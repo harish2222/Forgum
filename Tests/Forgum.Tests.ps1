@@ -387,5 +387,11 @@ Describe "Update-Forgum" -Tag 'Update' {
     It "exports Update-Forgum" {
         Get-Command Update-Forgum -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
     }
+
+    It "has a -Force parameter" {
+        $params = (Get-Command Update-Forgum).Parameters
+        $params.ContainsKey('Force') | Should -Be $true
+        $params['Force'].ParameterType.Name | Should -Be 'SwitchParameter'
+    }
 }
 
