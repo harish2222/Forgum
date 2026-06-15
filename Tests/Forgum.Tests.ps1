@@ -27,8 +27,8 @@ Describe "Module Loading" -Tag 'Module' {
         { Get-Module Forgum } | Should -Not -Throw
     }
 
-    It "exports exactly 8 functions" {
-        (Get-Command -Module Forgum -CommandType Function).Count | Should -Be 8
+    It "exports exactly 9 functions" {
+        (Get-Command -Module Forgum -CommandType Function).Count | Should -Be 9
     }
 
     It "exports setup alias" {
@@ -36,7 +36,7 @@ Describe "Module Loading" -Tag 'Module' {
     }
 
     It "exports all expected functions" {
-        $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup')
+        $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup', 'Update-Forgum')
         $actual = (Get-Command -Module Forgum).Name
         foreach ($func in $expected) {
             $func | Should -BeIn $actual
@@ -44,7 +44,7 @@ Describe "Module Loading" -Tag 'Module' {
     }
 
     It "has CmdletBinding on public functions" {
-        $funcs = @('Invoke-Cowsay', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-Forgum', 'Invoke-ForgumSetup')
+        $funcs = @('Invoke-Cowsay', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-Forgum', 'Invoke-ForgumSetup', 'Update-Forgum')
         foreach ($func in $funcs) {
             $cmd = Get-Command $func -Module Forgum
             $cmd.Parameters.ContainsKey('Verbose') | Should -Be $true -Because "$func should support -Verbose"
@@ -377,6 +377,15 @@ Describe "Invoke-ForgumSetup" -Tag 'Setup' {
     }
     It "exports Invoke-ForgumSetup" {
         Get-Command Invoke-ForgumSetup -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
+    }
+}
+
+Describe "Update-Forgum" -Tag 'Update' {
+    BeforeAll {
+        if (-not (Get-Module Forgum)) { Import-Module $ModulePath -Force }
+    }
+    It "exports Update-Forgum" {
+        Get-Command Update-Forgum -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
     }
 }
 

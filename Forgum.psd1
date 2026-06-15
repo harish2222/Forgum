@@ -16,6 +16,7 @@
         'Set-CFConfig'
         'Show-CFAnimation'
         'Invoke-ForgumSetup'
+        'Update-Forgum'
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()
