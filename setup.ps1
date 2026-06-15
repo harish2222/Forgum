@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Forgum Shell Setup - Configure terminal integration interactively.
 .DESCRIPTION
@@ -51,7 +51,8 @@ function Show-Section {
 function Get-UserChoice {
     param(
         [string]$Prompt,
-        [bool]$Default
+        [bool]$Default,
+        [switch]$NonInteractive
     )
     $defaultStr = if ($Default) { "Y/n" } else { "y/N" }
     Write-Host "  $Prompt " -NoNewline -ForegroundColor White
@@ -71,7 +72,8 @@ function Get-UserSelection {
     param(
         [string]$Prompt,
         [string[]]$Options,
-        [string]$Default
+        [string]$Default,
+        [switch]$NonInteractive
     )
     Write-Host "  $Prompt" -ForegroundColor White
     for ($i = 0; $i -lt $Options.Count; $i++) {
@@ -127,29 +129,29 @@ try {
 
 # ── Toggle 1: Fortune Cow on Startup ──
 Show-Section "Fortune Cow on Startup"
-$fortuneOnStartup = Get-UserChoice "Show cow with fortune on terminal startup?" $true
+$fortuneOnStartup = Get-UserChoice "Show cow with fortune on terminal startup?" $true -NonInteractive:$NonInteractive
 
 # ── Toggle 2: Lolcat Rainbow ──
 Show-Section "Lolcat Rainbow Colors"
-$lolcatEnabled = Get-UserChoice "Enable rainbow lolcat colors by default?" $true
+$lolcatEnabled = Get-UserChoice "Enable rainbow lolcat colors by default?" $true -NonInteractive:$NonInteractive
 
 # ── Toggle 3: Default Cow File ──
 Show-Section "Default Cow File"
 $cowFiles = Get-CFCow | Select-Object -First 20
 $cowOptions = @('default') + ($cowFiles | Where-Object { $_ -ne 'default' } | Select-Object -First 9)
-$defaultCow = Get-UserSelection "Choose default cow:" $cowOptions "default"
+$defaultCow = Get-UserSelection "Choose default cow:" $cowOptions "default" -NonInteractive:$NonInteractive
 
 # ── Toggle 4: Animation Mode ──
 Show-Section "Animation Mode"
-$animMode = Get-UserSelection "Choose animation mode:" @('static', 'talking', 'typewriter') "static"
+$animMode = Get-UserSelection "Choose animation mode:" @('static', 'talking', 'typewriter') "static" -NonInteractive:$NonInteractive
 
 # ── Toggle 5: Shell Aliases ──
 Show-Section "Shell Aliases"
-$addAliases = Get-UserChoice "Add quick aliases (cowconfig, cowpreview, cowgallery, etc.)?" $true
+$addAliases = Get-UserChoice "Add quick aliases (cowconfig, cowpreview, cowgallery, etc.)?" $true -NonInteractive:$NonInteractive
 
 # ── Toggle 6: Tab Completion ──
 Show-Section "Tab Completion"
-$addCompletion = Get-UserChoice "Add tab completion for Forgum commands?" $true
+$addCompletion = Get-UserChoice "Add tab completion for Forgum commands?" $true -NonInteractive:$NonInteractive
 
 # ── Apply Config ──
 Show-Section "Applying Configuration"
@@ -157,7 +159,7 @@ Show-Section "Applying Configuration"
 $config.lolcat.enabled = $lolcatEnabled
 $config.cow.file = $defaultCow
 $config.animation.mode = $animMode
-Set-CFConfig -Config $config
+Set-CFConfig -Config $config -Confirm:$(-not $Force)
 Write-Host "  Config saved" -ForegroundColor Green
 
 # ── Update Profile ──
@@ -182,8 +184,7 @@ if (-not $NoProfile) {
         }
         
         # Add Fortune Cow on Startup
-        if ($fortuneOnStartup -and $newContent -notmatch 'Show-FortuneCow') {
-            $startupBlock = @"
+        $startupBlock = @"
 
 # Forgum Startup Fortune Cow
 function Show-FortuneCow {
@@ -207,13 +208,22 @@ if (-not `$global:FORGUM_STARTUP_DONE) {
     Show-FortuneCow
 }
 "@
-            $newContent += $startupBlock
-            Write-Host "  Added startup fortune cow" -ForegroundColor Green
+        if ($fortuneOnStartup) {
+            if ($newContent -match 'function Show-FortuneCow') {
+                if ($Force) {
+                    # Simple replacement logic - find the block and replace it
+                    # This is naive but works if the structure matches
+                    $newContent = $newContent -replace '(?s)\r?\n# Forgum Startup Fortune Cow.*?Show-FortuneCow\r?\n}', $startupBlock
+                    Write-Host "  Updated startup fortune cow (Forced)" -ForegroundColor Green
+                }
+            } else {
+                $newContent += $startupBlock
+                Write-Host "  Added startup fortune cow" -ForegroundColor Green
+            }
         }
         
         # Add Aliases
-        if ($addAliases -and $newContent -notmatch 'function cowconfig') {
-            $aliasBlock = @"
+        $aliasBlock = @"
 
 # Forgum Aliases
 function cowconfig { Get-CFConfig | ConvertTo-Json -Depth 4 }
@@ -222,13 +232,20 @@ function cowgallery { param([int]`$Count=5) Get-CFCow | Get-Random -Count `$Coun
 function lolcat-toggle { `$c = Get-CFConfig; `$c.lolcat.enabled = -not `$c.lolcat.enabled; Set-CFConfig -Config `$c; if (`$c.lolcat.enabled) { Write-Host "Lolcat: ON" -ForegroundColor Green } else { Write-Host "Lolcat: OFF" -ForegroundColor Yellow } }
 function cow-animate { param([ValidateSet('static','talking','typewriter')]`$Mode) `$c = Get-CFConfig; `$c.animation.mode = `$Mode; Set-CFConfig -Config `$c; Write-Host "Animation: `$Mode" }
 "@
-            $newContent += $aliasBlock
-            Write-Host "  Added shell aliases" -ForegroundColor Green
+        if ($addAliases) {
+            if ($newContent -match 'function cowconfig') {
+                if ($Force) {
+                    $newContent = $newContent -replace '(?s)\r?\n# Forgum Aliases.*?function cow-animate.*?}', $aliasBlock
+                    Write-Host "  Updated shell aliases (Forced)" -ForegroundColor Green
+                }
+            } else {
+                $newContent += $aliasBlock
+                Write-Host "  Added shell aliases" -ForegroundColor Green
+            }
         }
         
         # Add Tab Completion
-        if ($addCompletion -and $newContent -notmatch 'Register-ArgumentCompleter') {
-            $completionBlock = @"
+        $completionBlock = @"
 
 # Forgum Tab Completion
 Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -ScriptBlock {
@@ -238,8 +255,16 @@ Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -Sc
     }
 }
 "@
-            $newContent += $completionBlock
-            Write-Host "  Added tab completion" -ForegroundColor Green
+        if ($addCompletion) {
+            if ($newContent -match 'Forgum Tab Completion') {
+                if ($Force) {
+                    $newContent = $newContent -replace '(?s)\r?\n# Forgum Tab Completion.*?Register-ArgumentCompleter.*?}', $completionBlock
+                    Write-Host "  Updated tab completion (Forced)" -ForegroundColor Green
+                }
+            } else {
+                $newContent += $completionBlock
+                Write-Host "  Added tab completion" -ForegroundColor Green
+            }
         }
         
         # Backup profile before modifying
@@ -267,3 +292,4 @@ Write-Host ""
 Write-Host "  Restart your terminal to see changes." -ForegroundColor Yellow
 Write-Host "  Run 'Invoke-Forgum' to test!" -ForegroundColor Green
 Write-Host ""
+

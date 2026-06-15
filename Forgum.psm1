@@ -1,4 +1,7 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
+
+[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+param()
 
 # Enable Virtual Terminal Processing for truecolor ANSI support on Windows
 if ($IsWindows -or $env:OS -eq 'Windows_NT') {
@@ -85,7 +88,7 @@ if ($env:FORGUM_NOAUTOSTART -ne '1') {
             $script:ConfigCacheTime = [datetime]::UtcNow
             try {
                 $cowText = Invoke-Forgum -Lolcat
-                if ($cowText) { [Console]::WriteLine($cowText) }
+                if ($cowText) { Write-Host $cowText }
             }
             finally {
                 # Restore original cache so user config is not affected
@@ -96,3 +99,4 @@ if ($env:FORGUM_NOAUTOSTART -ne '1') {
     }
     & $sb
 }
+

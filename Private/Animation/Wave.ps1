@@ -1,4 +1,4 @@
-function Invoke-WaveAnimation {
+﻿function Invoke-WaveAnimation {
     <#
     .SYNOPSIS
         Fortune text appears word by word with rainbow color wave.
@@ -50,11 +50,8 @@ function Invoke-WaveAnimation {
 
     # Build word appearance schedule: which word appears at which frame
     $totalFrames = $words.Count
-    $rainbowOffset = 0
 
     $sb = [System.Text.StringBuilder]::new($CowOutput.Length * 3)
-
-    try { $startTop = [Console]::CursorTop } catch { $startTop = 0 }
 
     for ($frame = 0; $frame -le $totalFrames; $frame++) {
         [void]$sb.Clear()
@@ -130,3 +127,4 @@ function Invoke-WaveAnimation {
     Write-Host ""
     return $CowOutput
 }
+

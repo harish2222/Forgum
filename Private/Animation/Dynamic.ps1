@@ -6,10 +6,6 @@ function Invoke-DynamicAnimation {
         Picks a random cow and random fortune, displays with a brief
         transition animation, then cycles to the next pair. Runs for
         the configured duration.
-    .PARAMETER CowOutput
-        Ignored - generates fresh cow+fortune each cycle.
-    .PARAMETER Message
-        Ignored - uses random fortunes.
     .PARAMETER Duration
         Total animation duration in seconds (default 10).
     .PARAMETER CycleInterval
@@ -17,9 +13,8 @@ function Invoke-DynamicAnimation {
     #>
     [CmdletBinding()]
     [OutputType([string])]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
-        [string]$CowOutput = '',
-        [string]$Message = '',
         [double]$Duration = 10,
         [double]$CycleInterval = 3
     )
@@ -57,7 +52,6 @@ function Invoke-DynamicAnimation {
     try {
         while ([DateTime]::UtcNow -lt $endTime) {
             $now = [DateTime]::UtcNow
-            $elapsed = ($now - $startTime).TotalSeconds
             $shouldCycle = ($now - $lastCycle).TotalSeconds -ge $CycleInterval -or $firstRun
 
             if ($shouldCycle) {
@@ -103,7 +97,7 @@ function Invoke-DynamicAnimation {
                         [Console]::SetCursorPosition(0, $cursorPos - $balloon.Count)
                     }
                 } catch {
-                    # Console cursor not available, just continue
+                    Write-Verbose "DynamicAnimation: Failed to set cursor position: $_"
                 }
             }
             Write-Host $output -NoNewline

@@ -1,4 +1,4 @@
-function Invoke-WiggleAnimation {
+﻿function Invoke-WiggleAnimation {
     <#
     .SYNOPSIS
         Cow wiggles left and right playfully.
@@ -45,8 +45,6 @@ function Invoke-WiggleAnimation {
     }
 
     $sb = [System.Text.StringBuilder]::new($CowOutput.Length * 2)
-
-    try { $startTop = [Console]::CursorTop } catch { $startTop = 0 }
 
     for ($frame = 0; $frame -lt $Duration; $frame++) {
         [void]$sb.Clear()
@@ -99,3 +97,4 @@ function Invoke-WiggleAnimation {
     Write-Host ""
     return $CowOutput
 }
+

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Forgum Installer - Fun installation like oh-my-zsh!
 .DESCRIPTION
@@ -191,3 +191,4 @@ Write-Host '    Set-CFConfig -Config @{ lolcat = @{ enabled = $true } }' -Foregr
 Write-Host ""
 Write-Host "  Fortune favors the bold! Enjoy your cows!" -ForegroundColor Magenta
 Write-Host ""
+

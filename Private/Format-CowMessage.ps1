@@ -87,11 +87,6 @@ function Format-CowMessage {
     # 4. Render balloon
     # All lines will have length: 2 (indent) + 2 (||) + 1 (space) + $maxLength + 1 (space) + 2 (||) = $maxLength + 8
     $result = [System.Collections.Generic.List[string]]::new($lines.Count + 2)
-    $borderHashes = '#' * ($maxLength + 4)
-    $topLine = "  $borderHashes" # Total length: 2 + ($maxLength + 4) = $maxLength + 6? No.
-    # Wait, if side line is $maxLength + 8.
-    # Top line should be "  " (2) + hashes (N).
-    # So N should be $maxLength + 6.
     $borderHashes = '#' * ($maxLength + 6)
     $borderLine = "  $borderHashes"
 

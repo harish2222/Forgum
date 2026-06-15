@@ -1,4 +1,4 @@
-function Invoke-FadeInAnimation {
+﻿function Invoke-FadeInAnimation {
     <#
     .SYNOPSIS
         Cow fades in line by line with progressive brightness.
@@ -41,8 +41,6 @@ function Invoke-FadeInAnimation {
 
     $framesPerLine = [Math]::Max(1, [Math]::Floor($Duration / $totalLines))
     $sb = [System.Text.StringBuilder]::new($CowOutput.Length * 3)
-
-    try { $startTop = [Console]::CursorTop } catch { $startTop = 0 }
 
     $currentLine = 0
 
@@ -89,7 +87,8 @@ function Invoke-FadeInAnimation {
             $currentLine++
         }
 
-        Start-Sleep -Milliseconds 50
+        $sleepMs = [Math]::Max(10, [Math]::Floor(100 / $Speed))
+        Start-Sleep -Milliseconds $sleepMs
     }
 
     # Final frame — full brightness
@@ -111,3 +110,4 @@ function Invoke-FadeInAnimation {
     Write-Host ""
     return $CowOutput
 }
+

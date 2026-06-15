@@ -1,4 +1,4 @@
-function Invoke-SlideInAnimation {
+﻿function Invoke-SlideInAnimation {
     <#
     .SYNOPSIS
         Cow slides in from the left, revealing columns progressively.
@@ -43,8 +43,6 @@ function Invoke-SlideInAnimation {
     $revealed = 0
     $sb = [System.Text.StringBuilder]::new($CowOutput.Length * 2)
 
-    try { $startTop = [Console]::CursorTop } catch { $startTop = 0 }
-
     while ($revealed -le $totalCols) {
         [void]$sb.Clear()
 
@@ -74,3 +72,4 @@ function Invoke-SlideInAnimation {
     Write-Host ""
     return $CowOutput
 }
+

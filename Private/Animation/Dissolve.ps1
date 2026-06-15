@@ -1,4 +1,4 @@
-function Invoke-DissolveAnimation {
+﻿function Invoke-DissolveAnimation {
     <#
     .SYNOPSIS
         Cow materializes character by character in random positions.
@@ -104,9 +104,11 @@ function Invoke-DissolveAnimation {
             Write-Host $sb.ToString()
         }
 
-        Start-Sleep -Milliseconds 40
+        $sleepMs = [Math]::Max(10, [Math]::Floor(200 / $Speed))
+        Start-Sleep -Milliseconds $sleepMs
     }
 
     Write-Host ""
     return $CowOutput
 }
+

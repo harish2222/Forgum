@@ -5,7 +5,8 @@ function Update-Forgum {
     .PARAMETER Force
         Force a standalone update, skipping manual confirmation if an installer (Scoop/Winget) is detected.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter()]
         [switch]$Force
@@ -48,23 +49,25 @@ function Update-Forgum {
                 if ($choice -notmatch '^[yY]') { return }
             }
             
-            Write-Host "Downloading and installing v$latestVersion..." -ForegroundColor Cyan
-            $installScriptUrl = "https://raw.githubusercontent.com/harish2222/Forgum/main/install.ps1"
-            
-            $tempFile = Join-Path ([System.IO.Path]::GetTempPath()) "install_forgum_$(Get-Date -Format 'yyyyMMddHHmmss').ps1"
-            try {
-                Invoke-WebRequest -Uri $installScriptUrl -OutFile $tempFile -UseBasicParsing
-                # Execute downloaded script with -Silent flag
-                & $tempFile -Silent
-                Write-Host "Update complete! Restart your shell to use the new version." -ForegroundColor Green
-            }
-            finally {
-                if (Test-Path $tempFile) {
-                    Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
+            if ($PSCmdlet.ShouldProcess("v$latestVersion", "Install Forgum Update")) {
+                Write-Host "Downloading and installing v$latestVersion..." -ForegroundColor Cyan
+                $installScriptUrl = "https://raw.githubusercontent.com/harish2222/Forgum/main/install.ps1"
+                
+                $tempFile = Join-Path ([System.IO.Path]::GetTempPath()) "install_forgum_$(Get-Date -Format 'yyyyMMddHHmmss').ps1"
+                try {
+                    Invoke-WebRequest -Uri $installScriptUrl -OutFile $tempFile -UseBasicParsing
+                    # Execute downloaded script with -Silent flag
+                    & $tempFile -Silent
+                    Write-Host "Update complete! Restart your shell to use the new version." -ForegroundColor Green
+                }
+                finally {
+                    if (Test-Path $tempFile) {
+                        Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
+                    }
                 }
             }
         } else {
-            Write-Host "You are on the latest version (v$currentVersion)." -ForegroundColor Green
+            Write-Output "You are on the latest version (v$currentVersion)."
         }
     } catch {
         Write-Warning "Failed to check for updates: $_"

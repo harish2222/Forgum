@@ -45,8 +45,6 @@ function Invoke-BlinkAnimation {
 
     $sb = [System.Text.StringBuilder]::new($CowOutput.Length * 2)
 
-    try { $startTop = [Console]::CursorTop } catch { $startTop = 0 }
-
     for ($frame = 0; $frame -lt $Duration; $frame++) {
         [void]$sb.Clear()
 

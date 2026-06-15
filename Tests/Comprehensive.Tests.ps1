@@ -187,14 +187,14 @@ Describe "Performance Checks" -Tag 'Performance' {
 
     It "generates output in reasonable time" {
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
-        $output = Invoke-Forgum
+        $null = Invoke-Forgum
         $sw.Stop()
         $sw.ElapsedMilliseconds | Should -BeLessThan 10000
     }
 
     It "config read is fast" {
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
-        $config = Get-CFConfig
+        $null = Get-CFConfig
         $sw.Stop()
         $sw.ElapsedMilliseconds | Should -BeLessThan 100
     }

@@ -1,6 +1,9 @@
 # Forgum Test Runner
 # Usage: pwsh -File run_tests_final.ps1
 
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+param()
+
 $ErrorActionPreference = 'Stop'
 $env:FORGUM_NOAUTOSTART = '1'
 

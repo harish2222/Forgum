@@ -1,4 +1,4 @@
-function Invoke-BounceAnimation {
+﻿function Invoke-BounceAnimation {
     <#
     .SYNOPSIS
         Cow drops in from above with realistic bounce physics.
@@ -55,8 +55,6 @@ function Invoke-BounceAnimation {
     }
     $positions.Add($groundY)
 
-    try { $baseTop = [Console]::CursorTop } catch { $baseTop = 0 }
-
     $sb = [System.Text.StringBuilder]::new($CowOutput.Length * 2)
 
     foreach ($pos in $positions) {
@@ -91,3 +89,4 @@ function Invoke-BounceAnimation {
     Write-Host ""
     return $CowOutput
 }
+

@@ -42,13 +42,18 @@ function Import-TestModule {
     Returns a deep copy of the default config that tests can modify safely.
 #>
 function New-TestConfig {
-    $configJson = Get-Content $script:ConfigTemplate -Raw
-    $config = $configJson | ConvertFrom-Json -AsHashtable
-    if (-not $config) {
-        # Fallback for PS 5.1
-        $config = $configJson | ConvertFrom-Json | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
+
+    if ($PSCmdlet.ShouldProcess("Test Environment", "Create new test configuration object")) {
+        $configJson = Get-Content $script:ConfigTemplate -Raw
+        $config = $configJson | ConvertFrom-Json -AsHashtable
+        if (-not $config) {
+            # Fallback for PS 5.1
+            $config = $configJson | ConvertFrom-Json | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+        }
+        return $config
     }
-    return $config
 }
 
 <#
@@ -98,7 +103,7 @@ function Test-HasAnsi {
 .SYNOPSIS
     Returns a list of available cow files from the module.
 #>
-function Get-TestCowFiles {
+function Get-TestCowFile {
     $cowsPath = Join-Path $script:ModuleRoot 'Data/Cows'
     return (Get-ChildItem -Path $cowsPath -Filter '*.cow').BaseName
 }
@@ -147,7 +152,7 @@ Export-ModuleMember -Function @(
     'Save-TestConfig',
     'Restore-TestConfig',
     'Test-HasAnsi',
-    'Get-TestCowFiles',
+    'Get-TestCowFile',
     'Test-HasCmdletBinding',
     'Get-ModuleRoot',
     'Get-ModuleManifestPath',
