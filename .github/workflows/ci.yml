@@ -66,7 +66,7 @@ jobs:
           Write-Host "Module: $($manifest.Name) v$($manifest.Version)"
           Write-Host "Author: $($manifest.Author)"
           Write-Host "Exports: $($manifest.ExportedFunctions.Keys -join ', ')"
-          $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation')
+          $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup', 'Update-Forgum')
           $actual = $manifest.ExportedFunctions.Keys
           $missing = $expected | Where-Object { $_ -notin $actual }
           if ($missing) {
