@@ -2,7 +2,7 @@
 # Shared test utilities for Forgum test suite
 
 # Module path discovery
-$script:ModuleRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$script:ModuleRoot = Split-Path $PSScriptRoot -Parent
 $script:ModulePath = Join-Path $script:ModuleRoot 'Forgum.psd1'
 $script:ConfigTemplate = Join-Path $script:ModuleRoot 'Data/Templates/default-config.json'
 
