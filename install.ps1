@@ -131,19 +131,24 @@ if ($profilePath) {
     }
 }
 
-# Run setup in silent mode
+# Run setup
 if ($Silent) {
     Write-Host "  Running setup (silent mode)..." -ForegroundColor White
     $setupDir = if ($PSScriptRoot) { $PSScriptRoot } else { $sourceDir }
     $setupScript = Join-Path $setupDir "setup.ps1"
     if (Test-Path $setupScript) {
         & $setupScript -NonInteractive -Force
-    } else {
-        Write-Host "  setup.ps1 not found, skipping interactive setup" -ForegroundColor Yellow
     }
 } else {
-    Write-Host ""
-    Write-Host "  Run .\setup.ps1 to configure shell integration!" -ForegroundColor Yellow
+    Write-Host "  Starting interactive setup..." -ForegroundColor Cyan
+    $setupScript = Join-Path $installDir "setup.ps1"
+    if (-not (Test-Path $setupScript)) {
+        # Fallback to source dir if running locally
+        $setupScript = Join-Path $sourceDir "setup.ps1"
+    }
+    if (Test-Path $setupScript) {
+        & $setupScript
+    }
 }
 
 Show-Progress 90 100

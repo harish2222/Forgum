@@ -424,6 +424,16 @@ main() {
     echo -e "\n${BOLD}━━━ Step 5/5: Verification ━━━${NC}"
     run_tests
 
+    # Interactive Setup Prompt
+    echo ""
+    echo -e "\033[1;36mDo you want to run the interactive setup wizard now? [Y/n]\033[0m"
+    read -r run_setup
+    if [[ -z "$run_setup" || "$run_setup" =~ ^[Yy]$ ]]; then
+        pwsh -c "Import-Module Forgum; Invoke-ForgumSetup"
+    else
+        echo -e "\033[1;33mYou can run 'forgum-setup' later to configure your experience.\033[0m"
+    fi
+
     # Done!
     show_cow
 
