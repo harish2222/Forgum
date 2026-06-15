@@ -22,12 +22,11 @@ param(
 # ASCII Art Banner
 function Show-Banner {
     Write-Host ""
-    Write-Host "  _____ _____ ___ _____ ___ ___  _  ___" -ForegroundColor Cyan
-    Write-Host " /  ___|  ___/ _ \_   _|_ _/ _ \| |/ /" -ForegroundColor Cyan
-    Write-Host " \ \`--. | |_ / /_\ \| |  | | | | ' / " -ForegroundColor Cyan
-    Write-Host "  \`--. \|  _||  _  || |  | | | | . \ " -ForegroundColor Cyan
-    Write-Host " /\__/ /| |  | | | || | _| |_| | |\ \" -ForegroundColor Cyan
-    Write-Host " \____/ \_|  \_| |_/\_/ |___/ \_| |_/ " -ForegroundColor Cyan
+    Write-Host "  _____ ___  ____   ____ _   _ __  __ " -ForegroundColor Cyan
+    Write-Host " |  ___/ _ \|  _ \ / ___| | | |  \/  |" -ForegroundColor Cyan
+    Write-Host " | |_ | | | | |_) | |  _| | | | |\/| |" -ForegroundColor Cyan
+    Write-Host " |  _|| |_| |  _ <| |_| | |_| | |  | |" -ForegroundColor Cyan
+    Write-Host " |_|   \___/|_| \_\\____|\___/|_|  |_|" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  The fun way to get your daily fortune!" -ForegroundColor Magenta
     Write-Host ""
