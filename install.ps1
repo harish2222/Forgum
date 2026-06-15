@@ -88,22 +88,33 @@ if (-not (Test-Path $installDir)) {
 Show-Progress 10 100
 
 # Clone or copy
-$sourceDir = Split-Path $MyInvocation.MyCommand.Path -Parent
+$sourceDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocation.MyCommand.Path -Parent }
+$moduleItems = @("Forgum.psd1", "Forgum.psm1", "Public", "Private", "Data", "Tests", "setup.ps1", "LICENSE", "README.md")
+
 if (Test-CommandExists git) {
     if (Test-Path (Join-Path $sourceDir '.git')) {
         # Running from cloned repo
-        Copy-Item -Path "$sourceDir\Forgum\*" -Destination $installDir -Recurse -Force
+        foreach ($item in $moduleItems) {
+            $path = Join-Path $sourceDir $item
+            if (Test-Path $path) { Copy-Item -Path $path -Destination $installDir -Recurse -Force }
+        }
     } else {
         # Download from GitHub
         Write-Host ""
         Write-Host "  Downloading from GitHub..." -ForegroundColor Cyan
         $tempDir = Join-Path $env:TEMP "Forgum_$(Get-Random)"
         git clone --depth 1 https://github.com/harish2222/Forgum.git $tempDir 2>$null
-        Copy-Item -Path "$tempDir\Forgum\*" -Destination $installDir -Recurse -Force
+        foreach ($item in $moduleItems) {
+            $path = Join-Path $tempDir $item
+            if (Test-Path $path) { Copy-Item -Path $path -Destination $installDir -Recurse -Force }
+        }
         Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 } else {
-    Copy-Item -Path "$sourceDir\Forgum\*" -Destination $installDir -Recurse -Force
+    foreach ($item in $moduleItems) {
+        $path = Join-Path $sourceDir $item
+        if (Test-Path $path) { Copy-Item -Path $path -Destination $installDir -Recurse -Force }
+    }
 }
 Show-Progress 50 100
 
@@ -132,20 +143,19 @@ if ($profilePath) {
 }
 
 # Run setup
+$setupScript = Join-Path $installDir "setup.ps1"
+if (-not (Test-Path $setupScript)) {
+    # Fallback to source dir if running locally
+    $setupScript = Join-Path $sourceDir "setup.ps1"
+}
+
 if ($Silent) {
     Write-Host "  Running setup (silent mode)..." -ForegroundColor White
-    $setupDir = if ($PSScriptRoot) { $PSScriptRoot } else { $sourceDir }
-    $setupScript = Join-Path $setupDir "setup.ps1"
     if (Test-Path $setupScript) {
         & $setupScript -NonInteractive -Force
     }
 } else {
     Write-Host "  Starting interactive setup..." -ForegroundColor Cyan
-    $setupScript = Join-Path $installDir "setup.ps1"
-    if (-not (Test-Path $setupScript)) {
-        # Fallback to source dir if running locally
-        $setupScript = Join-Path $sourceDir "setup.ps1"
-    }
     if (Test-Path $setupScript) {
         & $setupScript
     }

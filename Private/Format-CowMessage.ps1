@@ -21,34 +21,43 @@ function Format-CowMessage {
     $Text = $Text -replace "`t", "    "
     # Strip ANSI escape codes
     $Text = $Text -replace "\x1B\[[0-9;]*[a-zA-Z]", ""
-    # Strip zero-width characters (using literal chars for maximum compatibility)
-    $zeroWidthChars = "[" + [char]0x200B + [char]0x200C + [char]0x200D + [char]0xFEFF + "]"
-    $Text = $Text -replace $zeroWidthChars, ""
+    # Strip zero-width characters (using literal character codes for absolute certainty)
+    $zeroWidthChars = [char]0x200B, [char]0x200C, [char]0x200D, [char]0xFEFF
+    foreach ($c in $zeroWidthChars) {
+        $Text = $Text.Replace([string]$c, "")
+    }
     $Text = $Text -replace "`r`n", "`n"
 
     # 2. Word wrap
     $lines = [System.Collections.Generic.List[string]]::new()
     $paragraphs = $Text -split '\n'
+
     foreach ($paragraph in $paragraphs) {
         if ([string]::IsNullOrWhiteSpace($paragraph)) {
             $lines.Add('')
             continue
         }
+
         $words = $paragraph -split ' '
         $currentLine = ""
+
         foreach ($word in $words) {
             if ($word.Length -eq 0) {
                 # Preserve multiple spaces
                 if ($currentLine.Length -gt 0) { $currentLine += " " }
                 continue
             }
+
             # Handle long words
             while ($word.Length -gt $MaxWidth) {
-                if ($currentLine.Length -gt 0) { $lines.Add($currentLine) }
+                if ($currentLine.Length -gt 0) {
+                    $lines.Add($currentLine)
+                    $currentLine = ""
+                }
                 $lines.Add($word.Substring(0, $MaxWidth))
                 $word = $word.Substring($MaxWidth)
-                $currentLine = ""
             }
+
             if ($currentLine.Length -eq 0) {
                 $currentLine = $word
             }
@@ -60,31 +69,38 @@ function Format-CowMessage {
                 $currentLine = $word
             }
         }
-        if ($currentLine.Length -gt 0) { $lines.Add($currentLine) }
+        if ($currentLine.Length -gt 0) {
+            $lines.Add($currentLine)
+        }
     }
-    if ($lines.Count -eq 0) { $lines.Add('') }
 
-    # 3. Calculate max width (minimum 11 for thought pointer)
+    if ($lines.Count -eq 0) {
+        $lines.Add('')
+    }
+
+    # 3. Calculate max width (minimum 11 for standard cow thought pointer)
     $maxLength = 11
     foreach ($line in $lines) {
         if ($line.Length -gt $maxLength) { $maxLength = $line.Length }
     }
 
     # 4. Render balloon
-    # Mid line format: "  || " (5) + line (maxLength) + " ||" (3) = maxLength + 8 total chars
-    # Top line format: "  " (2) + hashes (H)
-    # To align: 2 + H = maxLength + 8 => H = maxLength + 6
-    
+    # All lines will have length: 2 (indent) + 2 (||) + 1 (space) + $maxLength + 1 (space) + 2 (||) = $maxLength + 8
     $result = [System.Collections.Generic.List[string]]::new($lines.Count + 2)
+    $borderHashes = '#' * ($maxLength + 4)
+    $topLine = "  $borderHashes" # Total length: 2 + ($maxLength + 4) = $maxLength + 6? No.
+    # Wait, if side line is $maxLength + 8.
+    # Top line should be "  " (2) + hashes (N).
+    # So N should be $maxLength + 6.
     $borderHashes = '#' * ($maxLength + 6)
-    $topLine = "  $borderHashes"
-    
-    $result.Add($topLine)
+    $borderLine = "  $borderHashes"
+
+    $result.Add($borderLine)
     foreach ($line in $lines) {
         $pad = ' ' * ($maxLength - $line.Length)
         $result.Add("  || $line$pad ||")
     }
-    $result.Add($topLine)
+    $result.Add($borderLine)
 
     return ($result -join "`n")
 }

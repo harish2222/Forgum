@@ -426,12 +426,28 @@ main() {
 
     # Interactive Setup Prompt
     echo ""
-    echo -e "\033[1;36mDo you want to run the interactive setup wizard now? [Y/n]\033[0m"
+    echo -e "${CYAN}${BOLD}Do you want to run the interactive setup wizard now? [Y/n]${NC}"
     read -r run_setup
     if [[ -z "$run_setup" || "$run_setup" =~ ^[Yy]$ ]]; then
-        pwsh -c "Import-Module Forgum; Invoke-ForgumSetup"
+        if check_command pwsh; then
+            pwsh -c "Import-Module Forgum; Invoke-ForgumSetup"
+        else
+            # Try common paths if not in PATH yet
+            local pwsh_path=""
+            for p in "/usr/bin/pwsh" "/usr/local/bin/pwsh" "/snap/bin/pwsh" "/opt/microsoft/powershell/7/pwsh"; do
+                if [ -x "$p" ]; then
+                    pwsh_path="$p"
+                    break
+                fi
+            done
+            if [ -n "$pwsh_path" ]; then
+                "$pwsh_path" -c "Import-Module Forgum; Invoke-ForgumSetup"
+            else
+                echo -e "  ${YELLOW}⚠ PowerShell (pwsh) not found in PATH. Please restart your shell and run 'Invoke-ForgumSetup'.${NC}"
+            fi
+        fi
     else
-        echo -e "\033[1;33mYou can run 'forgum-setup' later to configure your experience.\033[0m"
+        echo -e "${YELLOW}You can run 'forgum-setup' later to configure your experience.${NC}"
     fi
 
     # Done!

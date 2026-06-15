@@ -4,7 +4,13 @@ BeforeAll {
     $env:FORGUM_NOAUTOSTART = '1'
     $ModuleRoot = Split-Path $PSScriptRoot -Parent
     $ModulePath = Join-Path $ModuleRoot 'Forgum.psd1'
-    Get-Module Forgum -All | Remove-Module Forgum -Force -ErrorAction SilentlyContinue
+    
+    # Force complete removal of any existing module instances
+    do {
+        $m = Get-Module Forgum -ErrorAction SilentlyContinue
+        if ($m) { Remove-Module Forgum -Force -ErrorAction SilentlyContinue }
+    } while ($m)
+
     Import-Module $ModulePath -Force
     $script:TestCows = (Get-ChildItem (Join-Path $ModuleRoot 'Data/Cows') -Filter '*.cow').BaseName
     $script:TestFortunes = Get-Content (Join-Path $ModuleRoot 'Data/Fortunes/fortunes.txt') -Raw
@@ -358,8 +364,8 @@ Describe "Format-CowMessage Alignment" -Tag 'Formatting' {
             
             # Verify right side border '||' is perfectly aligned
             foreach ($line in $lines[1..($lines.Count-2)]) {
-                $line.EndsWith('||') | Should -Be $true
-                $line.Length | Should -Be $lines[0].Length
+                $line.EndsWith('||') | Should -Be $true -Because "Line should end with ||: '$line'"
+                $line.Length | Should -Be $lines[0].Length -Because "Line length $($line.Length) should match top border length $($lines[0].Length). Line: '$line', Top: '$($lines[0])'"
             }
         }
     }
