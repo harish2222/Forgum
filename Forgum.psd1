@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Forgum.psm1'
-    ModuleVersion     = '1.0.8'
+    ModuleVersion     = '1.0.9'
     GUID              = 'f7e6b3a1-2d84-4c9f-a5e0-1b3d7c8f9e2a'
     Author            = 'HKDEVS'
     CompanyName       = 'HKDEVS'
@@ -28,6 +28,12 @@
             ProjectUri   = 'https://github.com/harish2222/Forgum'
             IconUri      = 'https://raw.githubusercontent.com/harish2222/Forgum/main/icon.png'
             ReleaseNotes = @'
+## v1.0.9
+- UX: Implemented "Clean Profile" region-based modification for PowerShell profiles
+- UX: Automatic cleanup of old Forgum snippets in profile
+- Maintenance: Removed all redundant agent artifacts and local test scripts from repository
+- Hardening: Reached absolute zero-warning baseline
+
 ## v1.0.8
 - Hardening: Resolved 100% of PSScriptAnalyzer linting warnings
 - Hardening: Standardized UTF-8 BOM encoding for cross-platform PowerShell compatibility
