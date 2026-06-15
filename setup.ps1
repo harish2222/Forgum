@@ -175,96 +175,65 @@ if (-not $NoProfile) {
         }
         
         $existingProfile = if (Test-Path $profilePath) { Get-Content $profilePath -Raw } else { '' }
-        $newContent = $existingProfile
         
-        # Add Import-Module Forgum
-        if ($newContent -notmatch 'Import-Module\s+Forgum') {
-            $newContent += "`n`n# Forgum`nImport-Module Forgum -ErrorAction SilentlyContinue"
-            Write-Host "  Added Import-Module Forgum" -ForegroundColor Green
-        }
+        # Build the new consolidated block
+        $blockLines = [System.Collections.Generic.List[string]]::new()
+        $blockLines.Add("# region FORGUM")
+        $blockLines.Add("# This section is managed by Forgum. Manually editing may affect its ability to update.")
+        $blockLines.Add("Import-Module Forgum -ErrorAction SilentlyContinue")
         
-        # Add Fortune Cow on Startup
-        $startupBlock = @"
-
-# Forgum Startup Fortune Cow
-function Show-FortuneCow {
-    if (Get-Command Invoke-Forgum -ErrorAction Ignore) {
-        `$cowText = Invoke-Forgum -Lolcat
-        if (`$cowText) { [Console]::WriteLine(`$cowText) }
-    } elseif (Get-Command Invoke-Cowsay -ErrorAction Ignore) {
-        `$fortune = if (Get-Command Get-Fortune -ErrorAction Ignore) { Get-Fortune -ErrorAction SilentlyContinue } else { '' }
-        `$randomCow = (Get-CFCow | Get-Random).Name
-        if (`$fortune) {
-            `$null = Invoke-Cowsay -Text `$fortune -CowFile `$randomCow -Lolcat
-        } else {
-            `$null = Invoke-Cowsay -Text "Moo!" -CowFile `$randomCow -Lolcat
-        }
-    }
-}
-Set-Alias cowfortune Show-FortuneCow
-
-if (-not `$global:FORGUM_STARTUP_DONE) {
-    `$global:FORGUM_STARTUP_DONE = `$true
-    Show-FortuneCow
-}
-"@
         if ($fortuneOnStartup) {
-            if ($newContent -match 'function Show-FortuneCow') {
-                if ($Force) {
-                    # Simple replacement logic - find the block and replace it
-                    # This is naive but works if the structure matches
-                    $newContent = $newContent -replace '(?s)\r?\n# Forgum Startup Fortune Cow.*?Show-FortuneCow\r?\n}', $startupBlock
-                    Write-Host "  Updated startup fortune cow (Forced)" -ForegroundColor Green
-                }
-            } else {
-                $newContent += $startupBlock
-                Write-Host "  Added startup fortune cow" -ForegroundColor Green
-            }
+            $blockLines.Add("")
+            $blockLines.Add("function Show-FortuneCow {")
+            $blockLines.Add("    if (Get-Command Invoke-Forgum -ErrorAction Ignore) {")
+            $blockLines.Add("        `$cowText = Invoke-Forgum -Lolcat")
+            $blockLines.Add("        if (`$cowText) { Write-Host `$cowText }")
+            $blockLines.Add("    }")
+            $blockLines.Add("}")
+            $blockLines.Add("Set-Alias cowfortune Show-FortuneCow")
+            $blockLines.Add("if (-not `$global:FORGUM_STARTUP_DONE) {")
+            $blockLines.Add("    `$global:FORGUM_STARTUP_DONE = `$true")
+            $blockLines.Add("    Show-FortuneCow")
+            $blockLines.Add("}")
         }
         
-        # Add Aliases
-        $aliasBlock = @"
-
-# Forgum Aliases
-function cowconfig { Get-CFConfig | ConvertTo-Json -Depth 4 }
-function cowpreview { param([string]`$Cow='default',[string]`$Text='Hello!') Invoke-Cowsay -Text `$Text -CowFile `$Cow }
-function cowgallery { param([int]`$Count=5) Get-CFCow | Get-Random -Count `$Count | ForEach-Object { Invoke-Cowsay -Text (Get-Fortune) -CowFile `$_ } }
-function lolcat-toggle { `$c = Get-CFConfig; `$c.lolcat.enabled = -not `$c.lolcat.enabled; Set-CFConfig -Config `$c; if (`$c.lolcat.enabled) { Write-Host "Lolcat: ON" -ForegroundColor Green } else { Write-Host "Lolcat: OFF" -ForegroundColor Yellow } }
-function cow-animate { param([ValidateSet('static','talking','typewriter')]`$Mode) `$c = Get-CFConfig; `$c.animation.mode = `$Mode; Set-CFConfig -Config `$c; Write-Host "Animation: `$Mode" }
-"@
         if ($addAliases) {
-            if ($newContent -match 'function cowconfig') {
-                if ($Force) {
-                    $newContent = $newContent -replace '(?s)\r?\n# Forgum Aliases.*?function cow-animate.*?}', $aliasBlock
-                    Write-Host "  Updated shell aliases (Forced)" -ForegroundColor Green
-                }
-            } else {
-                $newContent += $aliasBlock
-                Write-Host "  Added shell aliases" -ForegroundColor Green
-            }
+            $blockLines.Add("")
+            $blockLines.Add("# Forgum Aliases")
+            $blockLines.Add("function cowconfig { Get-CFConfig | ConvertTo-Json -Depth 4 }")
+            $blockLines.Add("function cowpreview { param([string]`$Cow='default',[string]`$Text='Hello!') Invoke-Cowsay -Text `$Text -CowFile `$Cow }")
+            $blockLines.Add("function cowgallery { param([int]`$Count=5) Get-CFCow | Get-Random -Count `$Count | ForEach-Object { Invoke-Cowsay -Text (Get-Fortune) -CowFile `$_ } }")
+            $blockLines.Add("function lolcat-toggle { `$c = Get-CFConfig; `$c.lolcat.enabled = -not `$c.lolcat.enabled; Set-CFConfig -Config `$c; if (`$c.lolcat.enabled) { Write-Host `"Lolcat: ON`" -ForegroundColor Green } else { Write-Host `"Lolcat: OFF`" -ForegroundColor Yellow } }")
         }
         
-        # Add Tab Completion
-        $completionBlock = @"
-
-# Forgum Tab Completion
-Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -ScriptBlock {
-    param(`$commandName, `$parameterName, `$wordToComplete, `$commandAst, `$fakeBoundParameters)
-    Get-CFCow | Where-Object { `$_ -like "*`$wordToComplete*" } | ForEach-Object {
-        [System.Management.Automation.CompletionResult]::new(`$_, `$_, 'ParameterValue', `$_)
-    }
-}
-"@
         if ($addCompletion) {
-            if ($newContent -match 'Forgum Tab Completion') {
-                if ($Force) {
-                    $newContent = $newContent -replace '(?s)\r?\n# Forgum Tab Completion.*?Register-ArgumentCompleter.*?}', $completionBlock
-                    Write-Host "  Updated tab completion (Forced)" -ForegroundColor Green
-                }
-            } else {
-                $newContent += $completionBlock
-                Write-Host "  Added tab completion" -ForegroundColor Green
-            }
+            $blockLines.Add("")
+            $blockLines.Add("# Forgum Tab Completion")
+            $blockLines.Add("Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -ScriptBlock {")
+            $blockLines.Add("    param(`$commandName, `$parameterName, `$wordToComplete, `$commandAst, `$fakeBoundParameters)")
+            $blockLines.Add("    Get-CFCow | Where-Object { `$_ -like `"*`$wordToComplete*`" } | ForEach-Object {")
+            $blockLines.Add("        [System.Management.Automation.CompletionResult]::new(`$_, `$_, 'ParameterValue', `$_)")
+            $blockLines.Add("    }")
+            $blockLines.Add("}")
+        }
+        $blockLines.Add("# endregion FORGUM")
+        
+        $forgumBlock = ($blockLines -join "`r`n")
+        
+        # Clean up old scattered blocks if they exist
+        $cleanedProfile = $existingProfile
+        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum Startup Fortune Cow.*?Show-FortuneCow\r?\n}', ''
+        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum Aliases.*?function cow-animate.*?}', ''
+        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum Tab Completion.*?Register-ArgumentCompleter.*?}', ''
+        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum\r?\nImport-Module Forgum -ErrorAction SilentlyContinue', ''
+        
+        # Replace existing region if found, otherwise append
+        if ($cleanedProfile -match '(?s)# region FORGUM.*?# endregion FORGUM') {
+            $newProfile = $cleanedProfile -replace '(?s)# region FORGUM.*?# endregion FORGUM', $forgumBlock
+            Write-Host "  Updated Forgum block in profile" -ForegroundColor Green
+        } else {
+            $newProfile = $cleanedProfile.Trim() + "`r`n`r`n" + $forgumBlock
+            Write-Host "  Added Forgum block to profile" -ForegroundColor Green
         }
         
         # Backup profile before modifying
@@ -273,7 +242,7 @@ Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -Sc
             Copy-Item -Path $profilePath -Destination $backupPath -Force
         }
         
-        Set-Content -Path $profilePath -Value $newContent -Force
+        Set-Content -Path $profilePath -Value $newProfile.Trim() -Force
         Write-Host "  Profile updated: $profilePath" -ForegroundColor Green
     }
 }
