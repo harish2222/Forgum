@@ -338,3 +338,26 @@ Describe "Cross-Platform Behavior" -Tag 'Platform' {
         $manifest.ExportedFunctions.Keys.Count | Should -BeGreaterOrEqual 7
     }
 }
+
+Describe "Format-CowMessage Alignment" -Tag 'Formatting' {
+    BeforeAll {
+        if (-not (Get-Module Forgum)) { Import-Module $ModulePath -Force }
+    }
+    It "correctly calculates width with tabs and invisible chars" {
+        InModuleScope Forgum {
+            # A fortune string with a tab and a zero-width space (\u200B)
+            $trickyFortune = "A wise cow says:`tmoo." + [char]0x200B
+            $output = Format-CowMessage -Text $trickyFortune -MaxWidth 40
+            $lines = $output -split "`n"
+            
+            # Verify top and bottom borders have identical length
+            $lines[0].Length | Should -Be $lines[-1].Length
+            
+            # Verify right side border '||' is perfectly aligned
+            foreach ($line in $lines[1..($lines.Count-2)]) {
+                $line.EndsWith('||') | Should -Be $true
+                $line.Length | Should -Be $lines[0].Length
+            }
+        }
+    }
+}

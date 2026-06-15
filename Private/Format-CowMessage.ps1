@@ -16,6 +16,12 @@ function Format-CowMessage {
         [int]$MaxWidth = 60
     )
 
+    # Expand tabs to 4 spaces to ensure width calculation is accurate
+    $Text = $Text -replace "`t", "    "
+    # Strip zero-width spaces
+    $Text = $Text -replace "[\u200B\u200C\u200D\uFEFF]", ""
+    # Strip ANSI escape codes
+    $Text = $Text -replace "\x1B\[[0-9;]*[a-zA-Z]", ""
     $Text = $Text -replace "`r`n", "`n"
 
     $lines = [System.Collections.Generic.List[string]]::new()
@@ -68,22 +74,20 @@ function Format-CowMessage {
         if ($line.Length -gt $maxLength) { $maxLength = $line.Length }
     }
 
+    if ($maxLength -lt 11) {
+        $maxLength = 11
+    }
+
     # Clean ASCII balloon with double-line top/bottom
     $result = [System.Collections.Generic.List[string]]::new($lines.Count + 2)
-    $topBorder = '#' * ($maxLength + 4)
+    $topBorder = '#' * ($maxLength + 6)
     $sideBorder = '||'
 
     $result.Add("  $topBorder")
 
-    if ($lines.Count -eq 1) {
-        $pad = ' ' * ($maxLength - $lines[0].Length)
-        $result.Add("  $sideBorder $($lines[0])$pad $sideBorder")
-    }
-    else {
-        for ($i = 0; $i -lt $lines.Count; $i++) {
-            $pad = ' ' * ($maxLength - $lines[$i].Length)
-            $result.Add("  $sideBorder $($lines[$i])$pad $sideBorder")
-        }
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $pad = ' ' * ($maxLength - $lines[$i].Length)
+        $result.Add("  $sideBorder $($lines[$i])$pad $sideBorder")
     }
 
     $result.Add("  $topBorder")
