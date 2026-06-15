@@ -15,10 +15,11 @@
         'Get-CFConfig'
         'Set-CFConfig'
         'Show-CFAnimation'
+        'Invoke-ForgumSetup'
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()
-    AliasesToExport    = @()
+    AliasesToExport    = @('forgum-setup')
     PrivateData       = @{
         PSData = @{
             Tags         = @('cowsay', 'fortune', 'lolcat', 'ascii', 'fun', 'cross-platform', 'terminal')

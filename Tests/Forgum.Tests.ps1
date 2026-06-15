@@ -4,7 +4,7 @@ BeforeAll {
     $env:FORGUM_NOAUTOSTART = '1'
     $ModuleRoot = Split-Path $PSScriptRoot -Parent
     $ModulePath = Join-Path $ModuleRoot 'Forgum.psd1'
-    Get-Module Forgum | Remove-Module Forgum -Force -ErrorAction SilentlyContinue
+    Get-Module Forgum -All | Remove-Module Forgum -Force -ErrorAction SilentlyContinue
     Import-Module $ModulePath -Force
     $script:TestCows = (Get-ChildItem (Join-Path $ModuleRoot 'Data/Cows') -Filter '*.cow').BaseName
     $script:TestFortunes = Get-Content (Join-Path $ModuleRoot 'Data/Fortunes/fortunes.txt') -Raw
@@ -21,12 +21,16 @@ Describe "Module Loading" -Tag 'Module' {
         { Get-Module Forgum } | Should -Not -Throw
     }
 
-    It "exports exactly 7 functions" {
-        (Get-Command -Module Forgum).Count | Should -Be 7
+    It "exports exactly 8 functions" {
+        (Get-Command -Module Forgum -CommandType Function).Count | Should -Be 8
+    }
+
+    It "exports setup alias" {
+        (Get-Command -Module Forgum -CommandType Alias).Name | Should -Contain 'forgum-setup'
     }
 
     It "exports all expected functions" {
-        $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation')
+        $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup')
         $actual = (Get-Command -Module Forgum).Name
         foreach ($func in $expected) {
             $func | Should -BeIn $actual
@@ -34,7 +38,7 @@ Describe "Module Loading" -Tag 'Module' {
     }
 
     It "has CmdletBinding on public functions" {
-        $funcs = @('Invoke-Cowsay', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-Forgum')
+        $funcs = @('Invoke-Cowsay', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-Forgum', 'Invoke-ForgumSetup')
         foreach ($func in $funcs) {
             $cmd = Get-Command $func -Module Forgum
             $cmd.Parameters.ContainsKey('Verbose') | Should -Be $true -Because "$func should support -Verbose"
@@ -320,12 +324,11 @@ Describe "Animation Modes" -Tag 'Animation' {
 
 Describe "Cross-Platform Behavior" -Tag 'Platform' {
     BeforeAll {
-        Get-Module Forgum | Remove-Module Forgum -Force -ErrorAction SilentlyContinue
-        Import-Module $ModulePath -Force
+        if (-not (Get-Module Forgum)) { Import-Module $ModulePath -Force }
     }
 
     It "has platform-agnostic path handling" {
-        $path = InModuleScope Forgum { Get-ConfigPath }
+        $path = & (Get-Module Forgum | Where-Object ModuleType -eq Script | Select-Object -First 1) { Get-ConfigPath }
         $path | Should -Not -BeNullOrEmpty
         if ($IsLinux) { $path | Should -Match '/' }
         elseif ($IsMacOS) { $path | Should -Match '/' }
@@ -344,7 +347,7 @@ Describe "Format-CowMessage Alignment" -Tag 'Formatting' {
         if (-not (Get-Module Forgum)) { Import-Module $ModulePath -Force }
     }
     It "correctly calculates width with tabs and invisible chars" {
-        InModuleScope Forgum {
+        & (Get-Module Forgum | Where-Object ModuleType -eq Script | Select-Object -First 1) {
             # A fortune string with a tab and a zero-width space (\u200B)
             $trickyFortune = "A wise cow says:`tmoo." + [char]0x200B
             $output = Format-CowMessage -Text $trickyFortune -MaxWidth 40
@@ -361,3 +364,13 @@ Describe "Format-CowMessage Alignment" -Tag 'Formatting' {
         }
     }
 }
+
+Describe "Invoke-ForgumSetup" -Tag 'Setup' {
+    BeforeAll {
+        if (-not (Get-Module Forgum)) { Import-Module $ModulePath -Force }
+    }
+    It "exports Invoke-ForgumSetup" {
+        Get-Command Invoke-ForgumSetup -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
+    }
+}
+

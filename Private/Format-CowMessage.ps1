@@ -16,81 +16,75 @@ function Format-CowMessage {
         [int]$MaxWidth = 60
     )
 
-    # Expand tabs to 4 spaces to ensure width calculation is accurate
+    # 1. Pre-process text
+    # Expand tabs to 4 spaces
     $Text = $Text -replace "`t", "    "
-    # Strip zero-width spaces
-    $Text = $Text -replace "[\u200B\u200C\u200D\uFEFF]", ""
     # Strip ANSI escape codes
     $Text = $Text -replace "\x1B\[[0-9;]*[a-zA-Z]", ""
+    # Strip zero-width characters (using literal chars for maximum compatibility)
+    $zeroWidthChars = "[" + [char]0x200B + [char]0x200C + [char]0x200D + [char]0xFEFF + "]"
+    $Text = $Text -replace $zeroWidthChars, ""
     $Text = $Text -replace "`r`n", "`n"
 
+    # 2. Word wrap
     $lines = [System.Collections.Generic.List[string]]::new()
     $paragraphs = $Text -split '\n'
-
     foreach ($paragraph in $paragraphs) {
-        if ($paragraph.Length -eq 0) {
+        if ([string]::IsNullOrWhiteSpace($paragraph)) {
             $lines.Add('')
             continue
         }
-
         $words = $paragraph -split ' '
-        $sb = [System.Text.StringBuilder]::new()
-
+        $currentLine = ""
         foreach ($word in $words) {
-            if ($word.Length -eq 0) { continue }
-            # Handle words longer than MaxWidth by splitting them
+            if ($word.Length -eq 0) {
+                # Preserve multiple spaces
+                if ($currentLine.Length -gt 0) { $currentLine += " " }
+                continue
+            }
+            # Handle long words
             while ($word.Length -gt $MaxWidth) {
-                if ($sb.Length -gt 0) {
-                    $lines.Add($sb.ToString())
-                    [void]$sb.Clear()
-                }
+                if ($currentLine.Length -gt 0) { $lines.Add($currentLine) }
                 $lines.Add($word.Substring(0, $MaxWidth))
                 $word = $word.Substring($MaxWidth)
+                $currentLine = ""
             }
-            $currentLen = $sb.Length
-            if ($currentLen -eq 0) {
-                [void]$sb.Append($word)
+            if ($currentLine.Length -eq 0) {
+                $currentLine = $word
             }
-            elseif ($currentLen + 1 + $word.Length -le $MaxWidth) {
-                [void]$sb.Append(' ').Append($word)
+            elseif ($currentLine.Length + 1 + $word.Length -le $MaxWidth) {
+                $currentLine += " " + $word
             }
             else {
-                $lines.Add($sb.ToString())
-                [void]$sb.Clear().Append($word)
+                $lines.Add($currentLine)
+                $currentLine = $word
             }
         }
-
-        if ($sb.Length -gt 0) {
-            $lines.Add($sb.ToString())
-        }
+        if ($currentLine.Length -gt 0) { $lines.Add($currentLine) }
     }
+    if ($lines.Count -eq 0) { $lines.Add('') }
 
-    if ($lines.Count -eq 0) {
-        $lines.Add('')
-    }
-
-    $maxLength = 0
+    # 3. Calculate max width (minimum 11 for thought pointer)
+    $maxLength = 11
     foreach ($line in $lines) {
         if ($line.Length -gt $maxLength) { $maxLength = $line.Length }
     }
 
-    if ($maxLength -lt 11) {
-        $maxLength = 11
-    }
-
-    # Clean ASCII balloon with double-line top/bottom
+    # 4. Render balloon
+    # Mid line format: "  || " (5) + line (maxLength) + " ||" (3) = maxLength + 8 total chars
+    # Top line format: "  " (2) + hashes (H)
+    # To align: 2 + H = maxLength + 8 => H = maxLength + 6
+    
     $result = [System.Collections.Generic.List[string]]::new($lines.Count + 2)
-    $topBorder = '#' * ($maxLength + 6)
-    $sideBorder = '||'
-
-    $result.Add("  $topBorder")
-
-    for ($i = 0; $i -lt $lines.Count; $i++) {
-        $pad = ' ' * ($maxLength - $lines[$i].Length)
-        $result.Add("  $sideBorder $($lines[$i])$pad $sideBorder")
+    $borderHashes = '#' * ($maxLength + 6)
+    $topLine = "  $borderHashes"
+    
+    $result.Add($topLine)
+    foreach ($line in $lines) {
+        $pad = ' ' * ($maxLength - $line.Length)
+        $result.Add("  || $line$pad ||")
     }
-
-    $result.Add("  $topBorder")
+    $result.Add($topLine)
 
     return ($result -join "`n")
 }

@@ -98,30 +98,32 @@ function Get-UserSelection {
 Show-Banner
 
 # Check if Forgum is installed
-$forgumPath = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "PowerShell\Modules\Forgum\Forgum.psd1"
-if (-not (Test-Path $forgumPath)) {
-    $forgumPath = Join-Path $PSScriptRoot "Forgum.psd1"
+if (-not (Get-Command Get-CFConfig -ErrorAction SilentlyContinue)) {
+    $forgumPath = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "PowerShell\Modules\Forgum\Forgum.psd1"
     if (-not (Test-Path $forgumPath)) {
-        Write-Host "  ERROR: Forgum module not found." -ForegroundColor Red
-        Write-Host "  Run install.ps1 first, then run this script." -ForegroundColor Yellow
-        exit 1
+        $forgumPath = Join-Path $PSScriptRoot "Forgum.psd1"
+        if (-not (Test-Path $forgumPath)) {
+            Write-Host "  ERROR: Forgum module not found." -ForegroundColor Red
+            Write-Host "  Run install.ps1 first, then run this script." -ForegroundColor Yellow
+            return
+        }
     }
-}
 
-try {
-    Import-Module $forgumPath -Force -ErrorAction Stop
-} catch {
-    Write-Host "  ERROR: Failed to load Forgum module: $_" -ForegroundColor Red
-    exit 1
+    try {
+        Import-Module $forgumPath -Force -ErrorAction Stop
+    } catch {
+        Write-Host "  ERROR: Failed to load Forgum module: $_" -ForegroundColor Red
+        return
+    }
+    Write-Host "  Forgum module loaded successfully!" -ForegroundColor Green
 }
 
 try {
     $config = Get-CFConfig
 } catch {
     Write-Host "  ERROR: Failed to load config: $_" -ForegroundColor Red
-    exit 1
+    return
 }
-Write-Host "  Forgum module loaded successfully!" -ForegroundColor Green
 
 # ── Toggle 1: Fortune Cow on Startup ──
 Show-Section "Fortune Cow on Startup"
