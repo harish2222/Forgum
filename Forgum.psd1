@@ -10,6 +10,7 @@
     FunctionsToExport = @(
         'Invoke-Cowsay'
         'Invoke-Forgum'
+        'Invoke-ForgumLive'
         'Get-Fortune'
         'Get-CFCow'
         'Get-CFConfig'
@@ -20,7 +21,7 @@
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()
-    AliasesToExport    = @('forgum-setup')
+    AliasesToExport    = @('forgum-setup', 'forgum-show')
     PrivateData       = @{
         PSData = @{
             Tags         = @('cowsay', 'fortune', 'lolcat', 'ascii', 'fun', 'cross-platform', 'terminal')
