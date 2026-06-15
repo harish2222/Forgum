@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Forgum.psm1'
-    ModuleVersion     = '1.0.7'
+    ModuleVersion     = '1.0.8'
     GUID              = 'f7e6b3a1-2d84-4c9f-a5e0-1b3d7c8f9e2a'
     Author            = 'HKDEVS'
     CompanyName       = 'HKDEVS'
@@ -28,6 +28,14 @@
             ProjectUri   = 'https://github.com/harish2222/Forgum'
             IconUri      = 'https://raw.githubusercontent.com/harish2222/Forgum/main/icon.png'
             ReleaseNotes = @'
+## v1.0.8
+- Hardening: Resolved 100% of PSScriptAnalyzer linting warnings
+- Hardening: Standardized UTF-8 BOM encoding for cross-platform PowerShell compatibility
+- Hardening: Implemented `SupportsShouldProcess` for all state-changing functions
+- Feature: Refined `-NonInteractive` and `-Force` support in setup scripts for CI/CD
+- Perf: Optimized animation loops by removing unused variables and parameters
+- Quality: Reached zero-warning baseline for industry-standard quality
+
 ## v1.0.7
 - Feature: Interactive setup wizard integrated into installers
 - Feature: New `Invoke-ForgumSetup` (forgum-setup) command for re-configuration
