@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Forgum.psm1'
-    ModuleVersion     = '1.0.6'
+    ModuleVersion     = '1.0.7'
     GUID              = 'f7e6b3a1-2d84-4c9f-a5e0-1b3d7c8f9e2a'
     Author            = 'HKDEVS'
     CompanyName       = 'HKDEVS'
@@ -28,6 +28,14 @@
             ProjectUri   = 'https://github.com/harish2222/Forgum'
             IconUri      = 'https://raw.githubusercontent.com/harish2222/Forgum/main/icon.png'
             ReleaseNotes = @'
+## v1.0.7
+- Feature: Interactive setup wizard integrated into installers
+- Feature: New `Invoke-ForgumSetup` (forgum-setup) command for re-configuration
+- Feature: Secure auto-update mechanism via `Update-Forgum`
+- Fix: Robust bubble alignment engine (handles tabs, zero-width chars, ANSI)
+- Fix: Standardized "FORGUM" ASCII banners across all scripts
+- Test: Expanded benchmark suite with 34 tests and visual regression
+
 ## v1.0.6
 - Security: path traversal prevention in Read-CowFile (validates resolved paths stay in Cows dir)
 - Security: Set-CFConfig temp file race condition fix (New-TemporaryFile)
