@@ -27,3 +27,6 @@ The Rust executable (`forgum-core`) is optimized for heavy text processing, colo
 1.  Modify the PowerShell logic in `Private/` or `Public/`.
 2.  If modifying performance-critical rendering, update the Rust source inside `src-rust/`.
 3.  Ensure you run `Invoke-Pester -Path ./Tests/Forgum.Tests.ps1` before submitting a PR.
+
+## Testing Standard
+This project uses a Pester Permutation Matrix generating over 384 tests to ensure every combination of Cow, Eyes, Tongue, and Animation works flawlessly. Rust tests ensure ANSI integrity and double-buffering logic.
