@@ -113,13 +113,44 @@ mod tests {
     #[test]
     fn test_bounds_checking() {
         let mut fb = FrameBuffer::new(10, 10);
-        // Write outside bounds
-        fb.set_char(20, 20, 'x');
-        // No panic means success. The internal buffer should remain untouched.
-        assert_eq!(fb.get_char(20, 20), ' ');
+        
+        // Test exact boundaries
+        fb.set_char(9, 9, 'z');
+        assert_eq!(fb.get_char(9, 9), 'z');
+
+        // Test one-past-boundary (should not panic or write)
+        fb.set_char(10, 10, '!');
+        assert_eq!(fb.get_char(10, 10), ' ');
+
+        // Test X boundary
+        fb.set_char(10, 5, '!');
+        assert_eq!(fb.get_char(10, 5), ' ');
+
+        // Test Y boundary
+        fb.set_char(5, 10, '!');
+        assert_eq!(fb.get_char(5, 10), ' ');
 
         let max_fb = FrameBuffer::new(1000, 1000);
         assert_eq!(max_fb.width, 900);
         assert_eq!(max_fb.height, 900);
+    }
+
+    #[test]
+    fn test_write_str_multiline_and_increment() {
+        let mut fb = FrameBuffer::new(20, 20);
+        fb.write_str(0, 0, "a\nb");
+        
+        assert_eq!(fb.get_char(0, 0), 'a');
+        assert_eq!(fb.get_char(0, 1), 'b');
+        assert_eq!(fb.get_char(1, 0), ' '); // Ensure x didn't increment on newline
+    }
+
+    #[test]
+    fn test_get_char_out_of_bounds_logic() {
+        let fb = FrameBuffer::new(5, 5);
+        // Mutation testing often replaces && with || in bounds checks.
+        // We need to ensure that if EITHER x or y is out of bounds, it returns ' '.
+        assert_eq!(fb.get_char(5, 2), ' ');
+        assert_eq!(fb.get_char(2, 5), ' ');
     }
 }
