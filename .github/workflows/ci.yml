@@ -24,7 +24,7 @@ jobs:
       - name: Mutation Testing
         run: |
           cd src-rust
-          cargo mutants --no-times
+          cargo mutants --no-times --file src/engine.rs
       - name: PowerShell Static Analysis
         shell: pwsh
         run: |

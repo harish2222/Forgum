@@ -15,7 +15,7 @@ struct Args {
 }
 
 fn main() {
-    let args = Args::parse();
+    let _args = Args::parse();
 
     let mut cow_text = String::new();
     io::stdin().read_to_string(&mut cow_text).expect("Failed to read from stdin");

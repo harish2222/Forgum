@@ -6,14 +6,14 @@ pub struct Size {
 }
 
 pub struct Engine {
-    width: u16,
-    height: u16,
+    _width: u16,
+    _height: u16,
 }
 
 impl Engine {
     pub fn new() -> Self {
         let (w, h) = terminal::size().unwrap_or((80, 24));
-        Engine { width: w, height: h }
+        Engine { _width: w, _height: h }
     }
 
     pub fn calculate_bounds(&self, terminal_width_px: u16, terminal_height_px: u16) -> Size {
@@ -50,5 +50,13 @@ mod tests {
         let scaled = engine.calculate_bounds(640, 384);
         assert!(scaled.width <= 640, "Width should scale down to terminal size");
         assert!(scaled.height <= 384, "Height should scale down to terminal size");
+    }
+
+    #[test]
+    fn test_scale_asset_returns_original() {
+        let engine = Engine::new();
+        let input = "Moo cow";
+        let output = engine.scale_asset(input);
+        assert_eq!(input, output, "scale_asset should return original string for now");
     }
 }
