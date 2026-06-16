@@ -1,42 +1,73 @@
-use crossterm::terminal;
+use std::cmp::max;
 
-pub struct Size {
+#[derive(Debug, PartialEq, Eq)]
+pub struct Diff {
+    pub x: u16,
+    pub y: u16,
+    pub ch: char,
+}
+
+#[derive(Clone)]
+pub struct FrameBuffer {
     pub width: u16,
     pub height: u16,
+    pub buffer: Vec<Vec<char>>,
 }
 
-pub struct Engine {
-    _width: u16,
-    _height: u16,
-}
-
-impl Engine {
-    pub fn new() -> Self {
-        let (w, h) = terminal::size().unwrap_or((80, 24));
-        Engine { _width: w, _height: h }
-    }
-
-    pub fn calculate_bounds(&self, terminal_width_px: u16, terminal_height_px: u16) -> Size {
-        Size {
-            width: terminal_width_px.min(900),
-            height: terminal_height_px.min(900),
+impl FrameBuffer {
+    pub fn new(width: u16, height: u16) -> Self {
+        let width = width.min(900);
+        let height = height.min(900);
+        Self {
+            width,
+            height,
+            buffer: vec![vec![' '; width as usize]; height as usize],
         }
     }
 
-    pub fn scale_asset(&self, original: &str) -> String {
-        // Placeholder for the 900x900px math restriction logic
-        // For now, return original
-        original.to_string()
+    pub fn set_char(&mut self, x: u16, y: u16, ch: char) {
+        if x < self.width && y < self.height {
+            self.buffer[y as usize][x as usize] = ch;
+        }
     }
 
-    pub fn render_diff(&self, _old_frame: &str, new_frame: &str) -> String {
-        // Stub: In a real double buffer, we'd return ANSI codes. 
-        // For testing, just return the new frame if they differ, or empty string if same.
-        if _old_frame == new_frame {
-            String::new()
+    pub fn get_char(&self, x: u16, y: u16) -> char {
+        if x < self.width && y < self.height {
+            self.buffer[y as usize][x as usize]
         } else {
-            new_frame.to_string()
+            ' '
         }
+    }
+
+    pub fn write_str(&mut self, x: u16, y: u16, s: &str) {
+        let mut cx = x;
+        let mut cy = y;
+        for ch in s.chars() {
+            if ch == '\n' {
+                cx = x;
+                cy += 1;
+            } else {
+                self.set_char(cx, cy, ch);
+                cx += 1;
+            }
+        }
+    }
+
+    pub fn diff(&self, previous: &FrameBuffer) -> Vec<Diff> {
+        let mut diffs = Vec::new();
+        let max_y = max(self.height, previous.height);
+        let max_x = max(self.width, previous.width);
+
+        for y in 0..max_y {
+            for x in 0..max_x {
+                let curr_ch = self.get_char(x, y);
+                let prev_ch = previous.get_char(x, y);
+                if curr_ch != prev_ch {
+                    diffs.push(Diff { x, y, ch: curr_ch });
+                }
+            }
+        }
+        diffs
     }
 }
 
@@ -45,67 +76,50 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_scaling_hard_limits() {
-        let engine = Engine::new();
-        // Simulate a massive 4K terminal window
-        let scaled = engine.calculate_bounds(3840, 2160);
-        assert!(scaled.width <= 900, "Width exceeded 900px limit");
-        assert!(scaled.height <= 900, "Height exceeded 900px limit");
+    fn test_diff_identical_frames() {
+        let mut f1 = FrameBuffer::new(10, 10);
+        f1.write_str(2, 2, "hello");
+        let mut f2 = FrameBuffer::new(10, 10);
+        f2.write_str(2, 2, "hello");
+        
+        let diffs = f2.diff(&f1);
+        assert!(diffs.is_empty());
     }
 
     #[test]
-    fn test_scaling_small_terminals() {
-        let engine = Engine::new();
-        // Simulate a tiny 80x24 char terminal (~640x384px)
-        let scaled = engine.calculate_bounds(640, 384);
-        assert!(scaled.width <= 640, "Width should scale down to terminal size");
-        assert!(scaled.height <= 384, "Height should scale down to terminal size");
+    fn test_diff_empty_against_text() {
+        let empty = FrameBuffer::new(10, 10);
+        let mut text = FrameBuffer::new(10, 10);
+        text.write_str(0, 0, "hi");
+
+        let diffs = text.diff(&empty);
+        assert_eq!(diffs.len(), 2);
+        assert_eq!(diffs[0], Diff { x: 0, y: 0, ch: 'h' });
+        assert_eq!(diffs[1], Diff { x: 1, y: 0, ch: 'i' });
     }
 
     #[test]
-    fn test_scale_asset_returns_original() {
-        let engine = Engine::new();
-        let input = "Moo cow";
-        let output = engine.scale_asset(input);
-        assert_eq!(input, output, "scale_asset should return original string for now");       
+    fn test_diff_overlapping_different_text() {
+        let mut f1 = FrameBuffer::new(10, 10);
+        f1.write_str(0, 0, "hello");
+        let mut f2 = FrameBuffer::new(10, 10);
+        f2.write_str(0, 0, "hallo");
+
+        let diffs = f2.diff(&f1);
+        assert_eq!(diffs.len(), 1);
+        assert_eq!(diffs[0], Diff { x: 1, y: 0, ch: 'a' });
     }
 
     #[test]
-    fn test_render_diff_identical_frames_produce_zero_bytes() {
-        let engine = Engine::new();
-        let frame = "        \\   ^__^\n         \\  (oo)\\_______\n            (__)\\       )\\/\\";
-        let diff = engine.render_diff(frame, frame);
-        assert_eq!(diff.len(), 0, "Identical frames should produce 0 bytes of ANSI updates");
-    }
+    fn test_bounds_checking() {
+        let mut fb = FrameBuffer::new(10, 10);
+        // Write outside bounds
+        fb.set_char(20, 20, 'x');
+        // No panic means success. The internal buffer should remain untouched.
+        assert_eq!(fb.get_char(20, 20), ' ');
 
-    #[test]
-    fn test_render_diff_changed_frames_produce_output() {
-        let engine = Engine::new();
-        let frame1 = "Moo";
-        let frame2 = "Baa";
-        let diff = engine.render_diff(frame1, frame2);
-        assert!(diff.len() > 0, "Changed frames must produce output");
-    }
-
-    #[test]
-    fn test_buffer_diffing_identical_frames() {
-        let engine = Engine::new();
-        let frame1 = "Moo";
-        let frame2 = "Moo";
-        // If frames are identical, a double-buffering engine should produce no ANSI changes.
-        // For now, since we haven't built the full buffer state machine, we just test 
-        // that the asset scaler processes identical inputs identically.
-        let out1 = engine.scale_asset(frame1);
-        let out2 = engine.scale_asset(frame2);
-        assert_eq!(out1, out2, "Identical frames must produce identical scaled output");
-    }
-
-    #[test]
-    fn test_ansi_escape_integrity() {
-        let engine = Engine::new();
-        // Ensure that strings containing ANSI escape codes are not mangled during scaling
-        let ansi_string = "\x1b[31mMoo\x1b[0m";
-        let output = engine.scale_asset(ansi_string);
-        assert!(output.contains("\x1b[31m"), "ANSI color codes must survive scaling");
+        let max_fb = FrameBuffer::new(1000, 1000);
+        assert_eq!(max_fb.width, 900);
+        assert_eq!(max_fb.height, 900);
     }
 }
