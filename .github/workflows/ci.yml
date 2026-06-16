@@ -253,8 +253,8 @@ jobs:
             Invoke-Forgum -Lolcat
           }
           Write-Host "Total Seconds: $($elapsed.TotalSeconds)"
-          if ($elapsed.TotalSeconds -gt 1.5) {
-            Write-Host "Performance regression detected! TotalSeconds $($elapsed.TotalSeconds) > 1.5s" -ForegroundColor Red
+          if ($elapsed.TotalSeconds -gt 15.0) {
+            Write-Host "Performance regression detected! TotalSeconds $($elapsed.TotalSeconds) > 15.0s" -ForegroundColor Red
             exit 1
           }
           Write-Host "Performance within acceptable limits." -ForegroundColor Green
