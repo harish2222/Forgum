@@ -139,11 +139,11 @@ $lolcatEnabled = Get-UserChoice "Enable rainbow lolcat colors by default?" $true
 Show-Section "Default Cow File"
 $cowFiles = Get-CFCow | Select-Object -First 20
 $cowOptions = @('default') + ($cowFiles | Where-Object { $_ -ne 'default' } | Select-Object -First 9)
-$defaultCow = Get-UserSelection "Choose default cow:" $cowOptions "default" -NonInteractive:$NonInteractive
+$defaultCow = Get-UserSelection -Prompt "Choose default cow:" -Options $cowOptions -Default "default" -NonInteractive:$NonInteractive
 
 # ── Toggle 4: Animation Mode ──
 Show-Section "Animation Mode"
-$animMode = Get-UserSelection "Choose animation mode:" @('static', 'talking', 'typewriter') "static" -NonInteractive:$NonInteractive
+$animMode = Get-UserSelection -Prompt "Choose animation mode:" -Options @('static', 'talking', 'typewriter') -Default "static" -NonInteractive:$NonInteractive
 
 # ── Toggle 5: Shell Aliases ──
 Show-Section "Shell Aliases"
