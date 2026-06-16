@@ -29,6 +29,8 @@ function Invoke-Forgum {
     [CmdletBinding()]
     [OutputType([string])]
     param(
+        [switch]$Animate,
+
         [switch]$Think,
 
         [ValidateNotNullOrEmpty()]
@@ -45,6 +47,12 @@ function Invoke-Forgum {
     )
 
     $config = Get-CFConfig
+
+    if ($Animate) {
+        # One-off live show animation
+        $null = Invoke-LiveShow -RunOnce -Config $config
+        return ""
+    }
 
     $fortune = Get-Fortune -Database $config.fortune.database
 

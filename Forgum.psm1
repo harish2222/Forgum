@@ -73,22 +73,34 @@ $script:DefaultConfigSections = @{
     shell = @{ integration = 'auto'; tmux = @{ enabled = $false; pane = 'status-right' } }
 }
 
-# Auto-start: random cow with fortune on every import (static, no animation)
+# Auto-start: random cow with fortune on every import
 if ($env:FORGUM_NOAUTOSTART -ne '1') {
     $sb = {
         if (Get-Command Invoke-Forgum -ErrorAction Ignore) {
+            $config = Get-CFConfig
+            $useAnimation = $config.animation.mode -and $config.animation.mode -ne 'static'
+
             # Temporarily override config in-memory only — never write to disk
             $savedCache = $script:ConfigCache
             $savedCacheTime = $script:ConfigCacheTime
+            
             $config = Get-CFConfig
             $config.cow.random = $true
-            $config.animation.mode = 'static'
             $config.lolcat.enabled = $true
+            if (-not $useAnimation) {
+                $config.animation.mode = 'static'
+            }
+            
             $script:ConfigCache = $config
             $script:ConfigCacheTime = [datetime]::UtcNow
+            
             try {
-                $cowText = Invoke-Forgum -Lolcat
-                if ($cowText) { Write-Host $cowText }
+                if ($useAnimation) {
+                    Invoke-Forgum -Animate
+                } else {
+                    $cowText = Invoke-Forgum -Lolcat
+                    if ($cowText) { Write-Host $cowText }
+                }
             }
             finally {
                 # Restore original cache so user config is not affected
