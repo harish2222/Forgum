@@ -15,6 +15,7 @@
         'Get-CFCow'
         'Get-CFConfig'
         'Set-CFConfig'
+        'Set-Forgum'
         'Show-CFAnimation'
         'Invoke-ForgumSetup'
         'Update-Forgum'

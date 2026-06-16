@@ -74,6 +74,27 @@ Get-CFCow
 Get-CFCow -Name "ghost"
 ```
 
+## `Set-Forgum`
+
+The easiest way to update your Forgum configuration persistently.
+
+### Parameters
+*   `-Animation` (`[string]`): Sets the animation mode. (e.g. `static`, `talking`, `typewriter`, `bounce`, etc.)
+*   `-Cow` (`[string]`): Sets the default cow character.
+*   `-Eyes` (`[string]`): Sets the default eye character for the cow.
+*   `-Lolcat` (`[bool]`): Enables or disables rainbow colorization globally.
+*   `-RandomCow` (`[bool]`): Enables or disables random cow selection on startup.
+*   `-RainbowFrequency` (`[double]`): Adjusts the frequency of rainbow colors (0.01 to 1.0).
+
+### Examples
+```powershell
+# Set dragon as default cow with talking animation
+Set-Forgum -Cow dragon -Animation talking
+
+# Enable lolcat and set eyes to 'XX'
+Set-Forgum -Lolcat $true -Eyes "XX"
+```
+
 ## `Get-CFConfig`
 
 Retrieves the current Forgum configuration settings.

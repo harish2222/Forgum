@@ -12,7 +12,27 @@ Forgum stores its settings in a JSON file. You can change how it looks and behav
 
 ## How to Change Settings
 
-### Method 1: Use Commands (Easiest)
+### Method 1: Use Set-Forgum (Easiest)
+
+The `Set-Forgum` cmdlet is the recommended way to update your settings. It allows you to change configuration values with a single command without needing to handle the JSON file or configuration objects manually.
+
+```powershell
+# Enable rainbow colors and use the dragon cow
+Set-Forgum -Lolcat $true -Cow dragon
+
+# Set a talking animation with custom eyes
+Set-Forgum -Animation talking -Eyes "@@"
+
+# Enable random cows on startup
+Set-Forgum -RandomCow $true
+
+# Change multiple settings at once
+Set-Forgum -Animation bounce -Cow bill-the-cat -RainbowFrequency 0.2
+```
+
+### Method 2: Advanced Manual Configuration
+
+If you need to perform complex logic or bulk updates, you can manipulate the configuration object directly.
 
 ```powershell
 # Read current settings
@@ -27,7 +47,7 @@ $config.cow.file = 'tux'
 Set-CFConfig -Config $config
 ```
 
-### Method 2: Edit the Config File Directly
+### Method 3: Edit the Config File Directly
 
 Open the config file in any text editor and change what you want.
 

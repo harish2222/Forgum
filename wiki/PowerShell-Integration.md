@@ -287,12 +287,37 @@ function lolcat {
     Write-Host "Rainbow: $(if ($config.lolcat.enabled) {'ON'} else {'OFF'})" -ForegroundColor $(if ($config.lolcat.enabled) {'Magenta'} else {'Gray'})
 }
 
+# Change settings permanently
+# Usage: forgum-set -Cow dragon -Lolcat $true
+function forgum-set { Set-Forgum @args }
+
 # Random cow gallery (shows 3 cows)
 function cowgallery {
     Get-CFCow | Get-Random -Count 3 | ForEach-Object {
         Invoke-Cowsay -Text (Get-Fortune) -CowFile $_.Name
     }
 }
+```
+
+## Cross-Shell Persistence
+
+Forgum's configuration is shared across all shells (PowerShell, Bash, Zsh, Fish) because they all read from the same `config.json` file.
+
+You can use `Set-Forgum` in your PowerShell `$PROFILE` to ensure certain settings are always applied when you start a session:
+
+```powershell
+# Force a specific cow and animation every time PowerShell starts
+Set-Forgum -Cow dragon -Animation bounce
+```
+
+If you primarily use Bash or Zsh but want to change Forgum settings without opening PowerShell, you can add an alias to your `.bashrc` or `.zshrc`:
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+alias forgum-set='pwsh -Command "Set-Forgum"'
+
+# Now you can use it directly from Bash:
+# forgum-set -Cow tux -Animation talking
 ```
 
 ## What Each Line Does

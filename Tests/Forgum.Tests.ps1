@@ -27,8 +27,8 @@ Describe "Module Loading" -Tag 'Module' {
         { Get-Module Forgum } | Should -Not -Throw
     }
 
-    it "exports exactly 10 functions" {
-        (Get-Command -Module Forgum -CommandType Function).Count | Should -Be 10
+    it "exports exactly 11 functions" {
+        (Get-Command -Module Forgum -CommandType Function).Count | Should -Be 11
     }
 
     It "exports setup alias" {
@@ -36,7 +36,7 @@ Describe "Module Loading" -Tag 'Module' {
     }
 
     It "exports all expected functions" {
-        $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup', 'Update-Forgum')
+        $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup', 'Update-Forgum', 'Set-Forgum')
         $actual = (Get-Command -Module Forgum).Name
         foreach ($func in $expected) {
             $func | Should -BeIn $actual
@@ -44,7 +44,7 @@ Describe "Module Loading" -Tag 'Module' {
     }
 
     It "has CmdletBinding on public functions" {
-        $funcs = @('Invoke-Cowsay', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-Forgum', 'Invoke-ForgumSetup', 'Update-Forgum')
+        $funcs = @('Invoke-Cowsay', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-Forgum', 'Invoke-ForgumSetup', 'Update-Forgum', 'Set-Forgum')
         foreach ($func in $funcs) {
             $cmd = Get-Command $func -Module Forgum
             $cmd.Parameters.ContainsKey('Verbose') | Should -Be $true -Because "$func should support -Verbose"
@@ -111,6 +111,51 @@ Describe "Config System" -Tag 'Config' {
             Set-CFConfig -Config $config
             (Get-CFConfig).animation.mode | Should -Be $origMode
         }
+    }
+}
+
+Describe "Set-Forgum" -Tag 'Config' {
+    BeforeAll {
+        if (-not (Get-Module Forgum)) { Import-Module $ModulePath -Force }
+        $script:SetForgumRestore = Get-DeepCopyConfig
+    }
+
+    AfterAll {
+        if ($script:SetForgumRestore) { Set-CFConfig -Config $script:SetForgumRestore -ErrorAction SilentlyContinue }
+    }
+
+    It "updates animation mode" {
+        Set-Forgum -Animation 'typewriter'
+        (Get-CFConfig).animation.mode | Should -Be 'typewriter'
+    }
+
+    It "updates cow file" {
+        Set-Forgum -Cow 'tux'
+        (Get-CFConfig).cow.file | Should -Be 'tux'
+    }
+
+    It "updates cow eyes" {
+        Set-Forgum -Eyes 'XX'
+        (Get-CFConfig).cow.eyes | Should -Be 'XX'
+    }
+
+    It "updates lolcat status" {
+        Set-Forgum -Lolcat $true
+        (Get-CFConfig).lolcat.enabled | Should -Be $true
+        Set-Forgum -Lolcat $false
+        (Get-CFConfig).lolcat.enabled | Should -Be $false
+    }
+
+    It "updates random cow status" {
+        Set-Forgum -RandomCow $true
+        (Get-CFConfig).cow.random | Should -Be $true
+        Set-Forgum -RandomCow $false
+        (Get-CFConfig).cow.random | Should -Be $false
+    }
+
+    It "updates rainbow frequency" {
+        Set-Forgum -RainbowFrequency 0.5
+        (Get-CFConfig).lolcat.frequency | Should -Be 0.5
     }
 }
 

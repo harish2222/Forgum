@@ -154,11 +154,19 @@ Get-Fortune [-Database <name>]
 Get-CFCow [-Name <cowname>]
 ```
 
+### `Set-Forgum`
+
+```powershell
+Set-Forgum [-Animation <mode>] [-Cow <name>] [-Eyes <chars>] [-Lolcat <bool>] [-RandomCow <bool>]
+```
+
 ### `Get-CFConfig` / `Set-CFConfig`
 
 ```powershell
+# Get config object
 $config = Get-CFConfig
-$config.lolcat.enabled = $true
+
+# Set complete config object
 Set-CFConfig -Config $config
 ```
 
