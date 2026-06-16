@@ -115,7 +115,7 @@ Forgum comes packed with **107 unique characters**. Whether you want a friendly 
 
 ## 📖 Documentation
 
-- **[Layman's Handbook](wiki/Laymans-Handbook.md)**: New to the command line? Start here for a fun, jargon-free guide!
+- **[User Guide](wiki/User-Guide.md)**: New to the command line? Start here for a fun, jargon-free guide!
 - **[Installation Guide](wiki/Installation.md)**: Detailed steps for every platform.
 - **[Configuration](wiki/Configuration.md)**: How to tweak every setting.
 - **[API Reference](#-api-reference)**: For developers and scripters.

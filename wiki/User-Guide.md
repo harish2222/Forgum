@@ -1,4 +1,4 @@
-# 🐄 Layman's Handbook
+# 🐄 User Guide
 
 Welcome to **Forgum**! If you're new to using the command line (that window where you type text commands), don't worry—this guide is just for you. Forgum is all about adding a bit of personality and fun to your workspace.
 
