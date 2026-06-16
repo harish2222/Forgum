@@ -17,7 +17,7 @@ Describe "Write-TerminalFrame" {
         Mock Write-Host { } -ModuleName Forgum
         
         $null = & $script:Module { 
-            Write-TerminalFrame -Frame "Test Frame" -PreviousLineCount 5 
+            Write-TerminalFrame -Frame "Test Frame" -PreviousLineCount 5 -ForceTTY 
         }
         
         Should -Invoke -CommandName Write-Host -Exactly -Times 1 -ModuleName Forgum -ParameterFilter { $Object -match "\[5A" }
@@ -27,7 +27,7 @@ Describe "Write-TerminalFrame" {
         Mock Write-Host { } -ModuleName Forgum
         
         $null = & $script:Module { 
-            Write-TerminalFrame -Frame "Line1`nLine2" 
+            Write-TerminalFrame -Frame "Line1`nLine2" -ForceTTY 
         }
         
         # Each line should be preceded by ESC[2K

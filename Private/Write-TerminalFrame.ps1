@@ -12,12 +12,15 @@ function Write-TerminalFrame {
         [string]$Frame,
 
         [Parameter()]
-        [int]$PreviousLineCount = 0
+        [int]$PreviousLineCount = 0,
+
+        [Parameter()]
+        [switch]$ForceTTY
     )
 
     process {
         $esc = [char]27
-        $isTTY = -not [Console]::IsOutputRedirected
+        $isTTY = $ForceTTY -or (-not [Console]::IsOutputRedirected)
 
         # 1. Reset cursor if needed
         if ($isTTY -and $PreviousLineCount -gt 0) {
