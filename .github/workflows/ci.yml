@@ -164,9 +164,9 @@ jobs:
           cd ..
           mkdir -p bin
           if [ "$RUNNER_OS" == "Windows" ]; then
-            cp src-rust/target/release/forgum_core.exe bin/forgum-core.exe
+            cp src-rust/target/release/forgum-core.exe bin/forgum-core.exe
           else
-            cp src-rust/target/release/forgum_core bin/forgum-core
+            cp src-rust/target/release/forgum-core bin/forgum-core
           fi
         shell: bash
 
@@ -175,8 +175,8 @@ jobs:
         with:
           name: forgum-core-${{ matrix.os }}
           path: |
-            src-rust/target/release/forgum_core.exe
-            src-rust/target/release/forgum_core
+            src-rust/target/release/forgum-core.exe
+            src-rust/target/release/forgum-core
           if-no-files-found: ignore
 
       - name: Cache Pester + modules
@@ -326,13 +326,13 @@ jobs:
           
           # The artifacts are downloaded into folders named by artifact name
           if (Test-Path "bin_artifacts/forgum-core-windows-latest") {
-            Copy-Item -Path "bin_artifacts/forgum-core-windows-latest/forgum_core.exe" -Destination "$binDir/forgum-core.exe" -ErrorAction SilentlyContinue
+            Copy-Item -Path "bin_artifacts/forgum-core-windows-latest/forgum-core.exe" -Destination "$binDir/forgum-core.exe" -ErrorAction SilentlyContinue
           }
           if (Test-Path "bin_artifacts/forgum-core-ubuntu-latest") {
-            Copy-Item -Path "bin_artifacts/forgum-core-ubuntu-latest/forgum_core" -Destination "$binDir/forgum-core" -ErrorAction SilentlyContinue
+            Copy-Item -Path "bin_artifacts/forgum-core-ubuntu-latest/forgum-core" -Destination "$binDir/forgum-core" -ErrorAction SilentlyContinue
           }
           if (Test-Path "bin_artifacts/forgum-core-macos-latest") {
-            Copy-Item -Path "bin_artifacts/forgum-core-macos-latest/forgum_core" -Destination "$binDir/forgum-core-mac" -ErrorAction SilentlyContinue
+            Copy-Item -Path "bin_artifacts/forgum-core-macos-latest/forgum-core" -Destination "$binDir/forgum-core-mac" -ErrorAction SilentlyContinue
           }
 
           # Create zip

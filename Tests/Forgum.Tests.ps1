@@ -443,8 +443,27 @@ Describe "Update-Forgum" -Tag 'Update' {
 
 Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
     It "invokes real Rust binary when present on supported OS" {
-        $binName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-core.exe" } else { "forgum-core" }
+        $isWin = $IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6) -or ($env:OS -eq 'Windows_NT')
+        $isMac = $IsMacOS
+
+        if ($isWin) {
+            $arch = $env:PROCESSOR_ARCHITECTURE
+            $binName = if ($arch -eq 'ARM64' -or $arch -eq 'Arm64') { "forgum-core-arm64.exe" } else { "forgum-core.exe" }
+        } elseif ($isMac) {
+            $binName = "forgum-core-mac"
+        } else {
+            $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+            $binName = if ($arch -eq 'Arm64' -or $arch -eq 'ARM64') { "forgum-core-arm64" } else { "forgum-core" }
+        }
+
         $binPath = Join-Path $ModuleRoot "bin/$binName"
+        if (-not (Test-Path $binPath)) {
+            $fallbackName = if ($isWin) { "forgum-core.exe" } else { "forgum-core" }
+            $fallbackPath = Join-Path $ModuleRoot "bin/$fallbackName"
+            if (Test-Path $fallbackPath) {
+                $binPath = $fallbackPath
+            }
+        }
         
         if (Test-Path $binPath) {
             # Let it run for real (will exit after 60 frames in CI or fast on local)

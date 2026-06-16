@@ -100,7 +100,7 @@ if (Test-CommandExists cargo) {
         cargo build --release --quiet
         Set-Location $origDir
         if (-not (Test-Path $binDir)) { New-Item -ItemType Directory -Path $binDir -Force | Out-Null }
-        $exeName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum_core.exe" } else { "forgum_core" }
+        $exeName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-core.exe" } else { "forgum-core" }
         $targetName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-core.exe" } else { "forgum-core" }
         $compiledPath = Join-Path $rustDir "target/release/$exeName"
         if (Test-Path $compiledPath) {
