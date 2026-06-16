@@ -135,7 +135,7 @@ if (Test-Path $profilePath) {
     if ($existingProfile -match '# region FORGUM') {
         Show-Section "Existing Configuration Detected"
         $changeExisting = Get-UserChoice "Forgum is already configured. Do you want to change your settings?" $false -NonInteractive:$NonInteractive
-        if (-not $changeExisting) {
+        if (-not $changeExisting -and -not $Force) {
             Write-Host "  Keeping existing configuration. Setup complete." -ForegroundColor Green
             return
         }
