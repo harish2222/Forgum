@@ -1,4 +1,4 @@
-name: CI
+name: Forgum CI
 
 on:
   push:
@@ -11,6 +11,20 @@ env:
   MODULE_NAME: Forgum
 
 jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust Security Audit
+        run: |
+          cargo install cargo-audit
+          cd src-rust && cargo audit
+      - name: PowerShell Static Analysis
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Force
+          Invoke-ScriptAnalyzer -Path . -Settings ./PSScriptAnalyzerSettings.psd1 -EnableExit
+
   # ────────────────────────────────────────────
   # Phase 1: Fast feedback (parallel)
   # ────────────────────────────────────────────
@@ -114,7 +128,7 @@ jobs:
   # Phase 2: Tests (depends on Phase 1)
   # ────────────────────────────────────────────
   test:
-    needs: [lint, validate]
+    needs: [lint, validate, security-audit]
     strategy:
       fail-fast: false
       matrix:
@@ -129,6 +143,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Run Rust Tests
+        run: cd src-rust && cargo test --verbose
+
+      - name: Build Rust Binary (Release)
+        run: cd src-rust && cargo build --release
 
       - name: Cache Pester + modules
         uses: actions/cache@v4
