@@ -27,20 +27,20 @@ Describe "Forgum Permutation Engine" {
                                 $testName = "Renders Cow:$cow | Eyes:$eyes | Tongue:$tongue | Thought:$thought | Lolcat:$lolcat | Anim:$anim"
                                 
                                 It $testName {
-                                    $config = Get-CFConfig
-                                    $config.cow.file = $cow
-                                    $config.cow.eyes = $eyes
-                                    $config.cow.tongue = $tongue
-                                    $config.lolcat.enabled = $lolcat
-                                    $config.animation.mode = $anim
-                                    Set-CFConfig -Config $config
-
                                     $isThink = $thought -eq 'o'
 
-                                    # We don't want to actually sleep during tests
                                     {
-                                        & $script:Module { 
-                                            Invoke-Forgum -Think:$isThink -ErrorAction Stop 
+                                        & $script:Module {
+                                            $config = Get-CFConfig
+                                            $config.cow.file = $cow
+                                            $config.cow.eyes = $eyes
+                                            $config.cow.tongue = $tongue
+                                            $config.lolcat.enabled = $lolcat
+                                            $config.animation.mode = $anim
+                                            Set-CFConfig -Config $config
+
+                                            # We don't want to actually sleep during tests
+                                            Invoke-Forgum -Think:$isThink -ErrorAction Stop
                                         }
                                     } | Should -Not -Throw
                                 }
