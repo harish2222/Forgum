@@ -245,7 +245,8 @@ if (-not $NoProfile) {
         
         # Replace existing region if found, otherwise append
         if ($cleanedProfile -match '(?s)# region FORGUM.*?# endregion FORGUM') {
-            $newProfile = $cleanedProfile -replace '(?s)# region FORGUM.*?# endregion FORGUM', $forgumBlock
+            $escapedBlock = $forgumBlock -replace '\$', '$$$$'
+            $newProfile = $cleanedProfile -replace '(?s)# region FORGUM.*?# endregion FORGUM', $escapedBlock
             Write-Host "  Updated Forgum block in profile" -ForegroundColor Green
         } else {
             $newProfile = $cleanedProfile.Trim() + "`r`n`r`n" + $forgumBlock
