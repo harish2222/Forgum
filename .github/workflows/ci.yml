@@ -19,6 +19,12 @@ jobs:
         run: |
           cargo install cargo-audit
           cd src-rust && cargo audit
+      - name: Install cargo-mutants
+        run: cargo install cargo-mutants
+      - name: Mutation Testing
+        run: |
+          cd src-rust
+          cargo mutants --no-times
       - name: PowerShell Static Analysis
         shell: pwsh
         run: |
@@ -222,6 +228,36 @@ jobs:
             }
             exit 1
           }
+
+  # ────────────────────────────────────────────
+  # Phase 2.5: Performance Gate
+  # ────────────────────────────────────────────
+  perf-gate:
+    needs: [test]
+    runs-on: windows-latest
+    name: Performance Gate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Rust Binary (Release)
+        run: cd src-rust && cargo build --release
+
+      - name: Measure Performance
+        shell: pwsh
+        run: |
+          $elapsed = Measure-Command {
+            Import-Module ./Forgum.psd1 -Force
+            Invoke-Forgum -Lolcat
+          }
+          Write-Host "Total Seconds: $($elapsed.TotalSeconds)"
+          if ($elapsed.TotalSeconds -gt 1.5) {
+            Write-Host "Performance regression detected! TotalSeconds $($elapsed.TotalSeconds) > 1.5s" -ForegroundColor Red
+            exit 1
+          }
+          Write-Host "Performance within acceptable limits." -ForegroundColor Green
 
   # ────────────────────────────────────────────
   # Phase 3: Package (only on tags)

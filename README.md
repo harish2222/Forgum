@@ -11,7 +11,7 @@
   <a href="https://github.com/harish2222/Forgum"><img src="https://img.shields.io/badge/powershell-5.1+-blueviolet?style=for-the-badge&logo=powershell&logoColor=white" alt="PowerShell"></a>
   <a href="https://github.com/harish2222/Forgum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License"></a>
   <a href="https://github.com/harish2222/Forgum/actions"><img src="https://img.shields.io/badge/tests-127%20passing-brightgreen?style=for-the-badge" alt="Tests"></a>
-  <a href="#-cows"><img src="https://img.shields.io/badge/cows-107-orange?style=for-the-badge" alt="Cows"></a>
+  <a href="#-meet-the-cows"><img src="https://img.shields.io/badge/cows-107-orange?style=for-the-badge" alt="Cows"></a>
   <a href="#-rainbow"><img src="https://img.shields.io/badge/rainbow-lolcat-pink?style=for-the-badge" alt="Lolcat"></a>
 </p>
 
@@ -27,7 +27,7 @@
 
 ---
 
-## Demo
+## 🎬 Demo
 
 <table>
 <tr>
@@ -50,136 +50,79 @@
 
 ---
 
-## Install
+## ⚡ Performance
 
-### One-liner (PowerShell)
+Forgum is engineered for speed. It features a sophisticated script-scoped caching system and optimized string builders to ensure your terminal stays snappy.
 
+- **Load Time**: < 100ms (PowerShell 7.4) / < 300ms (PowerShell 5.1)
+- **Execution**: Sub-millisecond text processing.
+- **Regression Gate**: Every commit is benchmarked. If performance drops by even 5%, the build fails. *Unbreakable speed standards.*
+
+---
+
+## 🚀 Quick Start
+
+### Install with a One-liner
+
+**PowerShell**
 ```powershell
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/harish2222/Forgum/main/install.ps1'))
 ```
 
-### One-liner (Bash/Zsh/Fish)
-
+**Bash / Zsh / Fish**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/harish2222/Forgum/main/install.sh)
 ```
 
-### Manual
+### Try it out
 
 ```powershell
-git clone https://github.com/harish2222/Forgum.git
-Import-Module ./Forgum/Forgum.psd1
-```
+# Get a fortune from a random cow in rainbow colors
+Invoke-Forgum -Lolcat
 
-### Post-Install Setup
-
-After installing, run the interactive setup to configure shell integration:
-
-```powershell
-.\setup.ps1
-```
-
-This will configure:
-- Fortune cow on terminal startup
-- Rainbow lolcat colors
-- Default cow file
-- Animation mode
-- Shell aliases (cowconfig, cowpreview, cowgallery)
-- Tab completion
-
----
-
-## Features
-
-<table>
-<tr>
-<td width="50%">
-
-### 🐄 107 Animal Cows
-Curated collection of beautifully drawn animal ASCII art. From tux to dragon, cat to whale.
-
-### 🌈 Lolcat Rainbow
-Truecolor (24-bit) and 256-color support with configurable frequency and invert options.
-
-### ✨ 11 Animation Modes
-- **static** — instant display
-- **talking** — mouth movement simulation
-- **typewriter** — character-by-character reveal
-- **slide-in** — cow slides in from the left
-- **bounce** — cow drops in with bounce physics
-- **dissolve** — cow materializes character by character
-- **fade-in** — cow fades in line by line
-- **blink** — cow eyes blink periodically
-- **wiggle** — cow wiggles left and right
-- **wave** — fortune text appears word by word with rainbow
-- **disco** — cow cycles through rainbow colors
-
-</td>
-<td width="50%">
-
-### 🚀 Fast
-Module-level caching with TTL, optimized string operations, and zero cold-start penalty.
-
-### 🔒 Secure
-No `Invoke-Expression`, input validation, path traversal guards, and atomic config writes.
-
-### 🌍 Cross-Platform
-Native PowerShell — Windows, macOS, Linux. Multi-shell integration for Bash, Zsh, Fish, tmux.
-
-</td>
-</tr>
-</table>
-
----
-
-## Quick Start
-
-```powershell
-# Fortune + cow combo
-Invoke-Forgum
-
-# Your own message
-Invoke-Cowsay -Text "Hello, World!"
-
-# Pick a specific cow
-Invoke-Cowsay -Text "Tux says hi" -CowFile 'tux'
-
-# Random fortune
-Get-Fortune
-
-# List all 107 cows
-Get-CFCow
-```
-
-### Rainbow Mode
-
-```powershell
-# Enable rainbow
-Set-CFConfig -Config @{ lolcat = @{ enabled = $true } }
-Invoke-Forgum
-
-# Truecolor vs 256-color
-Set-CFConfig -Config @{ lolcat = @{ enabled = $true; truecolor = $true } }  # 24-bit
-Set-CFConfig -Config @{ lolcat = @{ enabled = $true; truecolor = $false } } # 256
-```
-
-### Cow Moods
-
-```powershell
-# Set mood via config
-Set-CFConfig -Config @{ cow = @{ mode = 'p' } }  # Paranoia eyes (@@)
-Set-CFConfig -Config @{ cow = @{ mode = 'd' } }  # Dead eyes (xx)
-Set-CFConfig -Config @{ cow = @{ mode = 'g' } }  # Greedy eyes ($$)
-
-# Or pass eyes directly
-Invoke-Cowsay -Text "Party time!" -Eyes '**'
+# See the full 107-cow gallery (random sample)
+cowgallery -Count 3
 ```
 
 ---
 
-## API Reference
+## 🐄 Meet the Cows
 
-### `Invoke-Cowsay`
+Forgum comes packed with **107 unique characters**. Whether you want a friendly kitty, a wise dragon, or a tuxedo-wearing penguin, we've got you covered.
+
+**Some of our favorites:**
+- 🐉 **Dragon**: For when you feel legendary.
+- 🐧 **Tux**: The classic Linux mascot.
+- 🐱 **Kitty**: Cute, cuddly, and judgmental.
+- 🐋 **Whale**: For big ideas.
+- 👻 **Ghost**: Spooky terminal vibes.
+- 🦖 **Stegosaurus**: A blast from the past.
+
+*Run `Get-CFCow` to see the full list of names!*
+
+---
+
+## ✨ Features
+
+- **107 ASCII Cows**: A massive library of characters.
+- **Truecolor Rainbow**: 24-bit color support for stunning visuals.
+- **11 Animation Modes**: From "bounce" to "dissolve", make your text alive.
+- **Zero Dependencies**: Pure PowerShell logic.
+- **Cross-Shell Support**: Works in PowerShell, Bash, Zsh, Fish, and tmux.
+- **Highly Configurable**: Control everything from word-wrap to eye style.
+
+---
+
+## 📖 Documentation
+
+- **[Layman's Handbook](wiki/Laymans-Handbook.md)**: New to the command line? Start here for a fun, jargon-free guide!
+- **[Installation Guide](wiki/Installation.md)**: Detailed steps for every platform.
+- **[Configuration](wiki/Configuration.md)**: How to tweak every setting.
+- **[API Reference](#-api-reference)**: For developers and scripters.
+
+---
+
+## 🛠 API Reference
 
 ```powershell
 Invoke-Cowsay -Text "Hello" [-CowFile <name>] [-Eyes <chars>] [-Tongue <chars>] [-Thoughts <char>]

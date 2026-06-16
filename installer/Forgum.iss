@@ -3,13 +3,13 @@
 ; Compile with Inno Setup 6+ (https://jrsoftware.org/isinfo.php)
 ;
 ; One-liner install (silent):
-;   & "$env:TEMP\Forgum-v1.0.5-Setup.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+;   & "$env:TEMP\Forgum-v1.0.7-Setup.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
 ;
 ; Winget install:
 ;   winget install HKDEVS.Forgum
 
 #define MyAppName "Forgum"
-#define MyAppVersion "1.0.5"
+#define MyAppVersion "1.0.7"
 #define MyAppPublisher "HKDEVS"
 #define MyAppURL "https://github.com/harish2222/Forgum"
 #define MyAppLicense "MIT"
@@ -43,6 +43,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "..\Forgum.psd1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\Forgum.psm1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\bin\*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\Private\*"; DestDir: "{app}\Private"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\Public\*"; DestDir: "{app}\Public"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\Data\*"; DestDir: "{app}\Data"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -94,6 +95,7 @@ begin
     FileCopy(SourceDir + '\setup.ps1', ModuleDir + '\setup.ps1', False);
     FileCopy(SourceDir + '\uninstall.ps1', ModuleDir + '\uninstall.ps1', False);
 
+    Exec('robocopy.exe', '"' + SourceDir + '\bin" "' + ModuleDir + '\bin" /E /NFL /NDL /NJH /NJS /NC /NS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec('robocopy.exe', '"' + SourceDir + '\Private" "' + ModuleDir + '\Private" /E /NFL /NDL /NJH /NJS /NC /NS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec('robocopy.exe', '"' + SourceDir + '\Public" "' + ModuleDir + '\Public" /E /NFL /NDL /NJH /NJS /NC /NS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec('robocopy.exe', '"' + SourceDir + '\Data" "' + ModuleDir + '\Data" /E /NFL /NDL /NJH /NJS /NC /NS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);

@@ -89,7 +89,7 @@ Show-Progress 10 100
 
 # Clone or copy
 $sourceDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocation.MyCommand.Path -Parent }
-$moduleItems = @("Forgum.psd1", "Forgum.psm1", "Public", "Private", "Data", "Tests", "setup.ps1", "LICENSE", "README.md")
+$moduleItems = @("Forgum.psd1", "Forgum.psm1", "bin", "Public", "Private", "Data", "Tests", "setup.ps1", "LICENSE", "README.md")
 
 if (Test-CommandExists git) {
     if (Test-Path (Join-Path $sourceDir '.git')) {
