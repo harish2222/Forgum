@@ -24,43 +24,15 @@ function Show-CFAnimation {
 
     $config = Get-CFConfig
     $mode = $config.animation.mode
+    $binName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-core.exe" } else { "forgum-core" }
+    $binPath = Join-Path (Split-Path $PSScriptRoot -Parent) "bin\$binName"
 
-    switch ($mode) {
-        'talking' {
-            return Invoke-TalkingAnimation -CowOutput $CowOutput -Message $Message -Duration $config.animation.duration
-        }
-        'typewriter' {
-            return Invoke-TypewriterAnimation -CowOutput $CowOutput -Message $Message -Speed $config.animation.speed
-        }
-        'slide-in' {
-            return Invoke-SlideInAnimation -CowOutput $CowOutput -Message $Message -Speed $config.animation.speed
-        }
-        'bounce' {
-            return Invoke-BounceAnimation -CowOutput $CowOutput -Message $Message -Duration $config.animation.duration
-        }
-        'dissolve' {
-            return Invoke-DissolveAnimation -CowOutput $CowOutput -Message $Message -Duration $config.animation.duration
-        }
-        'fade-in' {
-            return Invoke-FadeInAnimation -CowOutput $CowOutput -Message $Message -Duration $config.animation.duration
-        }
-        'blink' {
-            return Invoke-BlinkAnimation -CowOutput $CowOutput -Message $Message -Duration $config.animation.duration -BlinkRate $config.animation.blinkRate
-        }
-        'wiggle' {
-            return Invoke-WiggleAnimation -CowOutput $CowOutput -Message $Message -Duration $config.animation.duration -Amplitude $config.animation.amplitude
-        }
-        'wave' {
-            return Invoke-WaveAnimation -CowOutput $CowOutput -Message $Message -Speed $config.animation.speed
-        }
-        'disco' {
-            return Invoke-DiscoAnimation -CowOutput $CowOutput -Message $Message -Speed $config.animation.speed -Duration $config.animation.duration
-        }
-        'dynamic' {
-            return Invoke-DynamicAnimation -Duration $config.animation.duration -CycleInterval $config.animation.cycleInterval
-        }
-        default {
-            return Invoke-StaticAnimation -CowOutput $CowOutput -Message $Message
-        }
+    if (Test-Path $binPath) {
+        # Call the new Rust engine
+        $CowOutput | & $binPath --message $Message --mode $mode
+    } else {
+        # Fallback to legacy
+        Write-Warning "forgum-core not found, falling back to static"
+        return $CowOutput
     }
 }
