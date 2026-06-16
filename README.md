@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-1.0.3-blue?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-1.1.0-blue?style=for-the-badge" alt="Version"></a>
   <a href="https://github.com/harish2222/Forgum"><img src="https://img.shields.io/badge/powershell-5.1+-blueviolet?style=for-the-badge&logo=powershell&logoColor=white" alt="PowerShell"></a>
   <a href="https://github.com/harish2222/Forgum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License"></a>
   <a href="https://github.com/harish2222/Forgum/actions"><img src="https://img.shields.io/badge/tests-127%20passing-brightgreen?style=for-the-badge" alt="Tests"></a>

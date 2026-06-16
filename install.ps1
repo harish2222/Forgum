@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Forgum Installer - Fun installation like oh-my-zsh!
 .DESCRIPTION
@@ -88,7 +88,26 @@ if (-not (Test-Path $installDir)) {
 Show-Progress 10 100
 
 # Clone or copy
+# Compile Rust engine if cargo is available
 $sourceDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocation.MyCommand.Path -Parent }
+$rustDir = Join-Path $sourceDir "src-rust"
+$binDir = Join-Path $sourceDir "bin"
+if (Test-CommandExists cargo) {
+    if (Test-Path $rustDir) {
+        Write-Host "  Compiling Rust animation engine..." -ForegroundColor Cyan
+        $origDir = Get-Location
+        Set-Location $rustDir
+        cargo build --release --quiet
+        Set-Location $origDir
+        if (-not (Test-Path $binDir)) { New-Item -ItemType Directory -Path $binDir -Force | Out-Null }
+        $exeName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum_core.exe" } else { "forgum_core" }
+        $targetName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-core.exe" } else { "forgum-core" }
+        $compiledPath = Join-Path $rustDir "target/release/$exeName"
+        if (Test-Path $compiledPath) {
+            Copy-Item -Path $compiledPath -Destination (Join-Path $binDir $targetName) -Force
+        }
+    }
+}
 $moduleItems = @("Forgum.psd1", "Forgum.psm1", "bin", "Public", "Private", "Data", "Tests", "setup.ps1", "LICENSE", "README.md")
 
 if (Test-CommandExists git) {

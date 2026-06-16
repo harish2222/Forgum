@@ -173,7 +173,8 @@ Describe "Cow File System" -Tag 'Cows' {
     It "can read specific cow files" -ForEach @(
         @{ Cow = 'default' },
         @{ Cow = 'tux' },
-        @{ Cow = 'dragon' }
+        @{ Cow = 'dragon' },
+        @{ Cow = 'sheep' }
     ) {
         $cowText = Get-CFCow -Name $Cow
         $cowText | Should -Not -BeNullOrEmpty
@@ -441,15 +442,16 @@ Describe "Update-Forgum" -Tag 'Update' {
 }
 
 Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
-    It "invokes Rust binary when present on supported OS" {
-        # Mock Test-Path to simulate binary exists
-        Mock Test-Path { return $true } -ParameterFilter { $Path -like "*forgum-core*" }
-        # Mock native execution (the call operator &)
-        # Note: Pester 5 doesn't easily mock '&', so we test the result of the function
-        # which currently prints to console or returns CowOutput on fallback.
-        # We will assume that if Test-Path returns true, it attempts to execute.
-        # For this test, let's just ensure it doesn't throw.
-        { Show-CFAnimation -CowOutput "moo" } | Should -Not -Throw
+    It "invokes real Rust binary when present on supported OS" {
+        $binName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-core.exe" } else { "forgum-core" }
+        $binPath = Join-Path $ModuleRoot "bin/$binName"
+        
+        if (Test-Path $binPath) {
+            # Let it run for real (will exit after 60 frames in CI or fast on local)
+            { Show-CFAnimation -CowOutput "moo" -Message "real rendering test" } | Should -Not -Throw
+        } else {
+            Set-ItResult -Inconclusive -Because "Rust binary not built/found at $binPath"
+        }
     }
 
     It "falls back to static output if binary is missing" {

@@ -1,11 +1,11 @@
-﻿<#
+<#
 .SYNOPSIS
     Forgum Shell Setup - Configure terminal integration interactively.
 .DESCRIPTION
     Configures Fortune cow on startup, lolcat, cow file, animation, aliases, and tab completion.
     Supports -NonInteractive for package managers (winget/scoop).
 .PARAMETER NonInteractive
-    Skip all prompts, use defaults (fortune=yes, lolcat=yes, cow=default, animation=static, aliases=yes, completion=yes).
+    Skip all prompts, use defaults (fortune=yes, lolcat=yes, cow=default, animation=dynamic, aliases=yes, completion=yes).
 .PARAMETER Force
     Overwrite existing config without asking.
 .PARAMETER NoProfile
@@ -127,6 +127,21 @@ try {
     return
 }
 
+# Check for existing profile config
+$profilePath = $PROFILE.CurrentUserAllHosts
+if (-not $profilePath) { $profilePath = $PROFILE.CurrentUser }
+if (Test-Path $profilePath) {
+    $existingProfile = Get-Content $profilePath -Raw
+    if ($existingProfile -match '# region FORGUM') {
+        Show-Section "Existing Configuration Detected"
+        $changeExisting = Get-UserChoice "Forgum is already configured. Do you want to change your settings?" $false -NonInteractive:$NonInteractive
+        if (-not $changeExisting) {
+            Write-Host "  Keeping existing configuration. Setup complete." -ForegroundColor Green
+            return
+        }
+    }
+}
+
 # ── Toggle 1: Fortune Cow on Startup ──
 Show-Section "Fortune Cow on Startup"
 $fortuneOnStartup = Get-UserChoice "Show cow with fortune on terminal startup?" $true -NonInteractive:$NonInteractive
@@ -143,7 +158,7 @@ $defaultCow = Get-UserSelection -Prompt "Choose default cow:" -Options $cowOptio
 
 # ── Toggle 4: Animation Mode ──
 Show-Section "Animation Mode"
-$animMode = Get-UserSelection -Prompt "Choose animation mode:" -Options @('static', 'talking', 'typewriter') -Default "static" -NonInteractive:$NonInteractive
+$animMode = Get-UserSelection -Prompt "Choose animation mode:" -Options @('dynamic', 'talking', 'typewriter') -Default "dynamic" -NonInteractive:$NonInteractive
 
 # ── Toggle 5: Shell Aliases ──
 Show-Section "Shell Aliases"
@@ -180,6 +195,7 @@ if (-not $NoProfile) {
         $blockLines = [System.Collections.Generic.List[string]]::new()
         $blockLines.Add("# region FORGUM")
         $blockLines.Add("# This section is managed by Forgum. Manually editing may affect its ability to update.")
+        $blockLines.Add("`$env:FORGUM_NOAUTOSTART = '1'")
         $blockLines.Add("Import-Module Forgum -ErrorAction SilentlyContinue")
         
         if ($fortuneOnStartup) {

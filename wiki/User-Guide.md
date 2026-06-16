@@ -1,99 +1,109 @@
 # 🐄 User Guide
 
-Welcome to **Forgum**! If you're new to using the command line (that window where you type text commands), don't worry—this guide is just for you. Forgum is all about adding a bit of personality and fun to your workspace.
+Welcome to **Forgum**, the cross-platform terminal experience for PowerShell. This guide provides an overview of how to use and customize your Forgum installation to enhance your terminal environment.
 
 ---
 
-## 🌟 What is Forgum?
+## 🌟 Core Concepts
 
-Think of Forgum as a digital pet that lives in your command line. It can:
-1. **Talk**: You can make it say anything you want.
-2. **Predict**: It can give you a "fortune" (a random quote or piece of advice).
-3. **Be Colorful**: It can turn into a beautiful rainbow.
-4. **Animate**: It can move, blink, or even "bounce" onto your screen.
+Forgum integrates three classic terminal utilities into a cohesive, highly-performant module:
+1. **ASCII Art Engine**: A modern implementation of `cowsay` with 107 characters.
+2. **Fortune Database**: A curated collection of quotes, wisdom, and humorous observations.
+3. **Lolcat Rendering**: 24-bit truecolor rainbow colorization for any terminal output.
+4. **Animation Engine**: High-framerate terminal animations including bounce, dissolve, and fade effects.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-If you've already installed Forgum, try typing this and hitting Enter:
+Once installed, the primary way to interact with Forgum is through the `Invoke-Forgum` command.
 
 ```powershell
+# Display a random fortune with a random character in rainbow colors
 Invoke-Forgum -Lolcat
 ```
 
-You should see a colorful animal sharing a bit of wisdom!
-
 ---
 
-## 🎨 Fun Things to Try
+## 🎨 Primary Commands
 
-### 1. Change the Character
-We have **107 different characters** (we call them "cows," even if they're dragons or cats). To see a specific one, try:
+### 1. Generating ASCII Art
+Use `Invoke-Cowsay` for direct message generation with specific characters.
 
 ```powershell
-# Make a dragon talk
-Invoke-Cowsay -Text "I am legendary!" -CowFile dragon
+# Display a custom message using the 'dragon' character
+Invoke-Cowsay -Text "System systems operational." -CowFile dragon
 
-# Make a kitty talk
-Invoke-Cowsay -Text "Feed me." -CowFile kitty
+# Use the 'kitty' character
+Invoke-Cowsay -Text "Observation recorded." -CowFile kitty
 ```
 
-### 2. Rainbow Everything!
-Want to see those colors? Just add `-Lolcat` to almost any command:
+### 2. Configuration Management
+The `Set-Forgum` command is the recommended way to persistently update your preferences.
 
 ```powershell
-Invoke-Cowsay -Text "Rainbows are great!" -Lolcat
+# Persistently set the default character and animation mode
+Set-Forgum -Cow dragon -Animation bounce
+
+# Enable global rainbow colorization and set custom eyes
+Set-Forgum -Lolcat $true -Eyes "@@"
 ```
 
-### 3. See a Random Gallery
-Can't decide which character you like? Let Forgum show you a random selection:
+### 3. Character Gallery
+Explore the full library of 107 characters:
 
 ```powershell
+# List all character names
+Get-CFCow
+
+# View a random sample of characters
 cowgallery -Count 3
 ```
 
 ---
 
-## 🛠 Simple Customizing
+## 🛠 Advanced Customization
 
-### Changing the Eyes
-You can change how your character looks by changing its eyes:
+### Character Moods
+Modify the visual state of your character using eye presets:
 
 ```powershell
-# "Dead" eyes
-Invoke-Cowsay -Text "I'm a zombie!" -Eyes xx
+# Stoned mood
+Invoke-Cowsay -Text "Processing..." -Eyes **
 
-# "Greedy" eyes
-Invoke-Cowsay -Text "I love money!" -Eyes $$
+# Dead mood
+Invoke-Cowsay -Text "Critical Error." -Eyes xx
 
-# "Paranoid" eyes
-Invoke-Cowsay -Text "Who's there?" -Eyes @@
+# Paranoia mood
+Invoke-Cowsay -Text "Unauthorized access detected." -Eyes @@
 ```
 
-### Changing the Colors
-If you want the rainbow colors to be more or less frequent, you can use our easy toggle:
+### Rainbow Colorization (Lolcat)
+Toggle global colorization or adjust the frequency:
 
 ```powershell
-# Turn rainbow colors on or off
+# Toggle global lolcat state
 lolcat-toggle
+
+# Adjust color frequency via configuration
+Set-Forgum -RainbowFrequency 0.05
 ```
 
 ---
 
 ## ❓ Frequently Asked Questions
 
-**"How do I see all the characters?"**
-Type `Get-CFCow` to see a big list of every character name you can use.
+**"How do I see all available characters?"**
+Execute `Get-CFCow` to retrieve the complete inventory of character templates.
 
-**"Can I make it talk whenever I open my command line?"**
-Yes! During the setup (when you ran `setup.ps1`), if you chose "Yes" for the startup option, it will greet you every time you start working.
+**"How do I enable startup greetings?"**
+Startup behavior is managed during initial installation or via `Invoke-ForgumSetup`. To enable it manually, ensure `Import-Module Forgum` is present in your `$PROFILE`.
 
-**"What if I get stuck?"**
-Don't be afraid to experiment! You can't break anything by just making a cow talk. If you want to see all the "pro" options, you can always type `help Invoke-Cowsay`.
+**"Is this compatible with non-PowerShell environments?"**
+Yes. Forgum provides integration samples for Bash, Zsh, Fish, and tmux. Refer to the [Sample Configs](Sample-Configs.md) documentation for details.
 
 ---
 
-## ❤️ Enjoy your new digital companion!
+## ❤️ Conclusion
 
-Forgum is meant to be fun. If you find a character you love or a funny quote, share it with your friends!
+Forgum is designed to be a lightweight, secure, and performant addition to your terminal workflow. For detailed technical specifications, refer to the [API Reference](../docs/API-Reference.md).

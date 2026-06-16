@@ -2,31 +2,41 @@
 
 Welcome to the Forgum project! This manual details the internal architecture to help contributors understand how the system works and how to extend it.
 
-## Hybrid Architecture Overview
+## Architecture Overview
 
-Forgum uses a hybrid architecture, combining the flexibility and deep OS integration of PowerShell with the raw performance of a Rust core (`forgum-core`).
+Forgum is a pure PowerShell module optimized for performance, security, and cross-platform compatibility.
 
-### 1. The PowerShell Wrapper (`Forgum.psm1`)
+### 1. Module Structure (`Forgum.psm1`)
 
-The PowerShell module acts as the user-facing API and configuration manager.
+The root module dots-sources functions from the `Public/` and `Private/` directories.
 
-*   **Config and Data Parsing:** PowerShell is responsible for loading the user's `config.json`, reading `.cow` template files from disk, and querying the `fortunes.txt` database.
-*   **State Management:** PowerShell handles caching mechanisms to prevent unnecessary disk I/O on subsequent runs within the same session.
-*   **Pipeline Coordination:** When advanced rendering or animation is required, the PowerShell wrapper prepares the final text payload and streams it to the Rust core.
+*   **Public Functions**: Exported cmdlets intended for end-user interaction (e.g., `Invoke-Forgum`, `Set-Forgum`).
+*   **Private Functions**: Internal helper functions for text formatting, color generation, and animation logic.
+*   **Initialization**: Handles Virtual Terminal (VT) processing setup on Windows to ensure 24-bit color support.
 
-### 2. The Rust Core (`forgum-core`)
+### 2. State & Caching
 
-The Rust executable (`forgum-core`) is optimized for heavy text processing, color generation (lolcat), and high-framerate terminal animations.
+Forgum utilizes a script-scoped caching system (`$script:CowFileCache`, `$script:FortuneCache`) to minimize disk I/O.
 
-*   **Standard Input (stdin):** The core is designed to be invoked as a subprocess. It receives the prepared ASCII text payload from PowerShell via `stdin`.
-*   **Double-Buffering Algorithm:** For smooth animations (like scrolling or fading), `forgum-core` implements a double-buffered rendering loop. It constructs the next terminal frame in memory while displaying the current one, then performs a minimal diff update to the terminal screen. This prevents flickering.
-*   **Dynamic Scaling Logic Fallback (900x900px):** For specialized visual modes or edge cases where terminal dimensions are misreported, the engine includes a fallback dynamic scaling logic assuming a maximum viewport coordinate space of 900x900 "pixels" (mapping characters to a logical grid). This ensures animations remain bounded and don't corrupt the terminal state.
+*   **Configuration**: The configuration is managed as a JSON object, cached in memory with a Time-To-Live (TTL) to ensure responsiveness while allowing for external updates.
+*   **Atomic Writes**: Updates to the configuration file use temporary files and atomic move operations to prevent data corruption.
+
+### 3. Rendering Engine
+
+The rendering engine is built using `[System.Text.StringBuilder]` for efficient string manipulation.
+
+*   **Colorization**: The `Format-Lolcat.ps1` logic implements a high-performance rainbow colorization algorithm compatible with ANSI truecolor.
+*   **Animation**: Animations are coordinated through `Show-CFAnimation.ps1`, which utilizes frame-based rendering and precise timing loops.
 
 ## Getting Started
 
-1.  Modify the PowerShell logic in `Private/` or `Public/`.
-2.  If modifying performance-critical rendering, update the Rust source inside `src-rust/`.
-3.  Ensure you run `Invoke-Pester -Path ./Tests/Forgum.Tests.ps1` before submitting a PR.
+1.  Modify functions in `Private/` or `Public/`.
+2.  Follow the **Coding Style** mandates in `GEMINI.md`: strict typing, validation attributes, and comprehensive help blocks.
+3.  Ensure all changes are verified with the Pester test suite.
 
 ## Testing Standard
-This project uses a Pester Permutation Matrix generating over 384 tests to ensure every combination of Cow, Eyes, Tongue, and Animation works flawlessly. Rust tests ensure ANSI integrity and double-buffering logic.
+
+Forgum maintains a high-coverage test suite using Pester 5.
+*   **Comprehensive Tests**: `Tests/Comprehensive.Tests.ps1` validates the Permutation Matrix (Cow × Eyes × Animation).
+*   **Security Checks**: Automated audits ensure no use of `Invoke-Expression` and validate safe path resolution.
+*   **Benchmark Suite**: Every release is benchmarked to ensure zero performance regression.
