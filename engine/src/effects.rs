@@ -85,7 +85,30 @@ impl Effect for EmberEffect {
         }
     }
     fn render(&self, fb: &mut FrameBuffer) {
-        crate::compositor::Compositor::draw_text_layer(fb, self.offset_x, self.offset_y, &self.cow_text, 150, 150, 150);
+        let (mut cur_x, mut cur_y) = (self.offset_x, self.offset_y);
+        for ch in self.cow_text.chars() {
+            if ch == '\n' { cur_y += 1; cur_x = self.offset_x; } else {
+                if ch != ' ' {
+                    let mut base_color = crate::color::Rgb::new(60, 60, 60); // Darker base for high contrast glow
+                    
+                    // Add glow from nearby active embers
+                    for i in 0..self.particles.active.len() {
+                        if self.particles.active[i] {
+                            let p_color = crate::color::Rgb::new(self.particles.r[i], self.particles.g[i], self.particles.b[i]);
+                            base_color = crate::color::apply_radial_glow(
+                                cur_x, cur_y, 
+                                self.particles.x[i], self.particles.y[i], 
+                                6.0, p_color, base_color
+                            );
+                        }
+                    }
+                    
+                    fb.set_cell(cur_x, cur_y, Cell { ch, r: base_color.r, g: base_color.g, b: base_color.b, alpha: 1.0 });
+                }
+                cur_x += 1;
+            }
+        }
+
         for i in 0..self.particles.active.len() {
             if self.particles.active[i] {
                 let px = self.particles.x[i] as usize;
@@ -162,8 +185,10 @@ impl Effect for PlasmaEffect {
             if ch == '\n' { cur_y += 1; cur_x = self.offset_x; } else {
                 if ch != ' ' {
                     let v = ((cur_x as f32 * 0.2 + self.time).sin() + (cur_y as f32 * 0.2 + self.time).cos() + 2.0) / 4.0;
-                    let rgb = hsv_to_rgb(v * 360.0, 1.0, 1.0);
-                    fb.set_cell(cur_x, cur_y, Cell { ch, r: rgb.r, g: rgb.g, b: rgb.b, alpha: 1.0 });
+                    let plasma_rgb = hsv_to_rgb(v * 360.0, 1.0, 1.0);
+                    let base = crate::color::Rgb::new(80, 80, 80);
+                    let final_color = crate::color::blend_color_dodge(base, plasma_rgb);
+                    fb.set_cell(cur_x, cur_y, Cell { ch, r: final_color.r, g: final_color.g, b: final_color.b, alpha: 1.0 });
                 }
                 cur_x += 1;
             }
@@ -266,10 +291,19 @@ impl Effect for NeonPulseEffect {
     fn render(&self, fb: &mut FrameBuffer) {
         let (mut cur_x, mut cur_y) = (self.offset_x, self.offset_y);
         let pulse = (self.time.sin() * 0.5 + 0.5) * 200.0 + 55.0; // 55 to 255
+        
+        let light_x = self.offset_x as f32 + (self.time.cos() * 0.5 + 0.5) * 60.0;
+        let light_y = self.offset_y as f32 + (self.time.sin() * 0.5 + 0.5) * 20.0;
+        let neon_color = crate::color::Rgb::new(pulse as u8, 0, 255);
+
         for ch in self.cow_text.chars() {
             if ch == '\n' { cur_y += 1; cur_x = self.offset_x; } else {
                 if ch != ' ' {
-                    fb.set_cell(cur_x, cur_y, Cell { ch, r: pulse as u8, g: 0, b: 255, alpha: 1.0 }); // Magenta/Purple neon
+                    let base_color = crate::color::Rgb::new(40, 40, 40);
+                    let final_color = crate::color::apply_radial_glow(
+                        cur_x, cur_y, light_x, light_y, 30.0, neon_color, base_color
+                    );
+                    fb.set_cell(cur_x, cur_y, Cell { ch, r: final_color.r, g: final_color.g, b: final_color.b, alpha: 1.0 });
                 }
                 cur_x += 1;
             }
