@@ -45,8 +45,17 @@ function Show-CFAnimation {
         }
     }
 
-    # Rust binary animation modes: static, slide, bounce, wave, wiggle,
-    # fade-in, dissolve, disco.
+    # Rust binary animation modes (the new forgum-engine flagship effects)
+    $engineModes = @('aurora', 'plasma', 'ember', 'liquid-chrome', 'shatter', 'portal', 'glitch', 'neon-pulse')
+    if ($mode -in $engineModes) {
+        $success = Invoke-Engine -Message $Message -CowTemplate ($CowOutput -split "`r?`n") -Effect $mode -Fps 30
+        if ($success) { return "" }
+        Write-Warning "forgum-engine failed or not found. Falling back to native physics."
+        $mode = 'physics' # Fallback
+        return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration) 
+    }
+
+    # Legacy static/rust modes
     $isWin = $IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6) -or ($env:OS -eq 'Windows_NT')
     $isMac = $IsMacOS
 
