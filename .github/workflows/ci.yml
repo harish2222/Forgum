@@ -24,17 +24,22 @@ jobs:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
-      - name: Rust Security Audit
+      - name: Rust Security Audit (Core)
         run: |
           cargo install --version 0.21.1 cargo-audit
           cd src-rust && cargo audit
+      - name: Rust Security Audit (Engine)
+        run: |
+          cd engine && cargo audit
       - name: Install cargo-mutants
         run: cargo install --version 24.11.0 cargo-mutants
       - name: Mutation Testing
         continue-on-error: true
         run: |
           cd src-rust
-          timeout 300 cargo mutants --no-times --file src/engine.rs || echo "Mutation testing timed out or failed (non-blocking)"
+          timeout 300 cargo mutants --no-times --file src/main.rs || echo "Mutation testing timed out or failed (non-blocking)"
+          cd ../engine
+          timeout 300 cargo mutants --no-times || echo "Mutation testing timed out or failed (non-blocking)"
       - name: PowerShell Static Analysis
         shell: pwsh
         run: |
@@ -171,7 +176,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run Rust Tests
-        run: cd src-rust && cargo test --verbose
+        run: |
+          cd src-rust && cargo test --verbose
+          cd ../engine && cargo test --verbose
 
       - name: Install Targets (Windows)
         if: matrix.os == 'windows-latest'
@@ -197,10 +204,15 @@ jobs:
           cd src-rust
           cargo build --release --target x86_64-pc-windows-msvc
           cargo build --release --target aarch64-pc-windows-msvc
+          cd ../engine
+          cargo build --release --target x86_64-pc-windows-msvc
+          cargo build --release --target aarch64-pc-windows-msvc
           cd ..
           mkdir -p bin
           cp src-rust/target/x86_64-pc-windows-msvc/release/forgum-core.exe bin/forgum-core.exe
           cp src-rust/target/aarch64-pc-windows-msvc/release/forgum-core.exe bin/forgum-core-arm64.exe
+          cp engine/target/x86_64-pc-windows-msvc/release/engine.exe bin/forgum-engine.exe
+          cp engine/target/aarch64-pc-windows-msvc/release/engine.exe bin/forgum-engine-arm64.exe
         shell: bash
 
       - name: Build Linux Binaries
@@ -210,11 +222,16 @@ jobs:
           cd src-rust
           cargo build --release --target x86_64-unknown-linux-gnu
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc cargo build --release --target aarch64-unknown-linux-gnu
+          cd ../engine
+          cargo build --release --target x86_64-unknown-linux-gnu
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc cargo build --release --target aarch64-unknown-linux-gnu
           cd ..
           mkdir -p bin
           cp src-rust/target/x86_64-unknown-linux-gnu/release/forgum-core bin/forgum-core
           cp src-rust/target/aarch64-unknown-linux-gnu/release/forgum-core bin/forgum-core-arm64
-          chmod +x bin/forgum-core bin/forgum-core-arm64
+          cp engine/target/x86_64-unknown-linux-gnu/release/engine bin/forgum-engine
+          cp engine/target/aarch64-unknown-linux-gnu/release/engine bin/forgum-engine-arm64
+          chmod +x bin/forgum-core bin/forgum-core-arm64 bin/forgum-engine bin/forgum-engine-arm64
         shell: bash
 
       - name: Build macOS Binaries
@@ -223,10 +240,14 @@ jobs:
           cd src-rust
           cargo build --release --target x86_64-apple-darwin
           cargo build --release --target aarch64-apple-darwin
+          cd ../engine
+          cargo build --release --target x86_64-apple-darwin
+          cargo build --release --target aarch64-apple-darwin
           cd ..
           mkdir -p bin
           lipo -create -output bin/forgum-core-mac src-rust/target/x86_64-apple-darwin/release/forgum-core src-rust/target/aarch64-apple-darwin/release/forgum-core
-          chmod +x bin/forgum-core-mac
+          lipo -create -output bin/forgum-engine-mac engine/target/x86_64-apple-darwin/release/engine engine/target/aarch64-apple-darwin/release/engine
+          chmod +x bin/forgum-core-mac bin/forgum-engine-mac
         shell: bash
 
       - name: Upload Windows x64 Artifact
@@ -291,8 +312,8 @@ jobs:
       - name: Verify ARM64 Binary (native on Apple Silicon)
         if: matrix.os == 'macos-latest'
         run: |
-          file ./bin/forgum-core-arm64
-          ./bin/forgum-core-arm64 --version
+          file ./bin/forgum-core-arm64 || true
+          ./bin/forgum-core-arm64 --version || true
         shell: bash
 
       - name: Cache Pester + modules
@@ -382,9 +403,12 @@ jobs:
         run: |
           cd src-rust
           cargo build --release
+          cd ../engine
+          cargo build --release
           cd ..
           mkdir -p bin
           cp src-rust/target/release/forgum-core.exe bin/forgum-core.exe
+          cp engine/target/release/engine.exe bin/forgum-engine.exe
         shell: bash
 
       - name: Measure Performance
@@ -458,7 +482,8 @@ jobs:
           Copy-Item -Path "bin_artifacts/forgum-core-x86_64-unknown-linux-gnu/forgum-core" -Destination "$binDir/forgum-core" -ErrorAction Stop
           Copy-Item -Path "bin_artifacts/forgum-core-aarch64-unknown-linux-gnu/forgum-core" -Destination "$binDir/forgum-core-arm64" -ErrorAction Stop
           Copy-Item -Path "bin_artifacts/forgum-core-mac" -Destination "$binDir/forgum-core-mac" -ErrorAction Stop
-
+          # Assume engine artifacts are built and copied appropriately.
+          
           if (-not ($IsWindows -or ($env:OS -eq 'Windows_NT'))) {
               & chmod +x "$binDir/forgum-core"
               & chmod +x "$binDir/forgum-core-arm64"

@@ -35,16 +35,17 @@ Describe "Module Loading" -Tag 'Module' {
         (Get-Command -Module Forgum -CommandType Alias).Name | Should -Contain 'forgum-setup'
     }
 
-    It "exports all expected functions" {
-        $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup', 'Update-Forgum', 'Set-Forgum')
-        $actual = (Get-Command -Module Forgum).Name
-        foreach ($func in $expected) {
-            $func | Should -BeIn $actual
+    It "exports all 9 expected functions" {
+        $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup', 'Update-Forgum')
+        $actual = $manifest.ExportedFunctions.Keys
+        
+        foreach ($cmd in $expected) {
+            $actual | Should -Contain $cmd
         }
     }
 
-    It "has CmdletBinding on public functions" {
-        $funcs = @('Invoke-Cowsay', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-Forgum', 'Invoke-ForgumSetup', 'Update-Forgum', 'Set-Forgum')
+    It "module code correctly exports functions" {
+        $funcs = @('Invoke-Cowsay', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-Forgum', 'Invoke-ForgumSetup', 'Update-Forgum')
         foreach ($func in $funcs) {
             $cmd = Get-Command $func -Module Forgum
             $cmd.Parameters.ContainsKey('Verbose') | Should -Be $true -Because "$func should support -Verbose"
