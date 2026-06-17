@@ -111,12 +111,11 @@ end
 forgum
 ```
 
-## What's New in v1.0.4
+## What's New in v1.1.0
 
-- **Sample Configurations**: Complete examples for PowerShell, Bash, Zsh, Fish, and Git-Bash
-- **Platform Guides**: Step-by-step integration instructions for every shell
-- **Security**: Enhanced security harness with 30 tests
-- **Package Managers**: Winget and Scoop submissions in progress
+- **Profile Customization Functions**: `cowconfig`, `cowpreview`, `cowgallery`, `lolcat-toggle`, `cow-animate`, `cow-eyes`
+- **Customization Guides**: Custom cow creation, animation extension, shell wrapper examples
+- **VS Code & Tab Completion**: New integration recipes in the README
 
 See [Sample-Configs](Sample-Configs) for ready-to-use configuration examples across all platforms.
 

@@ -56,11 +56,19 @@ function Invoke-Forgum {
 
     $fortune = Get-Fortune -Database $config.fortune.database
 
-    $cowParams = @{ Text = $fortune }
-    if ($CowFile) { $cowParams.CowFile = $CowFile }
+    $effectiveCowFile = $CowFile
+    if (-not $effectiveCowFile) {
+        $cowsPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Data/Cows'
+        $cowFiles = Get-ChildItem -Path $cowsPath -Filter '*.cow' -ErrorAction SilentlyContinue
+        if ($cowFiles) { $effectiveCowFile = ($cowFiles | Get-Random).BaseName }
+    }
+
+    $cowParams = @{ Text = $fortune; CowFile = $effectiveCowFile }
     if ($Eyes)    { $cowParams.Eyes    = $Eyes }
     if ($Tongue)  { $cowParams.Tongue  = $Tongue }
-    if ($Think)   { $cowParams.Thoughts = 'o' }
+    
+    # 50% chance to be a thought bubble if not specified
+    if ($Think -or (Get-Random -Max 100) -lt 50) { $cowParams.Thoughts = 'o' }
 
     # Determine effective lolcat: explicit switch OR config setting
     $useLolcat = $Lolcat -or $config.lolcat.enabled
@@ -73,7 +81,7 @@ function Invoke-Forgum {
 
     # Apply animation if configured (works with or without lolcat)
     if ($useAnimation) {
-        $cowOutput = Show-CFAnimation -CowOutput $cowOutput -Message $fortune
+        $cowOutput = Show-CFAnimation -CowOutput $cowOutput -Message $fortune -CowName $effectiveCowFile
     }
 
     # Apply lolcat colorization after animation

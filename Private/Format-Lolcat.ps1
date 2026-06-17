@@ -55,11 +55,18 @@ function Format-Lolcat {
     )
 
     # Detect truecolor support
-    # Only auto-detect from COLORTERM if caller didn't explicitly set -Truecolor
+    # Only auto-detect if caller didn't explicitly set -Truecolor.
+    # Multiple fallbacks: COLORTERM, Windows Terminal session, 256-color capable
+    # xterm-style emulators (most modern terminals advertise 24-bit there too).
     if ($PSBoundParameters.ContainsKey('Truecolor')) {
         $useTruecolor = $Truecolor
     } else {
-        $useTruecolor = ($env:COLORTERM -in @('truecolor', '24bit'))
+        $colorTerm = "$env:COLORTERM"
+        $term      = "$env:TERM"
+        $useTruecolor = ($colorTerm -in @('truecolor', '24bit')) `
+            -or (-not [string]::IsNullOrEmpty($env:WT_SESSION)) `
+            -or ($term -eq 'xterm-256color') `
+            -or ($term -like '*-256color')
     }
 
     # Initialize seed (0 = random, like upstream)
@@ -106,10 +113,22 @@ function Format-LolcatLine {
         # Pass through ANSI escape sequences unchanged
         if ([int][char]$char -eq 27) {
             [void]$sb.Append($char)
-            # Consume the rest of the CSI sequence
+            # Consume the rest of the CSI sequence.
+            # ECMA-48 CSI structure: ESC [ <params> <intermediates> <final>
+            #   - params:    0x30-0x3F  (digits, ';', and ':' for sub-parameters)
+            #   - intermdts: 0x20-0x2F  (space, '!', '"', '#', ..., '/')
+            #   - final:     0x40-0x7E  (typically '@' or 'A'-'z')
+            # We must keep consuming until we hit the final byte. The previous
+            # implementation only broke on [A-Za-z] which still works for the
+            # final byte, but we make the range explicit so colons / digits /
+            # intermediate characters cannot accidentally terminate the sequence.
             for ($j = $i + 1; $j -lt $Line.Length; $j++) {
                 [void]$sb.Append($Line[$j])
-                if ($Line[$j] -match '[A-Za-z]') { $i = $j; break }
+                $code = [int][char]$Line[$j]
+                if ($code -ge 0x40 -and $code -le 0x7E) {
+                    $i = $j
+                    break
+                }
             }
             continue
         }

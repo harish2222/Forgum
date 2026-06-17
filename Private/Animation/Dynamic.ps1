@@ -41,18 +41,46 @@ function Invoke-DynamicAnimation {
     $firstRun = $true
     $output = ''
 
-    # Detect if we have a real console for cursor manipulation
-    $hasConsole = $true
+    # Detect if we have a real console for cursor manipulation.
+    # [Console]::CursorTop throws on redirected stdout / non-interactive hosts,
+    # so wrap the probe in try/catch and fall back to a non-TTY path.
+    $hasConsole = $false
     try {
         $null = [Console]::CursorTop
+        $hasConsole = $true
     } catch {
         $hasConsole = $false
     }
 
+    # Early-exit if Duration is zero / negative (caller wants one cycle only).
+    if ($Duration -le 0) {
+        $Duration = 0
+    }
+
     try {
-        while ([DateTime]::UtcNow -lt $endTime) {
+        while ($Duration -le 0 -or [DateTime]::UtcNow -lt $endTime) {
             $now = [DateTime]::UtcNow
             $shouldCycle = ($now - $lastCycle).TotalSeconds -ge $CycleInterval -or $firstRun
+
+            # Check for keypress so user can bail out of the live animation.
+            # Wrapped in try/catch because [Console]::KeyAvailable throws on
+            # redirected stdin (e.g. when piped from another command).
+            if ($hasConsole) {
+                $keyPressed = $false
+                try {
+                    $keyPressed = [Console]::KeyAvailable
+                } catch {
+                    $keyPressed = $false
+                }
+                if ($keyPressed) {
+                    try {
+                        $null = [Console]::ReadKey($true)
+                    } catch {
+                        # ignore - we're exiting anyway
+                    }
+                    return $output
+                }
+            }
 
             if ($shouldCycle) {
                 $currentCow = Get-Content ($cowFiles | Get-Random) -Raw
@@ -90,23 +118,35 @@ function Invoke-DynamicAnimation {
                 $output = Format-Lolcat @lolcatParams
             }
 
+            # Render with explicit cursor positioning so we don't accumulate
+            # frames on screen. Each frame is preceded by a cursor-up + clear-line
+            # for every line we previously wrote. The whole thing is one Write-Host
+            # call to minimise flicker.
             if ($hasConsole) {
-                try {
-                    $cursorPos = [Console]::CursorTop
-                    if ($cursorPos -gt 0) {
-                        [Console]::SetCursorPosition(0, $cursorPos - $balloon.Count)
+                $lineCount = $balloon.Count
+                $esc = [char]27
+                $preamble = ''
+                for ($lc = 0; $lc -lt $lineCount; $lc++) {
+                    $preamble += "$($esc)[2K"   # clear entire line
+                    if ($lc -lt ($lineCount - 1)) {
+                        $preamble += "$($esc)[1A"  # move up one line
                     }
-                } catch {
-                    Write-Verbose "DynamicAnimation: Failed to set cursor position: $_"
                 }
+                $preamble += "`r"               # carriage return to column 0
+                Write-Host -NoNewline ($preamble + $output)
             }
-            Write-Host $output -NoNewline
+            else {
+                # Redirected / non-interactive: just emit the frame with a newline.
+                Write-Host $output
+            }
 
             Start-Sleep -Milliseconds $frameDelay
         }
     }
     finally {
-        Write-Host ""
+        if ($hasConsole) {
+            try { Write-Host "" } catch {}
+        }
     }
 
     return $output

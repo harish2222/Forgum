@@ -342,6 +342,27 @@ alias forgum-set='pwsh -Command "Set-Forgum"'
 - Make sure `Invoke-Forgum` is on its own line in your profile.
 - Restart PowerShell to test.
 
+**PowerShell startup hangs for 30+ seconds after adding Forgum to my profile**
+- Root cause: Forgum's animation engine runs an infinite loop when `animation.mode` is set to anything other than `static` (e.g. `talking`, `typewriter`, `bounce`, `disco`). When an animation fires during profile load, the loop never exits and PowerShell cannot finish startup.
+- **Fix 1 — disable animations for startup** (preferred): set `animation.mode = 'static'` in your config:
+  ```powershell
+  $config = Get-CFConfig
+  $config.animation.mode = 'static'
+  Set-CFConfig -Config $config
+  ```
+  Or in `config.json`:
+  ```json
+  { "animation": { "mode": "static" } }
+  ```
+- **Fix 2 — skip auto-start for the current session**:
+  ```powershell
+  $env:FORGUM_NOAUTOSTART = '1'
+  Import-Module Forgum
+  ```
+  This is useful when the config is read-only or you're locked out of editing it.
+
+After applying either fix, restart your PowerShell window. Startup should return to under one second.
+
 ---
 
 **Back:** [Getting Started](Getting-Started) | **Next:** [Bash & Zsh Integration →](Bash-Zsh-Integration)

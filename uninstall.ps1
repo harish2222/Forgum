@@ -17,6 +17,12 @@ Write-Host ""
 
 # Remove module
 $installDir = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "PowerShell\Modules\Forgum"
+if (-not $installDir -or -not (Test-Path $installDir)) {
+    $installDir = Join-Path $HOME "Documents/PowerShell/Modules/Forgum"
+}
+if (-not $installDir -or -not (Test-Path $installDir)) {
+    $installDir = Join-Path $HOME ".local/share/powershell/Modules/Forgum"
+}
 if (Test-Path $installDir) {
     Remove-Item $installDir -Recurse -Force
     Write-Host "  Removed module: $installDir" -ForegroundColor Green
@@ -34,18 +40,30 @@ $profilePath = $PROFILE.CurrentUserAllHosts
 if (Test-Path $profilePath) {
     $content = Get-Content $profilePath -Raw
     if ($content -match 'Forgum') {
-        $newContent = $content -replace '(?s)\n*# Forgum\nImport-Module Forgum[^\n]*\n*', "`n"
-        Set-Content -Path $profilePath -Value $newContent.TrimEnd()
+        # Remove region-based blocks first
+        $newContent = $content -replace '(?s)\r?\n*\s*# region FORGUM.*?# endregion FORGUM\r?\n*', "`n"
+        # Remove legacy scattered blocks
+        $newContent = $newContent -replace '(?s)\r?\n*# Forgum Startup Fortune Cow.*?Show-FortuneCow\r?\n}', ''
+        $newContent = $newContent -replace '(?s)\r?\n*# Forgum Aliases.*?function cow-animate.*?}', ''
+        $newContent = $newContent -replace '(?s)\r?\n*# Forgum Tab Completion.*?Register-ArgumentCompleter.*?}', ''
+        $newContent = $newContent -replace '(?s)\r?\n*# Forgum\r?\nImport-Module Forgum -ErrorAction SilentlyContinue\r?\n*', ''
+        # Fallback: remove any remaining Forgum import line
+        $newContent = $newContent -replace '(?s)\r?\n*Import-Module Forgum[^\n]*\r?\n*', ''
+        Set-Content -Path $profilePath -Value $newContent.TrimEnd() -Encoding utf8NoBOM
         Write-Host "  Removed from PowerShell profile" -ForegroundColor Green
     }
 }
 
 # Remove from bash/zsh/fish
-foreach ($file in @("$HOME/.bashrc", "$HOME/.zshrc", "$HOME/.config/fish/config.fish")) {
+$homeDir = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+foreach ($file in @("$homeDir/.bashrc", "$homeDir/.zshrc", "$homeDir/.config/fish/config.fish")) {
     if (Test-Path $file) {
         $content = Get-Content $file -Raw
         if ($content -match 'Forgum') {
-            $newContent = $content -replace '(?s)\n*# Forgum\n.*?Forgum.*?\n*', "`n"
+            # Remove Forgum blocks (bash/zsh style and fish style)
+            $newContent = $content -replace '(?s)\r?\n*# Forgum.*?^fi\r?\n?', ''
+            $newContent = $newContent -replace '(?s)\r?\n*# Forgum.*?^end\r?\n?', ''
+            $newContent = $newContent -replace '(?s)\r?\n*# Forgum.*?pwsh.*?Forgum.*?\r?\n?', ''
             Set-Content -Path $file -Value $newContent.TrimEnd()
             Write-Host "  Removed from $file" -ForegroundColor Green
         }

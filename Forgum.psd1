@@ -30,6 +30,20 @@
             ProjectUri   = 'https://github.com/harish2222/Forgum'
             IconUri      = 'https://raw.githubusercontent.com/harish2222/Forgum/main/icon.png'
             ReleaseNotes = @'
+## v1.1.0
+- Feature: `Invoke-ForgumLive` now exposes a `-RunOnce` semantics via the `--once` profile path for single-cycle, non-blocking showcase runs
+- Feature: `Invoke-LiveShow` returns structured `{ Status, LastLineCount }` so callers can resume cleanly after user interrupts
+- Feature: `Update-Forgum` adds `Accept` and `User-Agent` GitHub API headers and tolerates pre-release SemVer tags
+- Feature: `Invoke-ForgumSetup` forwards `-NonInteractive`, `-Force`, and `-NoProfile` through to `setup.ps1`
+- Fix: `Get-ConfigPath` explicitly detects PS7 vs Windows PowerShell 5.1 on Linux/macOS so config files land in the right place
+- Fix: `Set-Forgum -Animation` `ValidateSet` now includes `dynamic`
+- Fix: `[Console]::KeyAvailable` / `CursorVisible` / `IsOutputRedirected` calls are wrapped in try/catch so redirected input no longer throws
+- Fix: `Format-Lolcat` CSI passthrough now handles ECMA-48 colon sub-parameters (e.g. `\e[38:2::R:G:Bm`)
+- Fix: `Format-Lolcat` truecolor detection falls back to `$env:WT_SESSION` and `xterm-256color` `$env:TERM`
+- Fix: `Write-TerminalFrame` combines clear-line + content into a single `Write-Host` call to remove flicker
+- Fix: `Invoke-DynamicAnimation` adds keypress early-exit, `Duration = 0` short-circuit, and proper cursor positioning for in-place frame redraw
+- Hardening: `Update-Forgum` now downloads the release zipball and copies module files in place instead of running the full installer (no more $PROFILE overwrite on update)
+
 ## v1.0.9
 - UX: Implemented "Clean Profile" region-based modification for PowerShell profiles
 - UX: Automatic cleanup of old Forgum snippets in profile

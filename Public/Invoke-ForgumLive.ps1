@@ -26,7 +26,7 @@ function Invoke-ForgumLive {
 
     $startTime = [DateTime]::UtcNow
     
-    # Hide cursor if possible
+    # Hide cursor if possible (all console access goes through the try block)
     $cursorVisible = $true
     try {
         $cursorVisible = [Console]::CursorVisible
@@ -46,8 +46,19 @@ function Invoke-ForgumLive {
             # Call the shared brain
             $result = Invoke-LiveShow -Config $config -Toggles $toggles -RunOnce:$false -Duration $Duration
 
+            # Brief sleep after each interrupt / completion to prevent CPU spinning
+            # in case Invoke-LiveShow returns very rapidly (e.g. redirected input).
+            Start-Sleep -Milliseconds 50
+
             # If we returned, it's either an interrupt or completion
-            if ([Console]::KeyAvailable) {
+            $keyAvailable = $false
+            try {
+                $keyAvailable = [Console]::KeyAvailable
+            } catch {
+                $keyAvailable = $false
+            }
+
+            if ($keyAvailable) {
                 $key = [Console]::ReadKey($true)
                 switch ($key.Key) {
                     'L' { 
@@ -56,7 +67,8 @@ function Invoke-ForgumLive {
                     'A' {
                         $toggles.Animation = -not $toggles.Animation
                     }
-                    'Spacebar' {
+                    # Accept both 'Spacebar' (PS7) and 'Space' (PS5.1) for cross-version compat.
+                    { $_ -in 'Spacebar', 'Space' } {
                         # Simply continue to the next loop iteration to get a new cow
                     }
                     'Q' {

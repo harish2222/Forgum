@@ -7,11 +7,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-1.1.0-blue?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-1.1.1-blue?style=for-the-badge" alt="Version"></a>
   <a href="https://github.com/harish2222/Forgum"><img src="https://img.shields.io/badge/powershell-5.1+-blueviolet?style=for-the-badge&logo=powershell&logoColor=white" alt="PowerShell"></a>
   <a href="https://github.com/harish2222/Forgum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License"></a>
-  <a href="https://github.com/harish2222/Forgum/actions"><img src="https://img.shields.io/badge/tests-127%20passing-brightgreen?style=for-the-badge" alt="Tests"></a>
-  <a href="#-meet-the-cows"><img src="https://img.shields.io/badge/cows-107-orange?style=for-the-badge" alt="Cows"></a>
+  <a href="https://github.com/harish2222/Forgum/actions"><img src="https://img.shields.io/badge/tests-102%20passing-brightgreen?style=for-the-badge" alt="Tests"></a>
+  <a href="#-meet-the-cows"><img src="https://img.shields.io/badge/cows-106-orange?style=for-the-badge" alt="Cows"></a>
   <a href="#-rainbow"><img src="https://img.shields.io/badge/rainbow-lolcat-pink?style=for-the-badge" alt="Lolcat"></a>
 </p>
 
@@ -80,7 +80,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/harish2222/Forgum/main/insta
 # Get a fortune from a random cow in rainbow colors
 Invoke-Forgum -Lolcat
 
-# See the full 107-cow gallery (random sample)
+# See the full 106-cow gallery (random sample)
 cowgallery -Count 3
 ```
 
@@ -88,7 +88,7 @@ cowgallery -Count 3
 
 ## 🐄 Meet the Cows
 
-Forgum comes packed with **107 unique characters**. Whether you want a friendly kitty, a wise dragon, or a tuxedo-wearing penguin, we've got you covered.
+Forgum comes packed with **106 unique characters**. Whether you want a friendly kitty, a wise dragon, or a tuxedo-wearing penguin, we've got you covered.
 
 **Some of our favorites:**
 - 🐉 **Dragon**: For when you feel legendary.
@@ -104,7 +104,7 @@ Forgum comes packed with **107 unique characters**. Whether you want a friendly 
 
 ## ✨ Features
 
-- **107 ASCII Cows**: A massive library of characters.
+- **106 ASCII Cows**: A massive library of characters.
 - **Truecolor Rainbow**: 24-bit color support for stunning visuals.
 - **11 Animation Modes**: From "bounce" to "dissolve", make your text alive.
 - **Zero Dependencies**: Pure PowerShell logic.
@@ -157,7 +157,7 @@ Get-CFCow [-Name <cowname>]
 ### `Set-Forgum`
 
 ```powershell
-Set-Forgum [-Animation <mode>] [-Cow <name>] [-Eyes <chars>] [-Lolcat <bool>] [-RandomCow <bool>]
+Set-Forgum [-Animation <mode>] [-Cow <name>] [-Eyes <chars>] [-Lolcat <bool>] [-RandomCow <bool>] [-RainbowFrequency <double>]
 ```
 
 ### `Get-CFConfig` / `Set-CFConfig`
@@ -216,7 +216,7 @@ Show-CFAnimation -CowOutput <string> [-Message <string>]
 
 | Mode | Description |
 |:-----|:------------|
-| `static` | Instant display (default) |
+| `static` | Instant display (default, recommended for startup) |
 | `talking` | Simulates mouth movement |
 | `typewriter` | Types character by character |
 | `slide-in` | Cow slides in from the left, column by column |
@@ -227,6 +227,11 @@ Show-CFAnimation -CowOutput <string> [-Message <string>]
 | `wiggle` | Cow wiggles left and right playfully |
 | `wave` | Fortune text appears word by word with rainbow |
 | `disco` | Cow cycles through rainbow colors (party mode) |
+| `physics` | Procedural personality-driven animations (Breathe, Float, Glitch, etc.) based on the Cow Animation Manifesto |
+
+> **Note:** Non-`static` animation modes are for interactive use only. The module automatically forces `static` mode during startup to prevent terminal hangs.
+>
+> **Dispatch:** `dynamic`, `talking`, and `typewriter` are rendered by PowerShell animation functions in `Private/Animation/`. The Rust binary (`forgum-core.exe`) handles `static`, `slide`, `bounce`, `wave`, `wiggle`, `fade-in`, `dissolve`, and `disco`.
 
 ---
 
@@ -356,6 +361,39 @@ Your second fortune here
 %
 Your third fortune here
 ```
+
+---
+
+## Known Issues
+
+### PowerShell startup hangs for 30+ seconds
+
+**Fixed in v1.1.1.** If you are still experiencing this issue, update to the latest version.
+
+If PowerShell appears to hang on startup after adding `Import-Module Forgum` (or any `Invoke-Forgum*` command) to your profile, the cause is almost always an animation loop:
+
+- **Root cause:** Forgum's animation engine ran an infinite loop when `animation.mode` was set to anything other than `static` (e.g. `talking`, `typewriter`, `bounce`, `disco`). If an animation fired during profile load, the loop never exited and PowerShell couldn't finish startup.
+- **Fix 1 — update Forgum** (recommended):
+  ```powershell
+  Update-Forgum
+  ```
+- **Fix 2 — set animation mode to static** (if update isn't available):
+  ```powershell
+  $config = Get-CFConfig
+  $config.animation.mode = 'static'
+  Set-CFConfig -Config $config
+  ```
+  Or in `config.json`:
+  ```json
+  { "animation": { "mode": "static" } }
+  ```
+- **Fix 3 — skip auto-start for the current session**:
+  ```powershell
+  $env:FORGUM_NOAUTOSTART = '1'
+  Import-Module Forgum
+  ```
+
+After applying the fix, restart your PowerShell window. Startup should return to under one second.
 
 ---
 

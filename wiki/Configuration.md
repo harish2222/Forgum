@@ -100,7 +100,7 @@ Here's the complete config file with every setting explained:
 
 | Setting | Values | What It Does |
 |:--------|:-------|:-------------|
-| `mode` | `static`, `talking`, `typewriter` | How the cow appears |
+| `mode` | `static`, `talking`, `typewriter`, `slide-in`, `bounce`, `dissolve`, `fade-in`, `blink`, `wiggle`, `wave`, `disco` | How the cow appears |
 | `speed` | Any number | Animation speed (higher = faster) |
 | `duration` | Any number | How long animation lasts (seconds) |
 | `spread` | Any number | How spread out the animation is |

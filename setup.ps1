@@ -158,7 +158,7 @@ $defaultCow = Get-UserSelection -Prompt "Choose default cow:" -Options $cowOptio
 
 # ── Toggle 4: Animation Mode ──
 Show-Section "Animation Mode"
-$animMode = Get-UserSelection -Prompt "Choose animation mode:" -Options @('dynamic', 'talking', 'typewriter') -Default "dynamic" -NonInteractive:$NonInteractive
+$animMode = Get-UserSelection -Prompt "Choose animation mode:" -Options @('static', 'dynamic', 'talking', 'typewriter', 'rainbow', 'fade', 'bounce', 'pulse', 'slide', 'blink', 'scroll') -Default "static" -NonInteractive:$NonInteractive
 
 # ── Toggle 5: Shell Aliases ──
 Show-Section "Shell Aliases"
@@ -202,7 +202,7 @@ if (-not $NoProfile) {
             $blockLines.Add("")
             $blockLines.Add("function Show-FortuneCow {")
             $blockLines.Add("    if (Get-Command Invoke-Forgum -ErrorAction Ignore) {")
-            $blockLines.Add("        `$cowText = Invoke-Forgum -Lolcat")
+            $blockLines.Add("        `$cowText = Invoke-Forgum")
             $blockLines.Add("        if (`$cowText) { Write-Host `$cowText }")
             $blockLines.Add("    }")
             $blockLines.Add("}")
@@ -242,6 +242,7 @@ if (-not $NoProfile) {
         $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum Aliases.*?function cow-animate.*?}', ''
         $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum Tab Completion.*?Register-ArgumentCompleter.*?}', ''
         $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum\r?\nImport-Module Forgum -ErrorAction SilentlyContinue', ''
+        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# region FORGUM.*?# endregion FORGUM\r?\n?', ''
         
         # Replace existing region if found, otherwise append
         if ($cleanedProfile -match '(?s)# region FORGUM.*?# endregion FORGUM') {
@@ -259,7 +260,7 @@ if (-not $NoProfile) {
             Copy-Item -Path $profilePath -Destination $backupPath -Force
         }
         
-        Set-Content -Path $profilePath -Value $newProfile.Trim() -Force
+        Set-Content -Path $profilePath -Value $newProfile.Trim() -Force -Encoding utf8NoBOM
         Write-Host "  Profile updated: $profilePath" -ForegroundColor Green
     }
 }

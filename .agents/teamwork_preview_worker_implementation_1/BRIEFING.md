@@ -34,14 +34,17 @@ Implement cross-platform and cross-architecture matrix testing requirements, ref
 - D:\Projects\Forgum\.agents\teamwork_preview_worker_implementation_1\handoff.md — Handoff report
 
 ## Change Tracker
-- **Files modified**: None
-- **Build status**: Untested
+- **Files modified**:
+  - `Public/Show-CFAnimation.ps1`: Added dynamic OS & CPU architecture-based binary resolution and fallbacks.
+  - `Tests/Forgum.Tests.ps1`: Updated binary detection inside the wrapper test to match implementation.
+  - `.github/workflows/ci.yml`: Refactored test, perf-gate, and build jobs to compile and test 6 target triples, verify ARM64 via QEMU, and package macOS Universal binaries using lipo.
+- **Build status**: Pass
 - **Pending issues**: None
 
 ## Quality Status
-- **Build/test result**: Untested
-- **Lint status**: Untested
-- **Tests added/modified**: None
+- **Build/test result**: Pass (42/42 tests pass locally, 1 inconclusive test for local missing binary as expected)
+- **Lint status**: Pass
+- **Tests added/modified**: `Tests/Forgum.Tests.ps1` (modified)
 
 ## Loaded Skills
 - None

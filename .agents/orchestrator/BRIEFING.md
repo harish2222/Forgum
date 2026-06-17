@@ -53,12 +53,14 @@ Test the Forgum dynamic animation engine across all platforms, operating systems
 | explorer_1 | teamwork_preview_explorer | Explore codebase, tests, and CI configuration | Completed | 301bc020-05ad-473d-b5dd-8eb155d81d16 |
 | explorer_2 | teamwork_preview_explorer | Explore CI matrix expansions | Completed | 45544eed-ff51-4078-83ba-e8ca0b053d10 |
 | explorer_3 | teamwork_preview_explorer | Explore PowerShell script/Pester fixes | Completed | cd950ac6-e3cd-4eae-ae21-8f9d0cb42783 |
-| worker_1 | teamwork_preview_worker | Implement resolver & Pester fixes and expand CI matrix | In-Progress | b78f6ac8-6306-476d-a8f8-7fecf1b02d1d |
+| worker_1 | teamwork_preview_worker | Implement resolver & Pester fixes and expand CI matrix | Completed | b78f6ac8-6306-476d-a8f8-7fecf1b02d1d |
+| reviewer_1 | teamwork_preview_reviewer | Review code & workflow modifications | In-Progress | 2a8d0b65-c88e-4a9b-b784-20b8a21cebd7 |
+| reviewer_2 | teamwork_preview_reviewer | Review safety & edge cases | In-Progress | 8fa316db-6656-411e-883a-f2445231b702 |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 4 / 16
-- Pending subagents: [b78f6ac8-6306-476d-a8f8-7fecf1b02d1d]
+- Spawn count: 6 / 16
+- Pending subagents: [2a8d0b65-c88e-4a9b-b784-20b8a21cebd7, 8fa316db-6656-411e-883a-f2445231b702]
 - Predecessor: none
 - Successor: not yet spawned
 

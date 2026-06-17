@@ -2,10 +2,11 @@ function Show-CFAnimation {
     <#
     .SYNOPSIS
         Displays cow output with the configured animation mode.
-        .DESCRIPTION
+    .DESCRIPTION
         Dispatches to the appropriate animation function based on config.
-        Modes: static, talking, typewriter, slide-in, bounce, dissolve,
-        fade-in, blink, wiggle, wave, disco, dynamic.
+        Modes handled by Rust binary: static, slide, bounce, wave, wiggle,
+        fade-in, dissolve, disco.
+        Modes handled by PowerShell: talking, typewriter, dynamic.
     .PARAMETER CowOutput
         The rendered cow string to animate.
     .PARAMETER Message
@@ -19,12 +20,33 @@ function Show-CFAnimation {
         [Parameter(Mandatory)]
         [string]$CowOutput,
 
-        [string]$Message = ''
+        [string]$Message = '',
+
+        [string]$CowName = ''
     )
 
     $config = Get-CFConfig
     $mode = $config.animation.mode
+    $duration = if ($config.animation.duration) { $config.animation.duration } else { 12 }
 
+    # PowerShell-native animation modes — these handle their own rendering
+    # via Write-Host and cursor positioning, so we dispatch directly.
+    $psModes = @('talking', 'typewriter', 'dynamic', 'procedural', 'physics')
+    if ($mode -in $psModes) {
+        switch ($mode) {
+            'talking'    { return (Invoke-TalkingAnimation -CowOutput $CowOutput -Message $Message -Duration $duration) }
+            'typewriter' { return (Invoke-TypewriterAnimation -CowOutput $CowOutput -Message $Message) }
+            'dynamic'    { return (Invoke-DynamicAnimation -Duration $duration -CycleInterval $config.animation.cycleInterval) }
+            'procedural' { return (Invoke-ProceduralAnimation -CowOutput $CowOutput -Duration $duration) }
+            'physics'    { 
+                $effCow = if ($CowName) { $CowName } else { $config.cow.file }
+                return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration -CowName $effCow) 
+            }
+        }
+    }
+
+    # Rust binary animation modes: static, slide, bounce, wave, wiggle,
+    # fade-in, dissolve, disco.
     $isWin = $IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6) -or ($env:OS -eq 'Windows_NT')
     $isMac = $IsMacOS
 
@@ -48,10 +70,25 @@ function Show-CFAnimation {
     }
 
     if (Test-Path $binPath) {
-        # Call the new Rust engine
-        $CowOutput | & $binPath --message $Message --mode $mode
+        $isAutoStart = $script:IsAutoStart
+        $frames = $duration
+        if (-not $frames -or $frames -lt 1) { $frames = 30 }
+
+        $binArgs = @('--message', $Message, '--mode', $mode, '--fps', '15')
+        if ($isAutoStart) {
+            $binArgs += '--once'
+        } else {
+            $binArgs += '--frames'
+            $binArgs += "$frames"
+        }
+        if ([Console]::IsOutputRedirected) {
+            $binArgs += '--plain'
+        }
+
+        $rendered = $CowOutput | & $binPath @binArgs 2>&1
+        if ($null -eq $rendered) { return $CowOutput }
+        return ($rendered -join "`n")
     } else {
-        # Fallback to legacy
         Write-Warning "forgum-core not found, falling back to static"
         return $CowOutput
     }

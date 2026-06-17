@@ -24,7 +24,7 @@ function Set-Forgum {
     [CmdletBinding()]
     param(
         [Parameter()]
-        [ValidateSet('static', 'talking', 'typewriter', 'slide-in', 'bounce', 'dissolve', 'fade-in', 'blink', 'wiggle', 'wave', 'disco')]
+        [ValidateSet('static', 'talking', 'typewriter', 'slide-in', 'bounce', 'dissolve', 'fade-in', 'blink', 'wiggle', 'wave', 'disco', 'dynamic')]
         [string]$Animation,
 
         [Parameter()]

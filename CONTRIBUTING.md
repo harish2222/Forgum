@@ -285,6 +285,14 @@ function Invoke-MyCustomAnimation {
 }
 ```
 
+**Extending PhysicsCow Animations:**
+
+Forgum uses `Invoke-PhysicsCow` (the `physics` mode) to map cows to physics-based procedural animations based on the Cow Animation Manifesto.
+To assign an engine to a cow or tweak properties:
+1. Edit `Data/Cows/animations.json`.
+2. Add an entry mapping the `.cow` file name (e.g. `duck.cow`) to `base`, `particles`, and `speed`.
+3. If you want to add a new `baseEngine` (e.g., `Spin`), implement it within the `switch ($baseEngine)` block in `Private/Animation/PhysicsCow.ps1`.
+
 Register in `Show-CFAnimation.ps1`:
 
 ```powershell

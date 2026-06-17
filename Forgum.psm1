@@ -1,26 +1,42 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 
 [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 
-# Enable Virtual Terminal Processing for truecolor ANSI support on Windows
-if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+# Preserve caller's preferences — restore on module unload so this module never
+# leaks global state. Required for safe composability with other modules / profiles.
+$_ForgumPreviousErrorActionPreference = $ErrorActionPreference
+$_ForgumPreviousProgressPreference   = $ProgressPreference
+$_ForgumOnRemove = {
+    $ErrorActionPreference = $script:_ForgumPreviousErrorActionPreference
+    $ProgressPreference   = $script:_ForgumPreviousProgressPreference
+}
+$ExecutionContext.SessionState.Module.OnRemove += $_ForgumOnRemove
+
+# Enable Virtual Terminal Processing for truecolor ANSI support on Windows.
+# Lazy: only set VT mode when both stdout and stderr go to a real console. Skipping
+# this on non-interactive sessions avoids Add-Type cost (5-15ms) on every import
+# and avoids touching handles in CI / piped contexts.
+if (($IsWindows -or $env:OS -eq 'Windows_NT') -and
+    -not [Console]::IsOutputRedirected) {
     try {
-        Add-Type @"
-            using System;
-            using System.Runtime.InteropServices;
-            public class VTTerminal {
-                [DllImport("kernel32.dll", SetLastError=true)]
-                public static extern IntPtr GetStdHandle(int nStdHandle);
-                [DllImport("kernel32.dll", SetLastError=true)]
-                public static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
-                [DllImport("kernel32.dll", SetLastError=true)]
-                public static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
-                public const int STD_OUTPUT_HANDLE = -11;
-                public const int STD_ERROR_HANDLE  = -12;
-                public const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
-            }
-"@ -ErrorAction SilentlyContinue
+        if (-not ('VTTerminal' -as [type])) {
+            Add-Type @"
+                using System;
+                using System.Runtime.InteropServices;
+                public class VTTerminal {
+                    [DllImport("kernel32.dll", SetLastError=true)]
+                    public static extern IntPtr GetStdHandle(int nStdHandle);
+                    [DllImport("kernel32.dll", SetLastError=true)]
+                    public static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+                    [DllImport("kernel32.dll", SetLastError=true)]
+                    public static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+                    public const int STD_OUTPUT_HANDLE = -11;
+                    public const int STD_ERROR_HANDLE  = -12;
+                    public const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
+                }
+"@
+        }
 
         $hOut = [VTTerminal]::GetStdHandle([VTTerminal]::STD_OUTPUT_HANDLE)
         $mode = 0
@@ -33,7 +49,8 @@ if ($IsWindows -or $env:OS -eq 'Windows_NT') {
     }
 }
 
-# Module initialization - dot-source private then public functions
+# Module-scoped error handling: errors abort the module load itself, but we do
+# NOT mutate $ErrorActionPreference globally — callers keep their preference.
 $ErrorActionPreference = 'Stop'
 
 $privatePath = Join-Path $PSScriptRoot 'Private'
@@ -59,12 +76,16 @@ $script:FortuneCache = @{}
 $script:ConfigCache  = $null
 $script:ConfigCacheTime = [datetime]::MinValue
 
+# Auto-start flag: Show-CFAnimation checks this to decide whether to use --once
+# (safe for startup) or --frames N (allows animation for manual invocations).
+$script:IsAutoStart = $false
+
 # Cache TTL in seconds (avoids stale reads during long sessions)
 $script:ConfigCacheTTL = 30
 
 # Default config sections (module-level constant — avoids recreation per Get-CFConfig call)
 $script:DefaultConfigSections = @{
-    animation = @{ mode = 'static'; speed = 20; duration = 12; spread = 3.0; blinkRate = 0.2; amplitude = 2; cycleInterval = 3 }
+    animation = @{ mode = 'physics'; speed = 20; duration = 12; spread = 3.0; blinkRate = 0.2; amplitude = 2; cycleInterval = 3 }
     cow = @{ file = 'default'; random = $false; mode = $null; eyes = 'oo'; tongue = '  ' }
     fortune = @{ database = 'fortunes'; databases = @('fortunes'); offensive = $false; lengthFilter = $null }
     lolcat = @{ enabled = $false; truecolor = $true; frequency = 0.1; spread = 3.0; seed = 0; invert = $false; animate = $false; duration = 12; speed = 20.0 }
@@ -73,42 +94,42 @@ $script:DefaultConfigSections = @{
     shell = @{ integration = 'auto'; tmux = @{ enabled = $false; pane = 'status-right' } }
 }
 
-# Auto-start: random cow with fortune on every import
-if ($env:FORGUM_NOAUTOSTART -ne '1') {
-    $sb = {
-        if (Get-Command Invoke-Forgum -ErrorAction Ignore) {
-            $config = Get-CFConfig
-            $useAnimation = $config.animation.mode -and $config.animation.mode -ne 'static'
-
-            # Temporarily override config in-memory only — never write to disk
-            $savedCache = $script:ConfigCache
-            $savedCacheTime = $script:ConfigCacheTime
-            
+# Auto-start: render a single static cow with lolcat on every import.
+#
+# Skipped when:
+#   - $env:FORGUM_NOAUTOSTART = '1' (caller-controlled)
+#   - output is redirected / non-interactive (CI, scripts, piped contexts)
+#   - HostName is ServerRemoteHost (SSH session, etc.)
+#
+# Never animates on auto-start: animations require interactive consent because
+# they block the terminal until completion (or keypress).
+if ($env:FORGUM_NOAUTOSTART -ne '1' -and
+    -not [Console]::IsOutputRedirected -and
+    $Host.Name -ne 'ServerRemoteHost') {
+    if (Get-Command Invoke-Forgum -ErrorAction Ignore) {
+        try {
+            # Signal to Show-CFAnimation that this is auto-start: use --once
+            # so the binary exits after one frame and never blocks startup.
+            $script:IsAutoStart = $true
             $config = Get-CFConfig
             $config.cow.random = $true
             $config.lolcat.enabled = $true
-            if (-not $useAnimation) {
-                $config.animation.mode = 'static'
-            }
-            
+
+            $savedCache = $script:ConfigCache
+            $savedCacheTime = $script:ConfigCacheTime
             $script:ConfigCache = $config
             $script:ConfigCacheTime = [datetime]::UtcNow
-            
             try {
-                if ($useAnimation) {
-                    Invoke-Forgum -Animate
-                } else {
-                    $cowText = Invoke-Forgum -Lolcat
-                    if ($cowText) { Write-Host $cowText }
-                }
-            }
-            finally {
-                # Restore original cache so user config is not affected
+                $cowText = Invoke-Forgum -Lolcat
+                if ($cowText) { Write-Host $cowText }
+            } finally {
                 $script:ConfigCache = $savedCache
                 $script:ConfigCacheTime = $savedCacheTime
+                $script:IsAutoStart = $false
             }
+        } catch {
+            Write-Verbose "Forgum auto-start skipped: $_"
+            $script:IsAutoStart = $false
         }
     }
-    & $sb
 }
-

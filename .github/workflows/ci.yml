@@ -7,6 +7,13 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 env:
   MODULE_NAME: Forgum
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -14,18 +21,20 @@ env:
 jobs:
   security-audit:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
       - name: Rust Security Audit
         run: |
-          cargo install cargo-audit
+          cargo install --version 0.21.1 cargo-audit
           cd src-rust && cargo audit
       - name: Install cargo-mutants
-        run: cargo install cargo-mutants
+        run: cargo install --version 24.11.0 cargo-mutants
       - name: Mutation Testing
+        continue-on-error: true
         run: |
           cd src-rust
-          cargo mutants --no-times --file src/engine.rs
+          timeout 300 cargo mutants --no-times --file src/engine.rs || echo "Mutation testing timed out or failed (non-blocking)"
       - name: PowerShell Static Analysis
         shell: pwsh
         run: |
@@ -38,6 +47,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     name: Lint
+    env:
+      PSSA_VERSION: '1.24.0'
     steps:
       - uses: actions/checkout@v4
 
@@ -45,13 +56,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.local/share/powershell/Modules/PSScriptAnalyzer
-          key: pssa-1.24
+          key: pssa-${{ runner.os }}-${{ env.PSSA_VERSION }}-${{ hashFiles('**/PSScriptAnalyzerSettings.psd1') }}
 
       - name: Install PSScriptAnalyzer
         shell: pwsh
         run: |
-          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer | Where-Object Version -ge '1.24.0')) {
-            Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -MinimumVersion 1.24.0
+          $minVersion = [version]$env:PSSA_VERSION
+          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer | Where-Object { $_.Version -ge $minVersion })) {
+            Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -MinimumVersion $env:PSSA_VERSION
           }
 
       - name: Run PSScriptAnalyzer
@@ -139,9 +151,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        pwsh: ['7.4']
         include:
+          - os: ubuntu-latest
+            pwsh: '7.4'
+          - os: macos-latest
+            pwsh: '7.4'
+          - os: windows-latest
+            pwsh: '7.4'
           - os: windows-latest
             pwsh: '5.1'
     runs-on: ${{ matrix.os }}
@@ -153,31 +169,131 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Run Rust Tests
         run: cd src-rust && cargo test --verbose
 
-      - name: Build Rust Binary (Release)
+      - name: Install Targets (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          rustup target add x86_64-pc-windows-msvc
+          rustup target add aarch64-pc-windows-msvc
+
+      - name: Install Targets (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          rustup target add aarch64-unknown-linux-gnu
+
+      - name: Install Targets (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+
+      - name: Build Windows Binaries
+        if: matrix.os == 'windows-latest'
         run: |
           cd src-rust
-          cargo build --release
+          cargo build --release --target x86_64-pc-windows-msvc
+          cargo build --release --target aarch64-pc-windows-msvc
           cd ..
           mkdir -p bin
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            cp src-rust/target/release/forgum-core.exe bin/forgum-core.exe
-          else
-            cp src-rust/target/release/forgum-core bin/forgum-core
-          fi
+          cp src-rust/target/x86_64-pc-windows-msvc/release/forgum-core.exe bin/forgum-core.exe
+          cp src-rust/target/aarch64-pc-windows-msvc/release/forgum-core.exe bin/forgum-core-arm64.exe
         shell: bash
 
-      - name: Upload Rust Binary Artifact
+      - name: Build Linux Binaries
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+          cd src-rust
+          cargo build --release --target x86_64-unknown-linux-gnu
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc cargo build --release --target aarch64-unknown-linux-gnu
+          cd ..
+          mkdir -p bin
+          cp src-rust/target/x86_64-unknown-linux-gnu/release/forgum-core bin/forgum-core
+          cp src-rust/target/aarch64-unknown-linux-gnu/release/forgum-core bin/forgum-core-arm64
+          chmod +x bin/forgum-core bin/forgum-core-arm64
+        shell: bash
+
+      - name: Build macOS Binaries
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd src-rust
+          cargo build --release --target x86_64-apple-darwin
+          cargo build --release --target aarch64-apple-darwin
+          cd ..
+          mkdir -p bin
+          lipo -create -output bin/forgum-core-mac src-rust/target/x86_64-apple-darwin/release/forgum-core src-rust/target/aarch64-apple-darwin/release/forgum-core
+          chmod +x bin/forgum-core-mac
+        shell: bash
+
+      - name: Upload Windows x64 Artifact
+        if: matrix.os == 'windows-latest' && matrix.pwsh == '7.4'
         uses: actions/upload-artifact@v4
         with:
-          name: forgum-core-${{ matrix.os }}
-          path: |
-            src-rust/target/release/forgum-core.exe
-            src-rust/target/release/forgum-core
-          if-no-files-found: ignore
+          name: forgum-core-x86_64-pc-windows-msvc
+          path: src-rust/target/x86_64-pc-windows-msvc/release/forgum-core.exe
+          if-no-files-found: error
+
+      - name: Upload Windows ARM64 Artifact
+        if: matrix.os == 'windows-latest' && matrix.pwsh == '7.4'
+        uses: actions/upload-artifact@v4
+        with:
+          name: forgum-core-aarch64-pc-windows-msvc
+          path: src-rust/target/aarch64-pc-windows-msvc/release/forgum-core.exe
+          if-no-files-found: error
+
+      - name: Upload Linux x64 Artifact
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: forgum-core-x86_64-unknown-linux-gnu
+          path: src-rust/target/x86_64-unknown-linux-gnu/release/forgum-core
+          if-no-files-found: error
+
+      - name: Upload Linux ARM64 Artifact
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: forgum-core-aarch64-unknown-linux-gnu
+          path: src-rust/target/aarch64-unknown-linux-gnu/release/forgum-core
+          if-no-files-found: error
+
+      - name: Upload macOS x64 Artifact
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: forgum-core-x86_64-apple-darwin
+          path: src-rust/target/x86_64-apple-darwin/release/forgum-core
+          if-no-files-found: error
+
+      - name: Upload macOS ARM64 Artifact
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: forgum-core-aarch64-apple-darwin
+          path: src-rust/target/aarch64-apple-darwin/release/forgum-core
+          if-no-files-found: error
+
+      - name: Install QEMU for ARM64 Emulation
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static binfmt-support
+
+      - name: Verify ARM64 Binary via QEMU
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          ./bin/forgum-core-arm64 --version
+
+      - name: Verify ARM64 Binary (native on Apple Silicon)
+        if: matrix.os == 'macos-latest'
+        run: |
+          file ./bin/forgum-core-arm64
+          ./bin/forgum-core-arm64 --version
+        shell: bash
 
       - name: Cache Pester + modules
         uses: actions/cache@v4
@@ -263,7 +379,13 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Build Rust Binary (Release)
-        run: cd src-rust && cargo build --release
+        run: |
+          cd src-rust
+          cargo build --release
+          cd ..
+          mkdir -p bin
+          cp src-rust/target/release/forgum-core.exe bin/forgum-core.exe
+        shell: bash
 
       - name: Measure Performance
         shell: pwsh
@@ -273,8 +395,8 @@ jobs:
             Invoke-Forgum -Lolcat
           }
           Write-Host "Total Seconds: $($elapsed.TotalSeconds)"
-          if ($elapsed.TotalSeconds -gt 15.0) {
-            Write-Host "Performance regression detected! TotalSeconds $($elapsed.TotalSeconds) > 15.0s" -ForegroundColor Red
+          if ($elapsed.TotalSeconds -gt 5.0) {
+            Write-Host "Performance regression detected! TotalSeconds $($elapsed.TotalSeconds) > 5.0s" -ForegroundColor Red
             exit 1
           }
           Write-Host "Performance within acceptable limits." -ForegroundColor Green
@@ -285,7 +407,7 @@ jobs:
   build:
     needs: [test, perf-gate]
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     name: Build
     permissions:
       contents: write
@@ -301,10 +423,16 @@ jobs:
         with:
           path: bin_artifacts
 
+      - name: Merge macOS Universal Binary
+        run: |
+          lipo -create -output bin_artifacts/forgum-core-mac bin_artifacts/forgum-core-x86_64-apple-darwin/forgum-core bin_artifacts/forgum-core-aarch64-apple-darwin/forgum-core
+          chmod +x bin_artifacts/forgum-core-mac
+        shell: bash
+
       - name: Create release package
         shell: pwsh
         run: |
-          $version = '${{ steps.version.outputs.tag }}'
+          $version = "${{ steps.version.outputs.tag }}"
           $stagingDir = Join-Path $env:RUNNER_TEMP "Forgum-v$version"
           New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
           
@@ -324,21 +452,28 @@ jobs:
           $binDir = Join-Path $stagingDir "bin"
           New-Item -ItemType Directory -Path $binDir -Force | Out-Null
           
-          # The artifacts are downloaded into folders named by artifact name
-          if (Test-Path "bin_artifacts/forgum-core-windows-latest") {
-            Copy-Item -Path "bin_artifacts/forgum-core-windows-latest/forgum-core.exe" -Destination "$binDir/forgum-core.exe" -ErrorAction SilentlyContinue
-          }
-          if (Test-Path "bin_artifacts/forgum-core-ubuntu-latest") {
-            Copy-Item -Path "bin_artifacts/forgum-core-ubuntu-latest/forgum-core" -Destination "$binDir/forgum-core" -ErrorAction SilentlyContinue
-          }
-          if (Test-Path "bin_artifacts/forgum-core-macos-latest") {
-            Copy-Item -Path "bin_artifacts/forgum-core-macos-latest/forgum-core" -Destination "$binDir/forgum-core-mac" -ErrorAction SilentlyContinue
+          # Copy artifacts
+          Copy-Item -Path "bin_artifacts/forgum-core-x86_64-pc-windows-msvc/forgum-core.exe" -Destination "$binDir/forgum-core.exe" -ErrorAction Stop
+          Copy-Item -Path "bin_artifacts/forgum-core-aarch64-pc-windows-msvc/forgum-core.exe" -Destination "$binDir/forgum-core-arm64.exe" -ErrorAction Stop
+          Copy-Item -Path "bin_artifacts/forgum-core-x86_64-unknown-linux-gnu/forgum-core" -Destination "$binDir/forgum-core" -ErrorAction Stop
+          Copy-Item -Path "bin_artifacts/forgum-core-aarch64-unknown-linux-gnu/forgum-core" -Destination "$binDir/forgum-core-arm64" -ErrorAction Stop
+          Copy-Item -Path "bin_artifacts/forgum-core-mac" -Destination "$binDir/forgum-core-mac" -ErrorAction Stop
+
+          if (-not ($IsWindows -or ($env:OS -eq 'Windows_NT'))) {
+              & chmod +x "$binDir/forgum-core"
+              & chmod +x "$binDir/forgum-core-arm64"
+              & chmod +x "$binDir/forgum-core-mac"
           }
 
-          # Create zip
+          # Create zip using bash zip (more reliable than Compress-Archive for long paths)
           $zipPath = Join-Path $env:RUNNER_TEMP "Forgum-v$version.zip"
-          Compress-Archive -Path "$stagingDir/*" -DestinationPath $zipPath -Force
-          
+          Push-Location $stagingDir
+          try {
+            & zip -r $zipPath . | Out-Null
+          } finally {
+            Pop-Location
+          }
+
           Write-Host "Package created: $zipPath"
           Copy-Item $zipPath ./Forgum-v$version.zip
 

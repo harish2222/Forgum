@@ -283,7 +283,9 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
         BeforeAll {
             $script:RestoreConfig = Get-DeepCopyConfig
             $script:OrigColorterm = $env:COLORTERM
+            $script:OrigWTSession = $env:WT_SESSION
             $env:COLORTERM = $null
+            $env:WT_SESSION = $null
             $cfg = Get-CFConfig
             $cfg.lolcat.enabled = $true
             $cfg.lolcat.truecolor = $false
@@ -293,6 +295,7 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
 
         AfterAll {
             $env:COLORTERM = $script:OrigColorterm
+            $env:WT_SESSION = $script:OrigWTSession
             if ($script:RestoreConfig) { Set-CFConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
         }
 
@@ -370,6 +373,25 @@ Describe "Animation Modes" -Tag 'Animation' {
         It "cycles through random cows and fortunes" {
             $output = Show-CFAnimation -CowOutput "Test cow" -Message "Hello"
             $output | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Physics animation" {
+        BeforeAll {
+            $script:RestoreConfig = Get-DeepCopyConfig
+            $cfg = Get-CFConfig
+            $cfg.animation.mode = 'physics'
+            $cfg.animation.duration = 1
+            Set-CFConfig -Config $cfg
+        }
+
+        AfterAll {
+            if ($script:RestoreConfig) { Set-CFConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
+        }
+
+        It "runs without throwing and returns cow text" {
+            $output = Show-CFAnimation -CowOutput "Test cow" -Message "Hello"
+            $output | Should -Be "Test cow"
         }
     }
 }
@@ -475,7 +497,7 @@ Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
 
     It "falls back to static output if binary is missing" {
         Mock Test-Path { return $false } -ParameterFilter { $Path -like "*forgum-core*" }
-        $result = Show-CFAnimation -CowOutput "moo"
+        $result = Show-CFAnimation -CowOutput "moo" -Message "test"
         $result | Should -Be "moo"
     }
 }

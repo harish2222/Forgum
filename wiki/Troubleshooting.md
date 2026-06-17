@@ -183,6 +183,33 @@ This guide helps you fix common problems with Forgum. If something isn't working
 
 ## Platform-Specific Issues
 
+### PowerShell startup hangs for 30+ seconds
+
+**What it means:** PowerShell takes a long time to start (or appears to hang) after adding `Import-Module Forgum` to your profile, or running a `Invoke-Forgum*` command on shell startup.
+
+**Root cause:** Forgum's animation engine runs an infinite loop when `animation.mode` is set to anything other than `static` (e.g. `talking`, `typewriter`, `bounce`, `disco`, etc.). When an animation is triggered during profile load, the loop never exits and PowerShell cannot finish startup.
+
+**How to fix it:**
+
+1. **Preferred: set the animation mode to `static`** (only renders the final frame instantly):
+   ```powershell
+   $config = Get-CFConfig
+   $config.animation.mode = 'static'
+   Set-CFConfig -Config $config
+   ```
+   Or in `config.json`:
+   ```json
+   { "animation": { "mode": "static" } }
+   ```
+
+2. **Skip auto-start for the current session** (handy when the config is unreachable):
+   ```powershell
+   $env:FORGUM_NOAUTOSTART = '1'
+   Import-Module Forgum
+   ```
+
+After fixing, restart your PowerShell window. Startup should return to under one second.
+
 ### Windows
 
 **"Execution of scripts is disabled on this system"**

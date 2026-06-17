@@ -52,7 +52,7 @@ Write-Host "  Checking dependencies..." -ForegroundColor White
 Write-Host ""
 
 # Check PowerShell version
-if ($PSVersionTable.PSVersion.Major -ge 5) {
+if ($PSVersionTable.PSVersion -ge [version]'5.1') {
     Write-Host "  PowerShell $($PSVersionTable.PSVersion) found" -ForegroundColor Green
 } else {
     Write-Host "  PowerShell 5.1+ required. Current: $($PSVersionTable.PSVersion)" -ForegroundColor Red
@@ -101,10 +101,9 @@ if (Test-CommandExists cargo) {
         Set-Location $origDir
         if (-not (Test-Path $binDir)) { New-Item -ItemType Directory -Path $binDir -Force | Out-Null }
         $exeName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-core.exe" } else { "forgum-core" }
-        $targetName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-core.exe" } else { "forgum-core" }
         $compiledPath = Join-Path $rustDir "target/release/$exeName"
         if (Test-Path $compiledPath) {
-            Copy-Item -Path $compiledPath -Destination (Join-Path $binDir $targetName) -Force
+            Copy-Item -Path $compiledPath -Destination (Join-Path $binDir $exeName) -Force
         }
     }
 }
@@ -121,8 +120,9 @@ if (Test-CommandExists git) {
         # Download from GitHub
         Write-Host ""
         Write-Host "  Downloading from GitHub..." -ForegroundColor Cyan
-        $tempDir = Join-Path $env:TEMP "Forgum_$(Get-Random)"
-        git clone --depth 1 https://github.com/harish2222/Forgum.git $tempDir 2>$null
+        $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "Forgum_$(Get-Random)"
+        $env:GIT_TERMINAL_PROMPT = '0'
+        git -c core.askPass=echo clone --depth 1 https://github.com/harish2222/Forgum.git $tempDir 2>$null
         foreach ($item in $moduleItems) {
             $path = Join-Path $tempDir $item
             if (Test-Path $path) { Copy-Item -Path $path -Destination $installDir -Recurse -Force }

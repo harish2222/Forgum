@@ -5,6 +5,121 @@ All notable changes to Forgum will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-06-17
+
+### Fixed
+
+- **Critical: PowerShell startup hang** — `forgum-core.exe` ran an infinite animation loop when `animation.mode` was not `static`, blocking terminal startup indefinitely
+  - Binary now respects `--mode` flag; `--once` flag renders one frame and exits
+  - Non-TTY output (piped/CI) defaults to 1 frame instead of infinite
+  - Binary never enters alternate screen or raw mode when piped
+- **`Show-CFAnimation.ps1`** — passes `--once` to binary, joins `Object[]` output into `[string]` for lolcat compatibility; `dynamic`, `talking`, `typewriter` now route to PowerShell animation functions (`Private/Animation/*.ps1`) instead of being sent to the Rust binary which has no arm for them
+- **`Forgum.psm1`** — rewritten: lazy VT init (skips `Add-Type` when non-TTY), preserves caller's `$ErrorActionPreference`/`$ProgressPreference` via `OnRemove`, forces `animation.mode = 'static'` for auto-start regardless of config, skips auto-start in non-interactive/redirected/ServerRemoteHost sessions
+- **`Invoke-LiveShow.ps1`** — try/catch on `[Console]::KeyAvailable` (throws in redirected sessions)
+- **`Invoke-ForgumLive.ps1`** — CPU spin fix (sleep between key polls), Spacebar/Space key compat
+- **`Update-Forgum.ps1`** — GitHub API auth headers, pre-release version cast to `[version]`, zipball download instead of re-running installer
+- **`Invoke-ForgumSetup.ps1`** — `-NonInteractive`/`-Force` passthrough
+- **`Format-Lolcat.ps1`** — WT_SESSION truecolor detection, ECMA-48 colon subparam stripping
+- **`Dynamic.ps1`** — `hasConsole` flag to avoid VT calls in non-TTY, `Duration = 0` early exit
+- **`Write-TerminalFrame.ps1`** — try/catch cursor position (fails in redirected sessions)
+- **`Get-ConfigPath.ps1`** — PS7 vs 5.1 path resolution
+- **`Set-Forgum.ps1`** — `ValidateSet` verified for all 11 animation modes
+- **`Forgum.psd1`** — version 1.1.1, updated ReleaseNotes
+
+### Changed
+
+- **`install.ps1`** — PSVersion comparison uses `[version]` object, git clone uses `GIT_TERMINAL_PROMPT=0` and `-c core.askPass=echo` to prevent hang on credential prompts
+- **`install.sh`** — bashrc injection comment documents `animation.mode = "static"` requirement, uninstall section references `uninstall.ps1`
+- **`setup.ps1`** — default animation mode changed from `dynamic` to `static`
+- **`uninstall.ps1`** — handles region-based profile blocks (`# region FORGUM...# endregion FORGUM`), `$HOME` fallback when `MyDocuments` is unavailable, bash/zsh/fish block cleanup improved
+
+### CI
+
+- **`.github/workflows/ci.yml`** — pinned `cargo-audit 0.21.1` and `cargo-mutants 24.11.0`, fixed single-quote `${{ }}` interpolation in `build` job, added `concurrency` + `permissions` + `continue-on-error` on mutation test, lowered perf-gate from 15s to 5s
+
+## [1.1.0] - 2026-06-15
+
+### Added
+
+- **Profile Customization Functions**
+  - `cowconfig` - Quick config access with dot notation
+  - `cowpreview` - Preview cows with custom text
+  - `cowgallery` - Browse random cows
+  - `lolcat-toggle` - Toggle rainbow colors
+  - `cow-animate` - Switch animation modes
+  - `cow-eyes` - Set cow eyes with presets
+
+- **Documentation**
+  - Comprehensive customization guide in README
+  - Advanced contributor customization methods
+  - Custom cow file creation guide
+  - Animation mode extension guide
+  - Shell wrapper examples
+  - Tab completion setup
+  - VS Code integration examples
+
+### Changed
+
+- Updated README with ghost-writing style
+- Enhanced CONTRIBUTING.md with customization methods
+- Improved profile integration with tab completion
+
+## [1.0.9] - 2026-06-14
+
+### Changed
+- Implemented "Clean Profile" region-based modification for PowerShell profiles
+- Automatic cleanup of old Forgum snippets in profile
+- Removed all redundant agent artifacts and local test scripts from repository
+- Reached absolute zero-warning baseline
+
+## [1.0.8] - 2026-06-14
+
+### Changed
+- Resolved 100% of PSScriptAnalyzer linting warnings
+- Standardized UTF-8 BOM encoding for cross-platform PowerShell compatibility
+- Implemented `SupportsShouldProcess` for all state-changing functions
+- Refined `-NonInteractive` and `-Force` support in setup scripts for CI/CD
+- Optimized animation loops by removing unused variables and parameters
+- Reached zero-warning baseline for industry-standard quality
+
+## [1.0.7] - 2026-06-14
+
+### Added
+- Interactive setup wizard integrated into installers
+- New `Invoke-ForgumSetup` (forgum-setup) command for re-configuration
+- Secure auto-update mechanism via `Update-Forgum`
+
+### Fixed
+- Robust bubble alignment engine (handles tabs, zero-width chars, ANSI)
+- Standardized "FORGUM" ASCII banners across all scripts
+
+### Changed
+- Expanded benchmark suite with 34 tests and visual regression
+
+## [1.0.6] - 2026-06-14
+
+### Security
+- Path traversal prevention in `Read-CowFile` (validates resolved paths stay in Cows dir)
+- `Set-CFConfig` temp file race condition fix (New-TemporaryFile)
+
+### Fixed
+- Auto-start no longer overwrites user config on disk (in-memory only)
+- `Set-CFConfig -WhatIf` no longer invalidates cache
+- `Invoke-Forgum` `ValidateLength(2,2)` on Eyes/Tongue parameters
+- `Talking.ps1` returns `$CowOutput` consistently
+- `Blink.ps1` `$BlinkRate` parameter now actually affects timing
+- `Wave.ps1` guards against no-balloon case
+- `FadeIn.ps1` guards against zero totalLines division
+- `Get-CFConfig` null check (was falsy check)
+
+### Performance
+- `Dissolve.ps1` O(n) with `List[int/string]` (was O(n^2) with `array +=`)
+
+### Changed
+- `Dynamic.ps1` path resolution and balloon style consistency
+- `Format-CowMessage` handles words longer than MaxWidth
+- CI: all 6 jobs green across macOS/Linux/Windows, pwsh 5.1 + 7.4
+
 ## [1.0.5] - 2026-06-13
 
 ### Added
@@ -38,33 +153,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved package manager docs from hidden .agent/ to visible package-managers/
 - Updated all documentation with platform-specific samples
 - Expanded test suite with security and package manager coverage
-
-## [1.1.0] - 2026-06-12
-
-### Added
-
-- **Profile Customization Functions**
-  - `cowconfig` - Quick config access with dot notation
-  - `cowpreview` - Preview cows with custom text
-  - `cowgallery` - Browse random cows
-  - `lolcat-toggle` - Toggle rainbow colors
-  - `cow-animate` - Switch animation modes
-  - `cow-eyes` - Set cow eyes with presets
-
-- **Documentation**
-  - Comprehensive customization guide in README
-  - Advanced contributor customization methods
-  - Custom cow file creation guide
-  - Animation mode extension guide
-  - Shell wrapper examples
-  - Tab completion setup
-  - VS Code integration examples
-
-### Changed
-
-- Updated README with ghost-writing style
-- Enhanced CONTRIBUTING.md with customization methods
-- Improved profile integration with tab completion
 
 ## [1.0.0] - 2026-06-12
 

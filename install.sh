@@ -246,9 +246,14 @@ install_powershell() {
 install_module() {
     echo -e "\n${YELLOW}  Installing Forgum module...${NC}"
 
+    local platform
+    platform=$(detect_platform)
+
     local module_dir
-    if check_command pwsh; then
-        module_dir=$(pwsh -NoProfile -Command '[Environment]::GetFolderPath("MyDocuments") + "/PowerShell/Modules/Forgum"' 2>/dev/null)
+    if [ "$platform" = "windows" ] || [ "$platform" = "macos" ]; then
+        if check_command pwsh; then
+            module_dir=$(pwsh -NoProfile -Command '[Environment]::GetFolderPath("MyDocuments") + "/PowerShell/Modules/Forgum"' 2>/dev/null)
+        fi
     fi
 
     if [ -z "$module_dir" ]; then
@@ -324,10 +329,10 @@ FISH
         else
             cat >> "$profile" << 'SHELL'
 
-# Forgum
+# Forgum (requires animation.mode = "static" in config to avoid startup hang)
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; \$cfg = Get-CFConfig 2>\$null; if (\$cfg -and \$cfg.animation.mode -eq 'static') { Invoke-Forgum }" 2>/dev/null
     fi
 fi
 SHELL
@@ -340,7 +345,7 @@ SHELL
 install_pester() {
     echo -e "\n${YELLOW}  Installing Pester (test framework)...${NC}"
 
-    if pwsh -NoProfile -Command "Get-Module -ListAvailable Pester | Where-Object Version.Major -ge 5" 2>/dev/null | grep -q "Pester"; then
+    if pwsh -NoProfile -Command 'Get-Module -ListAvailable Pester | Where-Object Version.Major -ge 5' 2>/dev/null | grep -q "Pester"; then
         echo -e "  ${GREEN}✓${NC} Pester already installed"
         return 0
     fi
@@ -365,7 +370,7 @@ run_tests() {
     local result
     result=$(pwsh -NoProfile -Command "
         Import-Module Pester
-        \$r = Invoke-Pester -Path '$test_dir/Tests/Forgum.Tests.ps1' -PassThru
+        \$r = Invoke-Pester -Path (Join-Path \$test_dir 'Tests' 'Forgum.Tests.ps1') -PassThru
         Write-Output \"\$(\$r.PassedCount)/\$(\$r.TotalCount) passed\"
         if (\$r.FailedCount -gt 0) { exit 1 }
     " 2>&1)
@@ -462,7 +467,9 @@ main() {
     echo -e "    Get-CFConfig | ConvertTo-Json"
     echo ""
     echo -e "  ${CYAN}Uninstall:${NC}"
+    echo -e "    pwsh -File \"\$HOME/Documents/PowerShell/Modules/Forgum/uninstall.ps1\""
     echo -e "    rm -rf ~/Documents/PowerShell/Modules/Forgum"
+    echo -e "    rm -rf ~/.local/share/powershell/Modules/Forgum"
     echo ""
 
     local final_phrase="${PHRASES[$RANDOM % ${#PHRASES[@]}]}"

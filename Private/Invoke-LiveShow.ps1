@@ -57,7 +57,15 @@ function Invoke-LiveShow {
 
         for ($f = 0; $f -lt $frames; $f++) {
             # Check for keys for real-time interaction
-            if ([Console]::KeyAvailable) {
+            # [Console]::KeyAvailable throws on redirected stdin / non-interactive hosts.
+            # Wrap in try/catch and treat exceptions as "no key pressed".
+            $keyPressed = $false
+            try {
+                $keyPressed = [Console]::KeyAvailable
+            } catch {
+                $keyPressed = $false
+            }
+            if ($keyPressed) {
                 return @{ Status = 'Interrupt'; LastLineCount = $lastLineCount }
             }
 
