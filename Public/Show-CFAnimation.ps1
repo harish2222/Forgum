@@ -22,12 +22,20 @@ function Show-CFAnimation {
 
         [string]$Message = '',
 
-        [string]$CowName = ''
+        [string]$CowName = '',
+
+        [switch]$Background
     )
 
     $config = Get-CFConfig
     $mode = $config.animation.mode
     $duration = if ($config.animation.duration) { $config.animation.duration } else { 12 }
+
+    # If the mode is literally 'random' or not specified properly, pick a random engine mode
+    if ($mode -eq 'random' -or $mode -eq $null -or $mode -eq '') {
+        $availableEffects = @('aurora', 'ember', 'shatter', 'plasma', 'liquid-chrome', 'portal', 'glitch', 'neon-pulse')
+        $mode = $availableEffects | Get-Random
+    }
 
     # PowerShell-native animation modes — these handle their own rendering
     # via Write-Host and cursor positioning, so we dispatch directly.
@@ -48,7 +56,15 @@ function Show-CFAnimation {
     # Rust binary animation modes (the new forgum-engine flagship effects)
     $engineModes = @('aurora', 'plasma', 'ember', 'liquid-chrome', 'shatter', 'portal', 'glitch', 'neon-pulse')
     if ($mode -in $engineModes) {
-        $success = Invoke-Engine -Message $Message -CowTemplate ($CowOutput -split "`r?`n") -Effect $mode -Fps 30 -Duration $duration
+        $engineParams = @{
+            Message    = $Message
+            CowTemplate = ($CowOutput -split "`r?`n")
+            Effect     = $mode
+            Fps        = 30
+            Duration   = $duration
+            Background = $Background.IsPresent
+        }
+        $success = Invoke-Engine @engineParams
         if ($success) { return "" }
         Write-Warning "forgum-engine failed or not found. Falling back to native physics."
         $mode = 'physics' # Fallback

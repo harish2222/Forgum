@@ -2,16 +2,19 @@ function Invoke-Engine {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
+        [AllowEmptyString()]
         [string]$Message,
         
-        [Parameter(Mandatory=$true)]
-        [string[]]$CowTemplate,
+        [Parameter(Mandatory=$false)]
+        $CowTemplate = @(),
         
         [string]$Effect = 'plasma',
         
         [int]$Fps = 30,
 
-        [int]$Duration = 0
+        [int]$Duration = 0,
+
+        [switch]$Background
     )
 
     # 1. Resolve binary path
@@ -61,14 +64,22 @@ function Invoke-Engine {
         cow_text = $fullText
         fps = $Fps
         duration = $Duration
+        background = $Background.IsPresent
     }
 
     $json = $scene | ConvertTo-Json -Depth 5 -Compress
 
     # 4. Pipe to engine
     try {
-        $json | & $enginePath
-        return $true
+        if ($Background) {
+            $tmp = New-TemporaryFile
+            $json | Out-File -FilePath $tmp.FullName -Encoding utf8
+            Start-Process -FilePath $enginePath -RedirectStandardInput $tmp.FullName -NoNewWindow
+            return $true
+        } else {
+            $json | & $enginePath
+            return $true
+        }
     } catch {
         Write-Warning "Failed to execute Rust engine: $_"
         return $false

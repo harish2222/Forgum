@@ -176,6 +176,9 @@ Set-CFConfig -Config $config
 Show-CFAnimation -CowOutput <string> [-Message <string>]
 ```
 
+* `Show-CFAnimation`: Takes a `CowOutput` (string block) and animates it with `-Effect` or default physics. Supports `-Background` to run animations without stealing focus or blocking the terminal prompt.
+* `Invoke-Engine`: Low-level wrapper around the Rust `forgum-engine` executable. Plumbs JSON payloads over `stdin` and handles the raw async/sync execution logic.
+
 **Available Flagship Modes:** `aurora`, `plasma`, `ember`, `liquid-chrome`, `shatter`, `portal`, `glitch`, `neon-pulse`
 **Available Legacy Modes:** `static`, `talking`, `typewriter`, `dynamic`, `procedural`, `physics` (and variants)
 
@@ -183,22 +186,18 @@ Show-CFAnimation -CowOutput <string> [-Message <string>]
 
 ## ⚙️ Configuration
 
-| Platform | Path |
-|:---------|:-----|
-| Windows | `~/Documents/PowerShell/Forgum/config.json` |
-| Linux/Mac | `~/.config/Forgum/config.json` |
-| Override | `$env:Forgum_CONFIG` |
-
-### Default Config
+### Configuration
+You can customize Forgum by editing its configuration file. Run `Get-CFConfig` to see your current settings and file path.
 
 ```json
 {
-  "animation": { "mode": "static", "speed": 20, "duration": 12, "spread": 3.0, "blinkRate": 0.2, "amplitude": 2 },
+  "animation": { "mode": "random", "background": true, "speed": 20, "duration": 12, "spread": 3.0, "blinkRate": 0.2, "amplitude": 2 },
   "cow": { "file": "default", "random": false, "mode": null, "eyes": "oo", "tongue": "  " },
   "fortune": { "database": "fortunes", "offensive": false },
   "lolcat": { "enabled": false, "truecolor": true, "frequency": 0.1 },
-  "output": { "wordWrap": true, "maxWidth": 60 },
-  "shell": { "integration": "auto", "tmux": { "enabled": false, "pane": "status-right" } }
+  "output": { "wordWrap": true, "maxWidth": 60, "noWrap": false },
+  "startup": { "enabled": true, "command": "Invoke-Forgum" },
+  "shell": { "integration": "auto" }
 }
 ```
 

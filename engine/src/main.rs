@@ -17,9 +17,15 @@ use std::time::{Duration, Instant};
 use std::path::PathBuf;
 
 fn render_loop(config: SceneConfig) -> io::Result<()> {
-    enable_raw_mode()?;
+    let is_bg = config.background.unwrap_or(false);
+
+    if !is_bg {
+        enable_raw_mode()?;
+        execute!(io::stdout(), crossterm::terminal::EnterAlternateScreen, cursor::Hide)?;
+    } else {
+        execute!(io::stdout(), cursor::Hide)?;
+    }
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, cursor::Hide)?;
 
     let (cols, rows) = size()?;
     let mut fb = FrameBuffer::new(cols as usize, rows as usize);
@@ -48,10 +54,12 @@ fn render_loop(config: SceneConfig) -> io::Result<()> {
         let dt = now.duration_since(last_frame).as_secs_f32();
         last_frame = now;
 
-        if event::poll(Duration::from_millis(0))? {
-            if let Event::Key(k) = event::read()? {
-                if k.code == KeyCode::Char('q') || k.code == KeyCode::Esc || k.code == KeyCode::Enter {
-                    running = false;
+        if !is_bg {
+            if event::poll(Duration::from_millis(0))? {
+                if let Event::Key(k) = event::read()? {
+                    if k.code == KeyCode::Char('q') || k.code == KeyCode::Esc || k.code == KeyCode::Enter {
+                        running = false;
+                    }
                 }
             }
         }
@@ -59,7 +67,15 @@ fn render_loop(config: SceneConfig) -> io::Result<()> {
         effect.update(dt);
         fb.clear();
         effect.render(&mut fb);
+        
+        if is_bg {
+            crossterm::queue!(stdout, crossterm::cursor::SavePosition)?;
+        }
         fb.render(&mut stdout)?;
+        if is_bg {
+            crossterm::queue!(stdout, crossterm::cursor::RestorePosition)?;
+            stdout.flush()?;
+        }
 
         frame_count += 1;
         if max_frames > 0 && frame_count >= max_frames {
@@ -72,8 +88,12 @@ fn render_loop(config: SceneConfig) -> io::Result<()> {
         }
     }
 
-    execute!(stdout, style::ResetColor, cursor::Show, LeaveAlternateScreen)?;
-    disable_raw_mode()?;
+    if !is_bg {
+        execute!(stdout, style::ResetColor, cursor::Show, crossterm::terminal::LeaveAlternateScreen)?;
+        disable_raw_mode()?;
+    } else {
+        execute!(stdout, style::ResetColor, cursor::Show)?;
+    }
     Ok(())
 }
 

@@ -43,7 +43,9 @@ function Invoke-Forgum {
         [ValidateLength(2,2)]
         [string]$Tongue,
 
-        [switch]$Lolcat
+        [switch]$Lolcat,
+
+        [switch]$Background
     )
 
     $config = Get-CFConfig
@@ -81,7 +83,13 @@ function Invoke-Forgum {
 
     # Apply animation if configured (works with or without lolcat)
     if ($useAnimation) {
-        $cowOutput = Show-CFAnimation -CowOutput $cowOutput -Message $fortune -CowName $effectiveCowFile
+        $animationParams = @{
+            CowOutput = $cowOutput
+            Message   = $fortune
+            CowName   = $effectiveCowFile
+        }
+        if ($Background -or $config.animation.background) { $animationParams.Background = $true }
+        $cowOutput = Show-CFAnimation @animationParams
     }
 
     # Apply lolcat colorization after animation
