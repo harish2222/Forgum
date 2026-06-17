@@ -106,8 +106,8 @@ Forgum comes packed with **106 unique characters**. Whether you want a friendly 
 
 - **106 ASCII Cows**: A massive library of characters.
 - **Truecolor Rainbow**: 24-bit color support for stunning visuals.
-- **11 Animation Modes**: From "bounce" to "dissolve", make your text alive.
-- **Zero Dependencies**: Pure PowerShell logic.
+- **19 Animation Modes**: From legacy "bounce" to flagship Rust-powered "aurora", "plasma", and "neon-pulse" with React-inspired mathematical blending.
+- **Lightning Fast Engine**: A differential ANSI framebuffer renderer built in Rust, integrated seamlessly via PowerShell.
 - **Cross-Shell Support**: Works in PowerShell, Bash, Zsh, Fish, and tmux.
 - **Highly Configurable**: Control everything from word-wrap to eye style.
 
@@ -176,9 +176,12 @@ Set-CFConfig -Config $config
 Show-CFAnimation -CowOutput <string> [-Message <string>]
 ```
 
+**Available Flagship Modes:** `aurora`, `plasma`, `ember`, `liquid-chrome`, `shatter`, `portal`, `glitch`, `neon-pulse`
+**Available Legacy Modes:** `static`, `talking`, `typewriter`, `dynamic`, `procedural`, `physics` (and variants)
+
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 | Platform | Path |
 |:---------|:-----|

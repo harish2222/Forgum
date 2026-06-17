@@ -37,9 +37,11 @@ fn render_loop(config: SceneConfig) -> io::Result<()> {
 
     let target_fps = config.fps.unwrap_or(30);
     let frame_duration = Duration::from_secs_f32(1.0 / target_fps as f32);
+    let max_frames = config.duration.unwrap_or(0); // 0 means infinite
     
     let mut last_frame = Instant::now();
     let mut running = true;
+    let mut frame_count = 0;
 
     while running {
         let now = Instant::now();
@@ -58,6 +60,11 @@ fn render_loop(config: SceneConfig) -> io::Result<()> {
         fb.clear();
         effect.render(&mut fb);
         fb.render(&mut stdout)?;
+
+        frame_count += 1;
+        if max_frames > 0 && frame_count >= max_frames {
+            running = false;
+        }
 
         let elapsed = now.elapsed();
         if elapsed < frame_duration {

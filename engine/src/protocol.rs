@@ -5,4 +5,5 @@ pub struct SceneConfig {
     pub effect: String,
     pub cow_text: String,
     pub fps: Option<u32>,
+    pub duration: Option<u32>,
 }

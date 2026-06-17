@@ -81,3 +81,47 @@ pub fn apply_radial_glow(x: usize, y: usize, light_x: f32, light_y: f32, radius:
         base_color
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hsv_to_rgb() {
+        let red = hsv_to_rgb(0.0, 1.0, 1.0);
+        assert_eq!(red.r, 255);
+        assert_eq!(red.g, 0);
+        assert_eq!(red.b, 0);
+
+        let green = hsv_to_rgb(120.0, 1.0, 1.0);
+        assert_eq!(green.r, 0);
+        assert_eq!(green.g, 255);
+        assert_eq!(green.b, 0);
+
+        let blue = hsv_to_rgb(240.0, 1.0, 1.0);
+        assert_eq!(blue.r, 0);
+        assert_eq!(blue.g, 0);
+        assert_eq!(blue.b, 255);
+    }
+
+    #[test]
+    fn test_blend_dodge() {
+        let base = Rgb { r: 100, g: 100, b: 100 };
+        let blend = Rgb { r: 50, g: 50, b: 50 };
+        let dodged = blend_color_dodge(base, blend);
+        assert!(dodged.r > 100);
+        assert!(dodged.g > 100);
+        assert!(dodged.b > 100);
+    }
+
+    #[test]
+    fn test_blend_multiply() {
+        let base = Rgb { r: 255, g: 128, b: 0 };
+        let blend = Rgb { r: 128, g: 255, b: 255 };
+        let multiplied = blend_multiply(base, blend);
+        
+        assert_eq!(multiplied.r, 128);
+        assert_eq!(multiplied.g, 128);
+        assert_eq!(multiplied.b, 0);
+    }
+}

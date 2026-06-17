@@ -48,7 +48,7 @@ function Show-CFAnimation {
     # Rust binary animation modes (the new forgum-engine flagship effects)
     $engineModes = @('aurora', 'plasma', 'ember', 'liquid-chrome', 'shatter', 'portal', 'glitch', 'neon-pulse')
     if ($mode -in $engineModes) {
-        $success = Invoke-Engine -Message $Message -CowTemplate ($CowOutput -split "`r?`n") -Effect $mode -Fps 30
+        $success = Invoke-Engine -Message $Message -CowTemplate ($CowOutput -split "`r?`n") -Effect $mode -Fps 30 -Duration $duration
         if ($success) { return "" }
         Write-Warning "forgum-engine failed or not found. Falling back to native physics."
         $mode = 'physics' # Fallback

@@ -9,7 +9,9 @@ function Invoke-Engine {
         
         [string]$Effect = 'plasma',
         
-        [int]$Fps = 30
+        [int]$Fps = 30,
+
+        [int]$Duration = 0
     )
 
     # 1. Resolve binary path
@@ -48,24 +50,17 @@ function Invoke-Engine {
     }
 
     # 3. Construct JSON Scene
+    $fullText = $Message
+    if ($fullText.Trim() -ne '' -and $CowTemplate.Count -gt 0) {
+        $fullText += "`n"
+    }
+    $fullText += ($CowTemplate -join "`n")
+
     $scene = @{
-        static_header = $bubble
-        sprite = $sprite
         effect = $Effect
-        params = @{
-            speed = 1.0
-            amplitude = 2
-            fps = $Fps
-        }
-        viewport = @{
-            cols = [Console]::WindowWidth
-            rows = [Console]::WindowHeight
-        }
-        color = @{
-            mode = "lolcat"
-            frequency = 0.1
-            spread = 3.0
-        }
+        cow_text = $fullText
+        fps = $Fps
+        duration = $Duration
     }
 
     $json = $scene | ConvertTo-Json -Depth 5 -Compress

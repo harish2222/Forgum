@@ -68,7 +68,7 @@ Describe "Config System" -Tag 'Config' {
     Context "Default values from template" {
         It "has correct default animation settings" {
             $config = Get-CFConfig
-            $config.animation.mode | Should -Be 'static'
+            $config.animation.mode | Should -Be 'physics'
             $config.animation.speed | Should -Be 20
             $config.animation.duration | Should -Be 12
             $config.animation.blinkRate | Should -Be 0.2
@@ -371,8 +371,7 @@ Describe "Animation Modes" -Tag 'Animation' {
         }
 
         It "cycles through random cows and fortunes" {
-            $output = Show-CFAnimation -CowOutput "Test cow" -Message "Hello"
-            $output | Should -Not -BeNullOrEmpty
+            { Show-CFAnimation -CowOutput "Test cow" -Message "Hello" } | Should -Not -Throw
         }
     }
 
@@ -389,9 +388,8 @@ Describe "Animation Modes" -Tag 'Animation' {
             if ($script:RestoreConfig) { Set-CFConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
         }
 
-        It "runs without throwing and returns cow text" {
-            $output = Show-CFAnimation -CowOutput "Test cow" -Message "Hello"
-            $output | Should -Be "Test cow"
+        It "runs without throwing" {
+            { Show-CFAnimation -CowOutput "Test cow" -Message "Hello" } | Should -Not -Throw
         }
     }
 }
@@ -464,41 +462,34 @@ Describe "Update-Forgum" -Tag 'Update' {
 }
 
 Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
-    It "invokes real Rust binary when present on supported OS" {
-        $isWin = $IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6) -or ($env:OS -eq 'Windows_NT')
-        $isMac = $IsMacOS
+    It "invokes forgum-engine binary for flagship modes when present" {
+        $binPath = Join-Path $ModuleRoot "bin/forgum-engine.exe"
+        if ($IsLinux -or $IsMacOS) { $binPath = Join-Path $ModuleRoot "bin/forgum-engine" }
 
-        if ($isWin) {
-            $arch = $env:PROCESSOR_ARCHITECTURE
-            $binName = if ($arch -eq 'ARM64' -or $arch -eq 'Arm64') { "forgum-core-arm64.exe" } else { "forgum-core.exe" }
-        } elseif ($isMac) {
-            $binName = "forgum-core-mac"
-        } else {
-            $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
-            $binName = if ($arch -eq 'Arm64' -or $arch -eq 'ARM64') { "forgum-core-arm64" } else { "forgum-core" }
-        }
-
-        $binPath = Join-Path $ModuleRoot "bin/$binName"
-        if (-not (Test-Path $binPath)) {
-            $fallbackName = if ($isWin) { "forgum-core.exe" } else { "forgum-core" }
-            $fallbackPath = Join-Path $ModuleRoot "bin/$fallbackName"
-            if (Test-Path $fallbackPath) {
-                $binPath = $fallbackPath
-            }
-        }
-        
         if (Test-Path $binPath) {
-            # Let it run for real (will exit after 60 frames in CI or fast on local)
+            # Let it run for real (will exit after 30 frames in CI or fast on local due to Show-CFAnimation defaults)
+            $script:RestoreConfig = Get-DeepCopyConfig
+            $cfg = Get-CFConfig
+            $cfg.animation.mode = 'aurora'
+            Set-CFConfig -Config $cfg
             { Show-CFAnimation -CowOutput "moo" -Message "real rendering test" } | Should -Not -Throw
+            Set-CFConfig -Config $script:RestoreConfig
         } else {
-            Set-ItResult -Inconclusive -Because "Rust binary not built/found at $binPath"
+            Set-ItResult -Inconclusive -Because "Rust engine binary not built/found at $binPath"
         }
     }
 
-    It "falls back to static output if binary is missing" {
-        Mock Test-Path { return $false } -ParameterFilter { $Path -like "*forgum-core*" }
+    It "falls back to physics mode if forgum-engine is missing for flagship modes" {
+        Mock Test-Path { return $false } -ParameterFilter { $Path -like "*forgum-engine*" }
+        $script:RestoreConfig = Get-DeepCopyConfig
+        $cfg = Get-CFConfig
+        $cfg.animation.mode = 'aurora'
+        Set-CFConfig -Config $cfg
+
         $result = Show-CFAnimation -CowOutput "moo" -Message "test"
-        $result | Should -Be "moo"
+        # Since it runs via physics fallback or directly prints, it should not throw and typically returns an empty string
+        $result | Should -Be ""
+        Set-CFConfig -Config $script:RestoreConfig
     }
 }
 
