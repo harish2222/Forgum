@@ -19,6 +19,8 @@
         'Show-CFAnimation'
         'Invoke-ForgumSetup'
         'Update-Forgum'
+        'Start-ForgumDaemon'
+        'Stop-ForgumDaemon'
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()

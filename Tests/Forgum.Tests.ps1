@@ -28,7 +28,7 @@ Describe "Module Loading" -Tag 'Module' {
     }
 
     it "exports exactly 11 functions" {
-        (Get-Command -Module Forgum -CommandType Function).Count | Should -Be 11
+        (Get-Command -Module Forgum -CommandType Function).Count | Should -Be 13
     }
 
     It "exports setup alias" {
