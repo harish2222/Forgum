@@ -60,9 +60,13 @@ function Invoke-Forgum {
 
     $effectiveCowFile = $CowFile
     if (-not $effectiveCowFile) {
-        $cowsPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Data/Cows'
-        $cowFiles = Get-ChildItem -Path $cowsPath -Filter '*.cow' -ErrorAction SilentlyContinue
-        if ($cowFiles) { $effectiveCowFile = ($cowFiles | Get-Random).BaseName }
+        if ($config.cow.random) {
+            $cowsPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Data/Cows'
+            $cowFiles = Get-ChildItem -Path $cowsPath -Filter '*.cow' -ErrorAction SilentlyContinue
+            if ($cowFiles) { $effectiveCowFile = ($cowFiles | Get-Random).BaseName }
+        } else {
+            $effectiveCowFile = if ($config.cow.file) { $config.cow.file } else { 'default' }
+        }
     }
 
     $cowParams = @{ Text = $fortune; CowFile = $effectiveCowFile }

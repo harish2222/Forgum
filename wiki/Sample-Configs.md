@@ -1087,7 +1087,7 @@ function cowpreview {
 function cowgallery {
     param([int]$Count = 5)
     Get-CFCow | Get-Random -Count $Count | ForEach-Object {
-        Invoke-Cowsay -Text (Get-Fortune) -CowFile $_.Name
+        Invoke-Cowsay -Text (Get-Fortune) -CowFile $_
     }
 }
 
@@ -1659,7 +1659,7 @@ function lolcat {
 }
 function cowconfig { Get-CFConfig | ConvertTo-Json -Depth 4 }
 function cowpreview { param([string]$Cow='default',[string]$Text='Hello!') Invoke-Cowsay -Text $Text -CowFile $Cow }
-function cowgallery { param([int]$Count=5) Get-CFCow | Get-Random -Count $Count | ForEach-Object { Invoke-Cowsay -Text (Get-Fortune) -CowFile $_.Name } }
+function cowgallery { param([int]$Count=5) Get-CFCow | Get-Random -Count $Count | ForEach-Object { Invoke-Cowsay -Text (Get-Fortune) -CowFile $_ } }
 function cow-animate { param([ValidateSet('static','talking','typewriter')]$Mode) $c = Get-CFConfig; $c.animation.mode = $Mode; Set-CFConfig -Config $c; Write-Host "Animation: $Mode" }
 
 # Tab completion

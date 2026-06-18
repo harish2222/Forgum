@@ -218,7 +218,7 @@ if (-not $NoProfile) {
             $blockLines.Add("# Forgum Aliases")
             $blockLines.Add("function cowconfig { Get-CFConfig | ConvertTo-Json -Depth 4 }")
             $blockLines.Add("function cowpreview { param([string]`$Cow='default',[string]`$Text='Hello!') Invoke-Cowsay -Text `$Text -CowFile `$Cow }")
-            $blockLines.Add("function cowgallery { param([int]`$Count=5) Get-CFCow | Get-Random -Count `$Count | ForEach-Object { Invoke-Cowsay -Text (Get-Fortune) -CowFile `$_.Name } }")
+            $blockLines.Add("function cowgallery { param([int]`$Count=5) Get-CFCow | Get-Random -Count `$Count | ForEach-Object { Invoke-Cowsay -Text (Get-Fortune) -CowFile `$_ } }")
             $blockLines.Add("function lolcat-toggle { `$c = Get-CFConfig; `$c.lolcat.enabled = -not `$c.lolcat.enabled; Set-CFConfig -Config `$c; if (`$c.lolcat.enabled) { Write-Host `"Lolcat: ON`" -ForegroundColor Green } else { Write-Host `"Lolcat: OFF`" -ForegroundColor Yellow } }")
         }
         

@@ -297,7 +297,7 @@ function cowpreview {
 function cowgallery {
   param([int]$Count = 5)
   Get-CFCow | Get-Random -Count $Count | ForEach-Object {
-    Invoke-Cowsay -Text (Get-Fortune) -CowFile $_.Name
+    Invoke-Cowsay -Text (Get-Fortune) -CowFile $_
   }
 }
 
