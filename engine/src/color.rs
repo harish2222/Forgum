@@ -38,6 +38,7 @@ pub fn hsv_to_rgb(h: f32, s: f32, v: f32) -> Rgb {
 }
 
 // Blending functions mirroring CSS mix-blend-mode
+#[allow(dead_code)]
 pub fn blend_multiply(base: Rgb, blend: Rgb) -> Rgb {
     Rgb::new(
         ((base.r as f32 * blend.r as f32) / 255.0) as u8,

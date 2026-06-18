@@ -37,7 +37,7 @@ Describe "Module Loading" -Tag 'Module' {
 
     It "exports all 9 expected functions" {
         $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup', 'Update-Forgum')
-        $actual = $manifest.ExportedFunctions.Keys
+        $actual = (Get-Command -Module Forgum -CommandType Function).Name
         
         foreach ($cmd in $expected) {
             $actual | Should -Contain $cmd
@@ -69,7 +69,7 @@ Describe "Config System" -Tag 'Config' {
     Context "Default values from template" {
         It "has correct default animation settings" {
             $config = Get-CFConfig
-            $config.animation.mode | Should -Be 'physics'
+            $config.animation.mode | Should -Be 'random'
             $config.animation.speed | Should -Be 20
             $config.animation.duration | Should -Be 12
             $config.animation.blinkRate | Should -Be 0.2

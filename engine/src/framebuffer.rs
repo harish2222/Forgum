@@ -46,6 +46,7 @@ impl FrameBuffer {
         }
     }
     
+    #[allow(dead_code)]
     pub fn get_cell_mut(&mut self, x: usize, y: usize) -> Option<&mut Cell> {
         if x < self.width && y < self.height {
             Some(&mut self.back[y * self.width + x])

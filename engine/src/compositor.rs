@@ -1,8 +1,10 @@
 use crate::framebuffer::{FrameBuffer, Cell};
 
+#[allow(dead_code)]
 pub struct Compositor;
 
 impl Compositor {
+    #[allow(dead_code)]
     pub fn draw_text_layer(fb: &mut FrameBuffer, x: usize, y: usize, text: &str, r: u8, g: u8, b: u8) {
         let mut cur_x = x;
         let mut cur_y = y;

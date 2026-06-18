@@ -1,6 +1,6 @@
 use crate::framebuffer::{FrameBuffer, Cell};
 use crate::particles::ParticlePool;
-use crate::color::{hsv_to_rgb, Rgb};
+use crate::color::hsv_to_rgb;
 use rand::Rng;
 
 pub trait Effect {

@@ -10,7 +10,7 @@ use std::io::{self, Read, Write};
 use framebuffer::FrameBuffer;
 use effects::{Effect, AuroraEffect, EmberEffect, ShatterEffect, PlasmaEffect, LiquidChromeEffect, PortalEffect, GlitchEffect, NeonPulseEffect};
 use crossterm::{
-    terminal::{enable_raw_mode, disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, size},
+    terminal::{enable_raw_mode, disable_raw_mode, size},
     execute, cursor, style, event::{self, Event, KeyCode},
 };
 use std::time::{Duration, Instant};
