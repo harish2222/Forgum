@@ -38,6 +38,21 @@ fn render_loop(config: SceneConfig) -> io::Result<()> {
         "portal" => Box::new(PortalEffect::new(config.cow_text)),
         "glitch" => Box::new(GlitchEffect::new(config.cow_text)),
         "neon-pulse" => Box::new(NeonPulseEffect::new(config.cow_text)),
+        "random" => {
+            use rand::seq::SliceRandom;
+            let effects = vec!["ember", "shatter", "plasma", "liquid-chrome", "portal", "glitch", "neon-pulse", "aurora"];
+            let mut rng = rand::thread_rng();
+            match *effects.choose(&mut rng).unwrap_or(&"aurora") {
+                "ember" => Box::new(EmberEffect::new(config.cow_text)),
+                "shatter" => Box::new(ShatterEffect::new(config.cow_text)),
+                "plasma" => Box::new(PlasmaEffect::new(config.cow_text)),
+                "liquid-chrome" => Box::new(LiquidChromeEffect::new(config.cow_text)),
+                "portal" => Box::new(PortalEffect::new(config.cow_text)),
+                "glitch" => Box::new(GlitchEffect::new(config.cow_text)),
+                "neon-pulse" => Box::new(NeonPulseEffect::new(config.cow_text)),
+                _ => Box::new(AuroraEffect::new(config.cow_text)),
+            }
+        },
         "aurora" | _ => Box::new(AuroraEffect::new(config.cow_text)),
     };
 
@@ -125,7 +140,7 @@ fn handle_init(shell: &str) {
         "bash" | "zsh" => format!(r#"
 forgum() {{
     local config="{}"
-    local effect="aurora"
+    local effect="random"
     if [ -f "$config" ]; then
         local parsed=$(grep -oE '"effect"\s*:\s*"[^"]+"' "$config" | cut -d'"' -f4)
         if [ ! -z "$parsed" ]; then
@@ -137,13 +152,13 @@ forgum() {{
     local cow="$(cowsay "$@")"
     local json_cow="${{cow//$'\n'/\\n}}"
     json_cow="${{json_cow//\"/\\\"}}"
-    echo "{{\"effect\":\"$effect\",\"cow_text\":\"$json_cow\"}}" | forgum-engine
+    echo "{{\"effect\":\"$effect\",\"cow_text\":\"$json_cow\",\"background\":true,\"duration\":150}}" | forgum-engine
 }}
 "#, config_path_str),
         "fish" => format!(r#"
 function forgum
     set config "{}"
-    set effect "aurora"
+    set effect "random"
     if test -f "$config"
         set parsed (grep -oE '"effect"\s*:\s*"[^"]+"' "$config" | cut -d'"' -f4)
         if test -n "$parsed"
@@ -154,7 +169,7 @@ function forgum
     # Basic JSON string escaping for fish
     set json_cow (string replace -a '\n' '\\n' "$cow")
     set json_cow (string replace -a '"' '\"' "$json_cow")
-    echo "{{\"effect\":\"$effect\",\"cow_text\":\"$json_cow\"}}" | forgum-engine
+    echo "{{\"effect\":\"$effect\",\"cow_text\":\"$json_cow\",\"background\":true,\"duration\":150}}" | forgum-engine
 end
 "#, config_path_str),
         "pwsh" | "powershell" => format!(r#"
@@ -165,14 +180,14 @@ function Invoke-ForgumEngine {{
     )
     process {{
         $configPath = "{}"
-        $effect = "aurora"
+        $effect = "random"
         if (Test-Path $configPath) {{
             try {{
                 $conf = Get-Content $configPath -Raw | ConvertFrom-Json
                 if ($conf.effect) {{ $effect = $conf.effect }}
             }} catch {{}}
         }}
-        $payload = @{{ effect = $effect; cow_text = $CowText }} | ConvertTo-Json -Compress
+        $payload = @{{ effect = $effect; cow_text = $CowText; background = $true; duration = 150 }} | ConvertTo-Json -Compress
         $payload | & forgum-engine
     }}
 }}
@@ -205,6 +220,25 @@ fn main() -> io::Result<()> {
             return Ok(());
         }
     };
+
+    let is_bg = config.background.unwrap_or(false);
+    let is_daemon = args.iter().any(|a| a == "--daemon");
+
+    if is_bg && !is_daemon {
+        use std::process::{Command, Stdio};
+        let current_exe = std::env::current_exe()?;
+        let mut child = Command::new(current_exe)
+            .arg("--daemon")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .spawn()?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(buffer.as_bytes())?;
+        }
+        return Ok(());
+    }
 
     render_loop(config)?;
 
