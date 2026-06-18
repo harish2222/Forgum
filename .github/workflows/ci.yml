@@ -307,7 +307,7 @@ jobs:
       - name: Verify ARM64 Binary via QEMU
         if: matrix.os == 'ubuntu-latest'
         run: |
-          ./bin/forgum-core-arm64 --version
+          QEMU_LD_PREFIX=/usr/aarch64-linux-gnu ./bin/forgum-core-arm64 --version
 
       - name: Verify ARM64 Binary (native on Apple Silicon)
         if: matrix.os == 'macos-latest'
