@@ -386,6 +386,27 @@ jobs:
             exit 1
           }
 
+      - name: Test Other Shell Integrations (Bash, Zsh, Fish)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh fish bash
+          
+          echo "Testing Bash..."
+          OUTPUT_BASH=$(bash -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; Invoke-Forgum"')
+          echo "$OUTPUT_BASH" | grep -E "(__|\(oo\))" > /dev/null || (echo "Bash test failed: $OUTPUT_BASH" && exit 1)
+          
+          echo "Testing Zsh..."
+          OUTPUT_ZSH=$(zsh -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; Invoke-Forgum"')
+          echo "$OUTPUT_ZSH" | grep -E "(__|\(oo\))" > /dev/null || (echo "Zsh test failed: $OUTPUT_ZSH" && exit 1)
+          
+          echo "Testing Fish..."
+          OUTPUT_FISH=$(fish -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; Invoke-Forgum"')
+          echo "$OUTPUT_FISH" | grep -E "(__|\(oo\))" > /dev/null || (echo "Fish test failed: $OUTPUT_FISH" && exit 1)
+          
+          echo "All shell integration tests passed!"
+
   # ────────────────────────────────────────────
   # Phase 2.5: Performance Gate
   # ────────────────────────────────────────────
