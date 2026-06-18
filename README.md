@@ -113,6 +113,22 @@ Forgum comes packed with **106 unique characters**. Whether you want a friendly 
 
 ---
 
+## 🎨 The Forgum Animation Engine
+
+Forgum goes far beyond simple ASCII art text rendering. We've built a **lightning-fast differential ANSI framebuffer renderer in Rust**, entirely seamlessly integrated through PowerShell to give you zero-latency and perfectly smooth animations!
+- **Zero Flickering**: Differential rendering means we only update the terminal blocks that actually change frame by frame.
+- **Mathematical Precision**: Employs React-inspired mathematical blending to render complex patterns like **Neon-Pulse**, **Liquid-Chrome**, and **Aurora**.
+- **No Blocking**: `Show-CFAnimation -Background` lets animations play seamlessly without stealing focus or halting your terminal prompt!
+
+---
+
+## 🧩 Placeholder API
+
+Don't settle for static text files! Forgum supports a highly flexible **Placeholder API** (the `{{...}}` engine) in your `.cow` files. 
+- You can inject variables dynamically. 
+- You define eyes, tongue, thoughts, and complex visual states with variables like `$eyes`, `$tongue`, `$thoughts`.
+- This API allows any third-party cow file to integrate beautifully with Forgum's mood and theme system!
+
 ## 📖 Documentation
 
 - **[User Guide](wiki/User-Guide.md)**: New to the command line? Start here for a fun, jargon-free guide!
