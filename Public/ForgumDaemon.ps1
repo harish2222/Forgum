@@ -11,7 +11,7 @@ function Start-ForgumDaemon {
     .PARAMETER Duration
         Duration of each animation in frames. Default is 150 (5 seconds at 30fps).
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$true)]
     param(
         [int]$Interval = 600,
         [int]$Duration = 150
@@ -67,7 +67,7 @@ function Stop-ForgumDaemon {
     .SYNOPSIS
         Stops the Forgum background daemon.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$true)]
     param()
 
     if ($global:ForgumDaemonRunspace) {
