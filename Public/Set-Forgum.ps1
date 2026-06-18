@@ -21,7 +21,8 @@ function Set-Forgum {
     .EXAMPLE
         Set-Forgum -Lolcat $true -RainbowFrequency 0.2
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter()]
         [ValidateSet('static', 'talking', 'typewriter', 'slide-in', 'bounce', 'dissolve', 'fade-in', 'blink', 'wiggle', 'wave', 'disco', 'dynamic')]

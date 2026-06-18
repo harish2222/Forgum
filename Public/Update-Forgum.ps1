@@ -1,4 +1,4 @@
-function Update-Forgum {
+﻿function Update-Forgum {
     <#
     .SYNOPSIS
         Checks for and applies updates to Forgum.
@@ -13,7 +13,7 @@ function Update-Forgum {
     )
 
     Write-Host "Checking for Forgum updates..." -ForegroundColor Cyan
-    
+
     # GitHub requires a User-Agent and (for v3) an Accept header that opts into
     # the vnd.github+json content type. Without these the request can be
     # rate-limited or return HTML on unauthenticated calls.
@@ -38,37 +38,37 @@ function Update-Forgum {
             Write-Warning "Could not parse latest version '$latestVersion' as a SemVer number; skipping update."
             return
         }
-        
+
         # Get current version robustly from module context or loaded module
         $module = $ExecutionContext.SessionState.Module
         if (-not $module -or $module.Name -ne 'Forgum') {
             $module = Get-Module Forgum -ErrorAction SilentlyContinue | Select-Object -First 1
         }
-        
+
         if (-not $module) {
             Write-Warning "Forgum module not found in current session. Cannot determine current version."
             return
         }
-        
+
         $currentVersion = $module.Version.ToString()
         $installPath = $module.ModuleBase
-        
+
         if ($latestComparable -gt [version]$currentVersion) {
             Write-Host "Update available! v$currentVersion -> v$latestVersion" -ForegroundColor Yellow
-            
+
             # Detect install method
             if ($installPath -match 'scoop' -and -not $Force) {
                 Write-Host "[Scoop Install Detected] Run 'scoop update forgum' to upgrade." -ForegroundColor Magenta
                 Write-Host "Use -Force to override and run standalone update." -ForegroundColor Gray
                 return
             }
-            
+
             if (($installPath -match 'WindowsApps' -or (Get-Command winget -ErrorAction SilentlyContinue)) -and -not $Force) {
                 Write-Host "Winget or WindowsApps detected. Prefer 'winget upgrade HKDEVS.Forgum'." -ForegroundColor Magenta
                 $choice = Read-Host "Force standalone update instead? (y/N)"
                 if ($choice -notmatch '^[yY]') { return }
             }
-            
+
             if ($PSCmdlet.ShouldProcess("v$latestVersion", "Install Forgum Update")) {
                 Write-Host "Downloading and installing v$latestVersion..." -ForegroundColor Cyan
 

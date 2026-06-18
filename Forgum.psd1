@@ -21,6 +21,12 @@
         'Update-Forgum'
         'Start-ForgumDaemon'
         'Stop-ForgumDaemon'
+        'Set-CFCowAnimate'
+        'Set-CFCowEyes'
+        'Show-CFConfig'
+        'Show-CFCowGallery'
+        'Show-CFCowPreview'
+        'Switch-CFLolcat'
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()

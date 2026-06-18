@@ -13,6 +13,7 @@ function Invoke-ForgumLive {
     #>
     [CmdletBinding()]
     [Alias('forgum-show')]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter()]
         [double]$Duration = 0
@@ -25,13 +26,15 @@ function Invoke-ForgumLive {
     }
 
     $startTime = [DateTime]::UtcNow
-    
+
     # Hide cursor if possible (all console access goes through the try block)
     $cursorVisible = $true
     try {
         $cursorVisible = [Console]::CursorVisible
         [Console]::CursorVisible = $false
-    } catch {}
+    } catch {
+        Write-Verbose "Could not set CursorVisible: $_"
+    }
 
     Write-Host "Starting Forgum Live Showcase..."
     Write-Host "Controls: [L] Toggle Lolcat | [A] Toggle Animation | [Space] Next Cow | [Q] Quit"
@@ -44,7 +47,7 @@ function Invoke-ForgumLive {
             }
 
             # Call the shared brain
-            $result = Invoke-LiveShow -Config $config -Toggles $toggles -RunOnce:$false -Duration $Duration
+            [void](Invoke-LiveShow -Config $config -Toggles $toggles -RunOnce:$false -Duration $Duration)
 
             # Brief sleep after each interrupt / completion to prevent CPU spinning
             # in case Invoke-LiveShow returns very rapidly (e.g. redirected input).
@@ -61,7 +64,7 @@ function Invoke-ForgumLive {
             if ($keyAvailable) {
                 $key = [Console]::ReadKey($true)
                 switch ($key.Key) {
-                    'L' { 
+                    'L' {
                         $toggles.Lolcat = -not $toggles.Lolcat
                     }
                     'A' {
@@ -86,7 +89,7 @@ function Invoke-ForgumLive {
     }
     finally {
         # Restore cursor
-        try { [Console]::CursorVisible = $cursorVisible } catch {}
+        try { [Console]::CursorVisible = $cursorVisible } catch { Write-Verbose "Could not restore cursor" }
         Write-Host "`nShowcase ended."
     }
 }

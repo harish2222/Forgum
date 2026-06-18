@@ -32,7 +32,7 @@ function Show-CFAnimation {
     $duration = if ($config.animation.duration) { $config.animation.duration } else { 12 }
 
     # If the mode is literally 'random' or not specified properly, pick a random engine mode
-    if ($mode -eq 'random' -or $mode -eq $null -or $mode -eq '') {
+    if ($mode -eq 'random' -or $null -eq $mode -or $mode -eq '') {
         $availableEffects = @('aurora', 'ember', 'shatter', 'plasma', 'liquid-chrome', 'portal', 'glitch', 'neon-pulse')
         $mode = $availableEffects | Get-Random
     }
@@ -46,9 +46,9 @@ function Show-CFAnimation {
             'typewriter' { return (Invoke-TypewriterAnimation -CowOutput $CowOutput -Message $Message) }
             'dynamic'    { return (Invoke-DynamicAnimation -Duration $duration -CycleInterval $config.animation.cycleInterval) }
             'procedural' { return (Invoke-ProceduralAnimation -CowOutput $CowOutput -Duration $duration) }
-            'physics'    { 
+            'physics'    {
                 $effCow = if ($CowName) { $CowName } else { $config.cow.file }
-                return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration -CowName $effCow) 
+                return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration -CowName $effCow)
             }
         }
     }
@@ -68,7 +68,7 @@ function Show-CFAnimation {
         if ($success) { return "" }
         Write-Warning "forgum-engine failed or not found. Falling back to native physics."
         $mode = 'physics' # Fallback
-        return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration) 
+        return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration)
     }
 
     # Legacy static/rust modes
