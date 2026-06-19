@@ -160,6 +160,10 @@ $defaultCow = Get-UserSelection -Prompt "Choose default cow:" -Options $cowOptio
 Show-Section "Animation Mode"
 $animMode = Get-UserSelection -Prompt "Choose animation mode:" -Options @('static', 'dynamic', 'talking', 'typewriter', 'rainbow', 'fade', 'bounce', 'pulse', 'slide', 'blink', 'scroll') -Default "static" -NonInteractive:$NonInteractive
 
+# ── Toggle 4.5: Daily Auto-Update ──
+Show-Section "Daily Auto-Update"
+$autoUpdate = Get-UserChoice "Enable background daily auto-update check?" $true -NonInteractive:$NonInteractive
+
 # ── Toggle 5: Shell Aliases ──
 Show-Section "Shell Aliases"
 $addAliases = Get-UserChoice "Add quick aliases (cowconfig, cowpreview, cowgallery, etc.)?" $true -NonInteractive:$NonInteractive
@@ -174,6 +178,7 @@ Show-Section "Applying Configuration"
 $config.lolcat.enabled = $lolcatEnabled
 $config.cow.file = $defaultCow
 $config.animation.mode = $animMode
+$config.update.autoCheck = $autoUpdate
 Set-CFConfig -Config $config -Confirm:$(-not $Force)
 Write-Host "  Config saved" -ForegroundColor Green
 
@@ -247,6 +252,7 @@ Write-Host "    Fortune on startup: $fortuneOnStartup" -ForegroundColor Cyan
 Write-Host "    Lolcat rainbow:     $lolcatEnabled" -ForegroundColor Cyan
 Write-Host "    Default cow:        $defaultCow" -ForegroundColor Cyan
 Write-Host "    Animation mode:     $animMode" -ForegroundColor Cyan
+Write-Host "    Daily auto-update:  $autoUpdate" -ForegroundColor Cyan
 Write-Host "    Shell aliases:      $addAliases" -ForegroundColor Cyan
 Write-Host "    Tab completion:     $addCompletion" -ForegroundColor Cyan
 Write-Host ""

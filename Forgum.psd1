@@ -29,6 +29,7 @@
         'Show-CFConfig'
         'Invoke-ForgumTUI'
         'Set-ForgumProfile'
+        'forgum'
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()

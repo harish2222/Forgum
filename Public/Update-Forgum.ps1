@@ -1,4 +1,4 @@
-﻿function Update-Forgum {
+function Update-Forgum {
     <#
     .SYNOPSIS
         Checks for and applies updates to Forgum.
@@ -9,7 +9,10 @@
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter()]
-        [switch]$Force
+        [switch]$Force,
+
+        [Parameter()]
+        [switch]$CheckOnly
     )
 
     Write-Host "Checking for Forgum updates..." -ForegroundColor Cyan
@@ -54,6 +57,14 @@
         $installPath = $module.ModuleBase
 
         if ($latestComparable -gt [version]$currentVersion) {
+            if ($CheckOnly) {
+                # Just write a flag file and exit
+                $configDir = Split-Path (Get-CFConfigPath) -Parent
+                $flagPath = Join-Path $configDir ".update_available"
+                $latestVersion | Out-File -FilePath $flagPath -Force -Encoding utf8
+                return
+            }
+
             Write-Host "Update available! v$currentVersion -> v$latestVersion" -ForegroundColor Yellow
 
             # Detect install method
@@ -113,6 +124,10 @@
                               -Recurse -Force
 
                     Write-Host "Update complete! Restart your shell to use the new version." -ForegroundColor Green
+
+                    $configDir = Split-Path (Get-CFConfigPath) -Parent
+                    $flagPath = Join-Path $configDir ".update_available"
+                    if (Test-Path $flagPath) { Remove-Item $flagPath -Force -ErrorAction SilentlyContinue }
                 }
                 finally {
                     if (Test-Path $tempRoot) {

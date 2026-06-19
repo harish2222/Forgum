@@ -100,6 +100,7 @@ $script:DefaultConfigSections = @{
     output = @{ wordWrap = $true; maxWidth = 60; noWrap = $false }
     startup = @{ enabled = $true; command = 'Invoke-Forgum' }
     shell = @{ integration = 'auto'; tmux = @{ enabled = $false; pane = 'status-right' } }
+    update = @{ autoCheck = $true; lastCheck = '1970-01-01T00:00:00Z' }
 }
 
 # Auto-start: render a single static cow with lolcat on every import.
@@ -116,10 +117,33 @@ if ($env:FORGUM_NOAUTOSTART -ne '1' -and
     $Host.Name -ne 'ServerRemoteHost') {
     if (Get-Command Invoke-Forgum -ErrorAction Ignore) {
         try {
+            # Update check
+            $realConfig = Get-CFConfig
+            $configDir = Split-Path (Get-CFConfigPath) -Parent
+            $flagPath = Join-Path $configDir ".update_available"
+
+            if (Test-Path $flagPath) {
+                Write-Host "`n🚀 A new version of Forgum is available! Run 'forgum update' to upgrade.`n" -ForegroundColor Yellow
+            }
+
+            if ($realConfig.update.autoCheck) {
+                try {
+                    $lastCheck = [datetime]($realConfig.update.lastCheck)
+                    if ([datetime]::UtcNow -gt $lastCheck.AddHours(24)) {
+                        $realConfig.update.lastCheck = [datetime]::UtcNow.ToString('o')
+                        Set-CFConfig -Config $realConfig
+                        $checkCmd = "Import-Module Forgum; Update-Forgum -CheckOnly"
+                        Start-Process -FilePath "pwsh" -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-Command", $checkCmd -ErrorAction SilentlyContinue
+                    }
+                } catch {
+                    Write-Verbose "Auto-update check failed to parse timestamp: $_"
+                }
+            }
+
             # Signal to Show-CFAnimation that this is auto-start: use --once
             # so the binary exits after one frame and never blocks startup.
             $script:IsAutoStart = $true
-            $config = Get-CFConfig
+            $config = $realConfig | Select-Object *
             $config.cow.random = $true
             $config.lolcat.enabled = $true
 

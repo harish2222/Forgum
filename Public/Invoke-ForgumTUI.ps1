@@ -26,6 +26,7 @@ function Invoke-ForgumTUI {
         @{ Name="Lolcat Rainbow"; Type="bool"; Value=[bool]$config.lolcat.enabled },
         @{ Name="Default Cow"; Type="list"; Options=$cows; Value=$config.cow.file },
         @{ Name="Animation Mode"; Type="list"; Options=$animModes; Value=$config.animation.mode },
+        @{ Name="Daily Auto-Update"; Type="bool"; Value=[bool]$config.update.autoCheck },
         @{ Name="Shell Aliases"; Type="bool"; Value=$addAliases },
         @{ Name="Tab Completion"; Type="bool"; Value=$addCompletion },
         @{ Name="Save & Apply"; Type="action" },
@@ -112,11 +113,12 @@ function Invoke-ForgumTUI {
                             $config.lolcat.enabled = $menuItems[1].Value
                             $config.cow.file = $menuItems[2].Value
                             $config.animation.mode = $menuItems[3].Value
+                            $config.update.autoCheck = $menuItems[4].Value
                             Set-CFConfig -Config $config
 
                             Set-ForgumProfile -FortuneOnStartup $menuItems[0].Value `
-                                              -AddAliases $menuItems[4].Value `
-                                              -AddCompletion $menuItems[5].Value
+                                              -AddAliases $menuItems[5].Value `
+                                              -AddCompletion $menuItems[6].Value
                         }
                     }
                 }
@@ -137,11 +139,12 @@ function Invoke-ForgumTUI {
                             $config.lolcat.enabled = $menuItems[1].Value
                             $config.cow.file = $menuItems[2].Value
                             $config.animation.mode = $menuItems[3].Value
+                            $config.update.autoCheck = $menuItems[4].Value
                             Set-CFConfig -Config $config
 
                             Set-ForgumProfile -FortuneOnStartup $menuItems[0].Value `
-                                              -AddAliases $menuItems[4].Value `
-                                              -AddCompletion $menuItems[5].Value
+                                              -AddAliases $menuItems[5].Value `
+                                              -AddCompletion $menuItems[6].Value
                         }
                     }
                 }
