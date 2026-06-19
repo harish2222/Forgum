@@ -16,11 +16,14 @@ Forgum integrates three classic terminal utilities into a cohesive, highly-perfo
 
 ## 🚀 Quick Start
 
-Once installed, the primary way to interact with Forgum is through the `Invoke-Forgum` command.
+Once installed, the primary way to interact with Forgum is through the `forgum` command.
 
 ```powershell
 # Display a random fortune with a random character in rainbow colors
-Invoke-Forgum -Lolcat
+forgum -Lolcat
+
+# Open the interactive configuration menu
+forgum config
 ```
 
 ---
@@ -28,36 +31,39 @@ Invoke-Forgum -Lolcat
 ## 🎨 Primary Commands
 
 ### 1. Generating ASCII Art
-Use `Invoke-Cowsay` for direct message generation with specific characters.
+Use `forgum` directly for message generation with specific characters.
 
 ```powershell
 # Display a custom message using the 'dragon' character
-Invoke-Cowsay -Text "System systems operational." -CowFile dragon
+forgum "System systems operational." -Cow dragon
 
 # Use the 'kitty' character
-Invoke-Cowsay -Text "Observation recorded." -CowFile kitty
+forgum "Observation recorded." -Cow kitty
 ```
 
 ### 2. Configuration Management
-The `Set-Forgum` command is the recommended way to persistently update your preferences.
+The `forgum config` command is the recommended way to persistently update your preferences visually. For quick toggles from the terminal:
 
 ```powershell
-# Persistently set the default character and animation mode
-Set-Forgum -Cow dragon -Animation bounce
+# Change the default character animation mode
+forgum animate bounce
 
-# Enable global rainbow colorization and set custom eyes
-Set-Forgum -Lolcat $true -Eyes "@@"
+# Set custom eyes globally
+forgum eyes "@@"
+
+# Toggle global rainbow colorization
+forgum toggle
 ```
 
 ### 3. Character Gallery
 Explore the full library of 107 characters:
 
 ```powershell
-# List all character names
-Get-CFCow
-
 # View a random sample of characters
-cowgallery -Count 3
+forgum gallery -Count 3
+
+# Preview a specific character
+forgum preview ghost "Boo!"
 ```
 
 ---
@@ -69,13 +75,13 @@ Modify the visual state of your character using eye presets:
 
 ```powershell
 # Stoned mood
-Invoke-Cowsay -Text "Processing..." -Eyes **
+forgum "Processing..." -Eyes **
 
 # Dead mood
-Invoke-Cowsay -Text "Critical Error." -Eyes xx
+forgum "Critical Error." -Eyes xx
 
 # Paranoia mood
-Invoke-Cowsay -Text "Unauthorized access detected." -Eyes @@
+forgum "Unauthorized access detected." -Eyes @@
 ```
 
 ### Rainbow Colorization (Lolcat)
@@ -83,7 +89,7 @@ Toggle global colorization or adjust the frequency:
 
 ```powershell
 # Toggle global lolcat state
-lolcat-toggle
+forgum toggle
 
 # Adjust color frequency via configuration
 Set-Forgum -RainbowFrequency 0.05
