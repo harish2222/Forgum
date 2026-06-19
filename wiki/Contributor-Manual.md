@@ -10,7 +10,7 @@ Forgum is a pure PowerShell module optimized for performance, security, and cros
 
 The root module dots-sources functions from the `Public/` and `Private/` directories.
 
-*   **Public Functions**: Exported cmdlets intended for end-user interaction (e.g., `Invoke-Forgum`, `Set-Forgum`).
+*   **Public Functions**: Exported cmdlets intended for end-user interaction (e.g., `forgum`, `Set-Forgum`).
 *   **Private Functions**: Internal helper functions for text formatting, color generation, and animation logic.
 *   **Initialization**: Handles Virtual Terminal (VT) processing setup on Windows to ensure 24-bit color support.
 

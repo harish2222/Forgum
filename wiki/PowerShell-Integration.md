@@ -50,7 +50,7 @@ Copy and paste these lines into your profile file:
 Import-Module Forgum -ErrorAction SilentlyContinue
 
 # Show a cow with a random fortune when PowerShell starts
-Invoke-Forgum
+forgum
 ```
 
 ## Step 4: Save and Restart
@@ -67,7 +67,7 @@ You should see a cow with a fortune!
 
 ```powershell
 Import-Module Forgum -ErrorAction SilentlyContinue
-Invoke-Forgum
+forgum
 ```
 
 ### Setup 2: Random Cow Every Time
@@ -78,7 +78,7 @@ Import-Module Forgum -ErrorAction SilentlyContinue
 # Pick a random cow and show a fortune
 $cows = Get-CFCow
 $randomCow = $cows | Get-Random
-Invoke-Forgum -CowFile $randomCow.Name
+forgum -CowFile $randomCow.Name
 ```
 
 ### Setup 3: Different Cow for Each Day
@@ -89,7 +89,7 @@ Import-Module Forgum -ErrorAction SilentlyContinue
 # Use day of year to pick a consistent cow for the day
 $cows = Get-CFCow
 $dayCow = $cows[(Get-Date).DayOfYear % $cows.Count]
-Invoke-Forgum -CowFile $dayCow.Name
+forgum -CowFile $dayCow.Name
 ```
 
 ### Setup 4: Rainbow Mode
@@ -102,7 +102,7 @@ $config = Get-CFConfig
 $config.lolcat.enabled = $true
 Set-CFConfig -Config $config
 
-Invoke-Forgum
+forgum
 ```
 
 ### Setup 5: Quiet Mode (Only on First Open)
@@ -113,7 +113,7 @@ Import-Module Forgum -ErrorAction SilentlyContinue
 # Only show fortune if this is the first PowerShell window
 $hostWindow = (Get-Process -Id $PID).MainWindowTitle
 if ($hostWindow -eq 'Windows PowerShell' -or $hostWindow -eq 'pwsh') {
-    Invoke-Forgum
+    forgum
 }
 ```
 
@@ -131,8 +131,8 @@ These are complete, ready-to-use profile snippets for common setups.
 
 Import-Module Forgum -ErrorAction SilentlyContinue
 
-# Invoke-Forgum calls the default cow and a random fortune
-Invoke-Forgum
+# forgum calls the default cow and a random fortune
+forgum
 ```
 
 **Expected output:**
@@ -160,7 +160,7 @@ Import-Module Forgum -ErrorAction SilentlyContinue
 
 function Show-FortuneCow {
     $fortune = Get-Fortune
-    Invoke-Cowsay -Text $fortune -CowFile 'tux'
+    forgum -Text $fortune -CowFile 'tux'
 }
 
 # Call on startup
@@ -196,7 +196,7 @@ Import-Module Forgum -ErrorAction SilentlyContinue
 
 function Show-FortuneCow {
     $fortune = Get-Fortune
-    Invoke-Cowsay -Text $fortune -CowFile 'tux' -Lolcat
+    forgum -Text $fortune -CowFile 'tux' -Lolcat
 }
 
 # Call on startup
@@ -218,7 +218,7 @@ Import-Module Forgum -ErrorAction SilentlyContinue
 function Show-FortuneCow {
     $fortune = Get-Fortune
     $cow = (Get-CFCow | Get-Random).Name
-    Invoke-Cowsay -Text $fortune -CowFile $cow
+    forgum -Text $fortune -CowFile $cow
 }
 
 # Call on startup
@@ -259,7 +259,7 @@ function Show-FortuneCow {
         $params['Lolcat'] = $true
     }
 
-    Invoke-Cowsay @params
+    forgum @params
 }
 
 # Call on startup
@@ -274,10 +274,10 @@ Add these handy shortcuts to your profile:
 
 ```powershell
 # Quick fortune
-function ff { Invoke-Forgum }
+function ff { forgum }
 
 # Fortune with a specific cow
-function fc { param([string]$Cow) Invoke-Forgum -CowFile $Cow }
+function fc { param([string]$Cow) forgum -CowFile $Cow }
 
 # Toggle rainbow
 function lolcat {
@@ -294,7 +294,7 @@ function forgum-set { Set-Forgum @args }
 # Random cow gallery (shows 3 cows)
 function cowgallery {
     Get-CFCow | Get-Random -Count 3 | ForEach-Object {
-        Invoke-Cowsay -Text (Get-Fortune) -CowFile $_.Name
+        forgum -Text (Get-Fortune) -CowFile $_.Name
     }
 }
 ```
@@ -326,7 +326,7 @@ alias forgum-set='pwsh -Command "Set-Forgum"'
 |:-----|:-------------|
 | `Import-Module Forgum` | Loads Forgum into PowerShell |
 | `-ErrorAction SilentlyContinue` | Ignores errors if Forgum isn't installed |
-| `Invoke-Forgum` | Shows a cow with a random fortune |
+| `forgum` | Shows a cow with a random fortune |
 | `Get-CFConfig` | Reads the current settings |
 | `Set-CFConfig` | Saves new settings |
 
@@ -335,11 +335,11 @@ alias forgum-set='pwsh -Command "Set-Forgum"'
 **"Import-Module : The specified module 'Forgum' was not loaded"**
 - Forgum isn't installed yet. Go back to [Getting Started](Getting-Started).
 
-**"Invoke-Forgum : The term 'Invoke-Forgum' is not recognized"**
+**"forgum : The term 'forgum' is not recognized"**
 - The import line might have an error. Check for typos.
 
 **No cow appears on startup**
-- Make sure `Invoke-Forgum` is on its own line in your profile.
+- Make sure `forgum` is on its own line in your profile.
 - Restart PowerShell to test.
 
 **PowerShell startup hangs for 30+ seconds after adding Forgum to my profile**

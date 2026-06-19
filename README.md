@@ -180,7 +180,7 @@ forgum animate <mode>
 forgum eyes <preset|custom>
 ```
 
-> **Note:** For script authors, low-level cmdlets like `Invoke-Forgum`, `Get-Fortune`, and `Show-CFAnimation` remain fully available and supported. Run `Get-Help forgum -Detailed` for the complete API breakdown.
+> **Note:** For script authors, low-level cmdlets like `forgum`, `Get-Fortune`, and `Show-CFAnimation` remain fully available and supported. Run `Get-Help forgum -Detailed` for the complete API breakdown.
 
 **Available Flagship Modes:** `aurora`, `plasma`, `ember`, `liquid-chrome`, `shatter`, `portal`, `glitch`, `neon-pulse`
 **Available Legacy Modes:** `static`, `talking`, `typewriter`, `dynamic`, `procedural`, `physics` (and variants)
@@ -199,7 +199,7 @@ You can customize Forgum by editing its configuration file. Run `Get-CFConfig` t
   "fortune": { "database": "fortunes", "offensive": false },
   "lolcat": { "enabled": false, "truecolor": true, "frequency": 0.1 },
   "output": { "wordWrap": true, "maxWidth": 60, "noWrap": false },
-  "startup": { "enabled": true, "command": "Invoke-Forgum" },
+  "startup": { "enabled": true, "command": "forgum" },
   "shell": { "integration": "auto" }
 }
 ```
@@ -249,7 +249,7 @@ You can customize Forgum by editing its configuration file. Run `Get-CFConfig` t
 fortune | cowsay -f $( cowsay -l | shuf -n1 )
 
 # Or use PowerShell module from bash
-pwsh -Command "Import-Module Forgum; Invoke-Forgum"
+pwsh -Command "Import-Module Forgum; forgum"
 ```
 
 ### tmux Status Bar
@@ -265,7 +265,7 @@ set -g status-interval 300
 ```powershell
 # Add to $PROFILE
 Import-Module Forgum
-Invoke-Forgum  # Show fortune on shell start
+forgum  # Show fortune on shell start
 ```
 
 ---
@@ -293,14 +293,14 @@ function cowconfig {
 # Preview any cow
 function cowpreview {
   param([string]$Cow = 'default', [string]$Text = 'Hello!')
-  Invoke-Cowsay -Text $Text -CowFile $Cow
+  forgum -Text $Text -CowFile $Cow
 }
 
 # Random cow gallery
 function cowgallery {
   param([int]$Count = 5)
   Get-CFCow | Get-Random -Count $Count | ForEach-Object {
-    Invoke-Cowsay -Text (Get-Fortune) -CowFile $_
+    forgum -Text (Get-Fortune) -CowFile $_
   }
 }
 
@@ -375,7 +375,7 @@ Your third fortune here
 
 **Fixed in v1.1.2.** If you are still experiencing this issue, update to the latest version.
 
-If PowerShell appears to hang on startup after adding `Import-Module Forgum` (or any `Invoke-Forgum*` command) to your profile, the cause is almost always an animation loop:
+If PowerShell appears to hang on startup after adding `Import-Module Forgum` (or any `forgum*` command) to your profile, the cause is almost always an animation loop:
 
 - **Root cause:** Forgum's animation engine ran an infinite loop when `animation.mode` was set to anything other than `static` (e.g. `talking`, `typewriter`, `bounce`, `disco`). If an animation fired during profile load, the loop never exited and PowerShell couldn't finish startup.
 - **Fix 1 — update Forgum** (recommended):

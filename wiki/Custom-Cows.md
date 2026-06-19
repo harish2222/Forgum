@@ -61,7 +61,7 @@ $the_cow = <<EOC;
 EOC
 ```
 
-Now when someone uses `Invoke-Cowsay -Eyes '@@'`, the cow will show `@@` instead of `oo`!
+Now when someone uses `forgum -Eyes '@@'`, the cow will show `@@` instead of `oo`!
 
 ## Example Cows
 
@@ -128,7 +128,7 @@ EOC
 2. Run this command:
 
 ```powershell
-Invoke-Cowsay -Text "Hello from my cow!" -CowFile 'mycow'
+forgum -Text "Hello from my cow!" -CowFile 'mycow'
 ```
 
 ## Tips for Good Cows

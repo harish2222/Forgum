@@ -59,9 +59,9 @@ Given Forgum's constraints (PowerShell, zero external dependencies, fast executi
     *   Since we have zero external dependencies, we can use built-in .NET classes like `[System.Drawing.Image]` or `[System.Windows.Media.Imaging.GifBitmapDecoder]` (depending on PS edition compatibility) to extract frames from a `.gif`.
     *   Downsample each frame into a "HalfBlock" (`▀▄█`) string grid using ANSI TrueColor (`\e[38;2;R;G;Bm`).
     *   Loop and render the frames using a strict `[System.Diagnostics.Stopwatch]` to maintain accurate FPS timings.
-*   **Use Cases:** `Invoke-Forgum -GifPath ./nyancat.gif` which renders Nyan Cat inside the terminal using truecolor half-blocks.
+*   **Use Cases:** `forgum -GifPath ./nyancat.gif` which renders Nyan Cat inside the terminal using truecolor half-blocks.
 
 ## Next Steps for Development
 1.  **Cursor Control Utility:** Add a robust internal helper in `Private/` for ANSI cursor positioning (`\e[<r>;<c>H`).
 2.  **String Buffer Renderer:** Refactor `Show-CFAnimation.ps1` to use a double-buffering concept where the entire next frame is built in a `StringBuilder` before being written, ensuring smooth >30 FPS playback.
-3.  **Prototype Phase 1:** Create a new switch `Invoke-Forgum -AnimateCow` that uses template replacement to make a cow's eyes blink.
+3.  **Prototype Phase 1:** Create a new switch `forgum -AnimateCow` that uses template replacement to make a cow's eyes blink.

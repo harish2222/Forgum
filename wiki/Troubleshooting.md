@@ -25,7 +25,7 @@ This guide helps you fix common problems with Forgum. If something isn't working
    Import-Module Forgum -Force
    ```
 
-### "Invoke-Forgum : The term 'Invoke-Forgum' is not recognized"
+### "forgum : The term 'forgum' is not recognized"
 
 **What it means:** Forgum is loaded but the command name is wrong.
 
@@ -33,7 +33,7 @@ This guide helps you fix common problems with Forgum. If something isn't working
 
 1. Make sure you're using the right command:
    ```powershell
-   Invoke-Forgum
+   forgum
    ```
 
 2. Check what commands Forgum provides:
@@ -41,7 +41,7 @@ This guide helps you fix common problems with Forgum. If something isn't working
    Get-Command -Module Forgum
    ```
 
-3. If you see `Invoke-CowsayFortune` instead of `Invoke-Forgum`, you might have an old version. Reinstall Forgum.
+3. If you see `forgumFortune` instead of `forgum`, you might have an old version. Reinstall Forgum.
 
 ### "Cow file not found"
 
@@ -56,7 +56,7 @@ This guide helps you fix common problems with Forgum. If something isn't working
 
 2. Use the exact name from the list (without `.cow`):
    ```powershell
-   Invoke-Cowsay -Text "Hello" -CowFile 'tux'
+   forgum -Text "Hello" -CowFile 'tux'
    ```
 
 3. If you created a custom cow, make sure it's in the `Data/Cows/` folder.
@@ -87,12 +87,12 @@ This guide helps you fix common problems with Forgum. If something isn't working
 
 1. Try with verbose output:
    ```powershell
-   Invoke-Forgum -Verbose
+   forgum -Verbose
    ```
 
 2. Check if your terminal supports the output:
    ```powershell
-   Invoke-Cowsay -Text "Test" | Out-Host
+   forgum -Text "Test" | Out-Host
    ```
 
 3. Make sure your terminal window isn't too small.
@@ -185,7 +185,7 @@ This guide helps you fix common problems with Forgum. If something isn't working
 
 ### PowerShell startup hangs for 30+ seconds
 
-**What it means:** PowerShell takes a long time to start (or appears to hang) after adding `Import-Module Forgum` to your profile, or running a `Invoke-Forgum*` command on shell startup.
+**What it means:** PowerShell takes a long time to start (or appears to hang) after adding `Import-Module Forgum` to your profile, or running a `forgum*` command on shell startup.
 
 **Root cause:** Forgum's animation engine runs an infinite loop when `animation.mode` is set to anything other than `static` (e.g. `talking`, `typewriter`, `bounce`, `disco`, etc.). When an animation is triggered during profile load, the loop never exits and PowerShell cannot finish startup.
 

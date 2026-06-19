@@ -25,10 +25,10 @@ Forgum is a fun PowerShell tool that shows your terminal a cow saying a random q
 
 ```powershell
 # Show a cow with a random fortune
-Invoke-Forgum
+forgum
 
 # Show your own message
-Invoke-Cowsay -Text "Hello World!"
+forgum -Text "Hello World!"
 
 # Get just a fortune (no cow)
 Get-Fortune
@@ -38,7 +38,7 @@ Get-CFCow
 
 # Enable rainbow colors
 Set-CFConfig -Config @{ lolcat = @{ enabled = $true } }
-Invoke-Forgum
+forgum
 ```
 
 ## Requirements

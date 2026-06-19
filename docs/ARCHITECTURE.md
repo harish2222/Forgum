@@ -9,10 +9,10 @@ The project is designed to be extremely lightweight, utilizing PowerShell's `[Sy
 
 ## Core Pipeline
 
-When `Invoke-Forgum` is executed, the following pipeline occurs:
+When `forgum` is executed, the following pipeline occurs:
 
 1. **Fortune Generation (`Get-Fortune`)**: A random fortune is retrieved from the `fortunes.txt` database.
-2. **Cow Assembly (`Invoke-Cowsay`)**: The text is wrapped in a dynamically generated speech or thought bubble. A randomly selected ASCII cow (or a user-specified one) is appended beneath the bubble.
+2. **Cow Assembly (`forgum`)**: The text is wrapped in a dynamically generated speech or thought bubble. A randomly selected ASCII cow (or a user-specified one) is appended beneath the bubble.
 3. **Animation (`Show-CFAnimation` -> `Invoke-PhysicsCow`)**: 
    - The combined text (speech bubble + cow) is parsed. 
    - The speech bubble is **isolated** to remain perfectly static at the top of the terminal.
@@ -50,8 +50,8 @@ Cows are assigned specific mathematical behaviors via `Data/Cows/animations.json
 Forgum/
 ├── Forgum.psd1 / .psm1       # Module manifest and initialization
 ├── Public/
-│   ├── Invoke-Forgum.ps1     # Main entry point pipeline
-│   ├── Invoke-Cowsay.ps1     # Core cowsay string assembler
+│   ├── forgum.ps1     # Main entry point pipeline
+│   ├── forgum.ps1     # Core cowsay string assembler
 │   └── Show-CFAnimation.ps1  # Animation routing dispatcher
 ├── Private/
 │   ├── Animation/

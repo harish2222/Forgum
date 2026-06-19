@@ -86,7 +86,7 @@ Import-Module Forgum
 ### Step 4: Test
 
 ```powershell
-Invoke-Forgum
+forgum
 ```
 
 ## Install from PSGallery
@@ -138,7 +138,7 @@ Get-Module -ListAvailable | Where-Object {$_.Name -eq "Forgum"}
 (Get-Module Forgum).Version
 
 # Test it
-Invoke-Forgum
+forgum
 ```
 
 ## Uninstall
@@ -172,7 +172,7 @@ pwsh -File <path-to-uninstall.ps1>
 2. Remove from your profile:
    - Open your PowerShell profile (`$PROFILE`)
    - Delete the `Import-Module Forgum` line
-   - Delete the `Invoke-Forgum` line
+   - Delete the `forgum` line
 
 3. Delete config (optional):
    ```powershell

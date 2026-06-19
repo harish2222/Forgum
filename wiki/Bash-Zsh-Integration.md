@@ -48,12 +48,12 @@ Add these lines at the end:
 
 # Show a cow with a fortune
 forgum() {
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
 }
 
 # Show your own message
 cow() {
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$*'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$*'"
 }
 
 # Get just a fortune (no cow)
@@ -117,7 +117,7 @@ forgum
 random_cow() {
     local cows=("default" "tux" "dragon" "cat" "elephant" "doge" "bunny" "moose" "whale")
     local cow=${cows[$RANDOM % ${#cows[@]}]}
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$cow'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$cow'"
 }
 random_cow
 ```
@@ -137,7 +137,7 @@ These are complete, ready-to-use snippets for common setups. Add them to your `~
 # Shows a cow with a random fortune every time you open a terminal.
 
 forgum() {
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
 }
 
 # Show fortune on every terminal open
@@ -153,7 +153,7 @@ forgum
 # Shows a cow with a random fortune every time you open a terminal.
 
 forgum() {
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
 }
 
 # Show fortune on every terminal open
@@ -186,7 +186,7 @@ forgum
 forgum_tux() {
     local fortune
     fortune=$(pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-Fortune")
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$fortune' -CowFile 'tux'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$fortune' -CowFile 'tux'"
 }
 
 # Call on startup
@@ -204,7 +204,7 @@ forgum_tux
 forgum_tux() {
     local fortune
     fortune=$(pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-Fortune")
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$fortune' -CowFile 'tux'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$fortune' -CowFile 'tux'"
 }
 
 # Call on startup
@@ -226,7 +226,7 @@ forgum_tux
 forgum_tux_rainbow() {
     local fortune
     fortune=$(pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-Fortune")
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$fortune' -CowFile 'tux' -Lolcat"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$fortune' -CowFile 'tux' -Lolcat"
 }
 
 # Call on startup
@@ -244,7 +244,7 @@ forgum_tux_rainbow
 forgum_tux_rainbow() {
     local fortune
     fortune=$(pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-Fortune")
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$fortune' -CowFile 'tux' -Lolcat"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$fortune' -CowFile 'tux' -Lolcat"
 }
 
 # Call on startup
@@ -268,7 +268,7 @@ forgum_random() {
     local cow=${cows[$RANDOM % ${#cows[@]}]}
     local fortune
     fortune=$(pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-Fortune")
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$fortune' -CowFile '$cow'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$fortune' -CowFile '$cow'"
 }
 
 # Call on startup
@@ -288,7 +288,7 @@ forgum_random() {
     local cow=${cows[$RANDOM % ${#cows[@]}]}
     local fortune
     fortune=$(pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-Fortune")
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$fortune' -CowFile '$cow'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$fortune' -CowFile '$cow'"
 }
 
 # Call on startup
@@ -313,7 +313,7 @@ forgum_config() {
     elif [[ -f "$HOME/.config/forgum/config.json" ]]; then
         config_file="$HOME/.config/forgum/config.json"
     else
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
         return
     fi
 
@@ -326,7 +326,7 @@ forgum_config() {
         lolcat_flag="-Lolcat"
     fi
 
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text \$(Get-Fortune) -CowFile '$cow' $lolcat_flag"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text \$(Get-Fortune) -CowFile '$cow' $lolcat_flag"
 }
 
 # Call on startup
@@ -349,7 +349,7 @@ forgum_config() {
     elif [[ -f "$HOME/.config/forgum/config.json" ]]; then
         config_file="$HOME/.config/forgum/config.json"
     else
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
         return
     fi
 
@@ -362,7 +362,7 @@ forgum_config() {
         lolcat_flag="-Lolcat"
     fi
 
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text \$(Get-Fortune) -CowFile '$cow' $lolcat_flag"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text \$(Get-Fortune) -CowFile '$cow' $lolcat_flag"
 }
 
 # Call on startup
@@ -389,8 +389,8 @@ set -g status-interval 300
 | `-NoProfile` | Doesn't load PowerShell's profile (faster) |
 | `-Command` | Runs the following PowerShell code |
 | `Import-Module Forgum` | Loads Forgum |
-| `Invoke-Forgum` | Shows cow + fortune |
-| `Invoke-Cowsay -Text` | Shows cow with your message |
+| `forgum` | Shows cow + fortune |
+| `forgum -Text` | Shows cow with your message |
 | `Get-Fortune` | Returns just a fortune |
 | `Get-CFCow` | Lists all cow characters |
 

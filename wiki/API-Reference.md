@@ -31,7 +31,7 @@ forgum eyes <preset|custom> # Sets eyes
 
 ---
 
-## `Invoke-Cowsay`
+## `forgum`
 
 Generates an ASCII art cow saying the provided text.
 
@@ -46,13 +46,13 @@ Generates an ASCII art cow saying the provided text.
 ### Examples
 ```powershell
 # Basic usage
-Invoke-Cowsay -Text "Hello, World!"
+forgum -Text "Hello, World!"
 
 # Using a different cow and custom eyes
-Invoke-Cowsay -Text "I am a Linux penguin" -Cow "tux" -Eyes "=="
+forgum -Text "I am a Linux penguin" -Cow "tux" -Eyes "=="
 ```
 
-## `Invoke-Forgum`
+## `forgum`
 
 The main entry point for the combined Forgum experience (Fortune + Cowsay + Lolcat).
 
@@ -65,13 +65,13 @@ The main entry point for the combined Forgum experience (Fortune + Cowsay + Lolc
 ### Examples
 ```powershell
 # Default behavior (Random fortune + Default cow)
-Invoke-Forgum
+forgum
 
 # Rainbow colored fortune with a specific cow
-Invoke-Forgum -Lolcat -Cow "dragon"
+forgum -Lolcat -Cow "dragon"
 
 # Custom text with rainbow colors
-Invoke-Forgum -Text "Stay awesome!" -Lolcat
+forgum -Text "Stay awesome!" -Lolcat
 ```
 
 ## `Get-Fortune`
@@ -163,7 +163,7 @@ Applies an animation effect to the provided text.
 ### Examples
 ```powershell
 # Scroll animation
-$cowText = Invoke-Cowsay -Text "Watch me move!"
+$cowText = forgum -Text "Watch me move!"
 Show-CFAnimation -Text $cowText -Mode "Scroll"
 ```
 
@@ -201,7 +201,7 @@ Changes the default eyes of your cow.
 *   **Parameters**: \-Preset\ (e.g. 'borg', 'dead', 'greedy') or \-Custom\
 *   **Example**: \cow-eyes -Preset borg\ OR \cow-eyes @@\
 
-### \Invoke-ForgumTUI\ (Alias: \orgum-tui\)
+### \forgumTUI\ (Alias: \orgum-tui\)
 Opens an interactive, keyboard-navigable Terminal User Interface to tweak your settings visually. You can change animation modes, toggle lolcat, set default cows, and update your profile automatically.
 *   **Example**: \orgum-tui\
 

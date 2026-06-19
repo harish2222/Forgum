@@ -91,7 +91,7 @@ set -g status-right "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorActi
 ### Style 3: Cow + Fortune (Left Side)
 
 ```bash
-set -g status-left "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text (Get-Fortune) -CowFile default' 2>/dev/null)"
+set -g status-left "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text (Get-Fortune) -CowFile default' 2>/dev/null)"
 ```
 
 ### Style 4: Colored Fortune
@@ -115,13 +115,13 @@ set -g status-right "#[fg=cyan]#(pwsh -NoProfile -Command 'Import-Module Forgum 
 ### Use a Specific Cow
 
 ```bash
-set -g status-right "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text (Get-Fortune) -CowFile tux' 2>/dev/null)"
+set -g status-right "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text (Get-Fortune) -CowFile tux' 2>/dev/null)"
 ```
 
 ### Use Rainbow Colors
 
 ```bash
-set -g status-right "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; `$config = Get-CFConfig; `$config.lolcat.enabled = `$true; Set-CFConfig -Config `$config; Invoke-Forgum' 2>/dev/null)"
+set -g status-right "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; `$config = Get-CFConfig; `$config.lolcat.enabled = `$true; Set-CFConfig -Config `$config; forgum' 2>/dev/null)"
 ```
 
 ### Update More Often

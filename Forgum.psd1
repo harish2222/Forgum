@@ -8,28 +8,8 @@
     Description       = 'Cross-platform cowsay + fortune + lolcat PowerShell module with 107 animal cows, rainbow colors, animations, and multi-shell integration.'
     PowerShellVersion = '5.1'
     FunctionsToExport = @(
-        'Invoke-Cowsay'
-        'Invoke-Forgum'
-        'Invoke-ForgumLive'
-        'Get-Fortune'
-        'Get-CFCow'
-        'Get-CFConfig'
-        'Set-CFConfig'
-        'Set-Forgum'
-        'Show-CFAnimation'
-        'Invoke-ForgumSetup'
-        'Update-Forgum'
-        'Start-ForgumDaemon'
-        'Stop-ForgumDaemon'
-        'Show-CFCowGallery'
-        'Show-CFCowPreview'
-        'Toggle-CFLolcat'
-        'Set-CFCowAnimate'
-        'Set-CFCowEyes'
-        'Show-CFConfig'
-        'Invoke-ForgumTUI'
-        'Set-ForgumProfile'
         'forgum'
+
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()

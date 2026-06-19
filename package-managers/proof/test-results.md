@@ -31,7 +31,7 @@ Core functionality tests covering:
 ### Comprehensive.Tests.ps1 — 30 tests
 
 Parameter permutation tests:
-- All parameter combinations for Invoke-Cowsay and Invoke-Fortune
+- All parameter combinations for forgum and Invoke-Fortune
 - Config round-trip persistence
 - Lolcat truecolor vs 256-color detection
 - Config-based lolcat toggle

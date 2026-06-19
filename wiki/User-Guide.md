@@ -103,7 +103,7 @@ Set-Forgum -RainbowFrequency 0.05
 Execute `Get-CFCow` to retrieve the complete inventory of character templates.
 
 **"How do I enable startup greetings?"**
-Startup behavior is managed during initial installation or via `Invoke-ForgumSetup`. To enable it manually, ensure `Import-Module Forgum` is present in your `$PROFILE`.
+Startup behavior is managed during initial installation or via `forgumSetup`. To enable it manually, ensure `Import-Module Forgum` is present in your `$PROFILE`.
 
 **"Is this compatible with non-PowerShell environments?"**
 Yes. Forgum provides integration samples for Bash, Zsh, Fish, and tmux. Refer to the [Sample Configs](Sample-Configs.md) documentation for details.

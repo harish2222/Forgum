@@ -216,9 +216,9 @@ function Toggle-Lolcat {
 function ff {
     $config = Get-CFConfig
     if ($config.lolcat.enabled) {
-        Invoke-Forgum -Lolcat
+        forgum -Lolcat
     } else {
-        Invoke-Forgum
+        forgum
     }
 }
 ```
@@ -235,9 +235,9 @@ ff() {
     local enabled
     enabled=$(pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; (Get-CFConfig).lolcat.enabled")
     if [[ "$enabled" == "True" ]]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -Lolcat"
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Lolcat"
     else
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
     fi
 }
 ```
@@ -253,9 +253,9 @@ end
 function ff
     set enabled (pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; (Get-CFConfig).lolcat.enabled")
     if test "$enabled" = "True"
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -Lolcat"
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Lolcat"
     else
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
     end
 end
 ```

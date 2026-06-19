@@ -8,9 +8,9 @@ Every combination of Forgum usage across all supported platforms and shells. Eac
 
 | Use Case | PowerShell | Bash/Zsh | Fish | Git-Bash | tmux |
 |----------|-----------|----------|------|----------|------|
-| Basic fortune | `Import-Module Forgum; Invoke-Forgum` | `pwsh -NoProfile -Command "... Invoke-Forgum"` | Same as Bash | Same as Bash | `set -g status-right "#(...)"` |
-| Fixed cow (tux) | `Invoke-Forgum -CowFile 'tux'` | `pwsh -Command "... Invoke-Forgum -CowFile 'tux'"` | Same as Bash | Same as Bash | `set -g status-right "#(... Invoke-Cowsay -CowFile tux ...)"` |
-| Lolcat on | `Set-CFConfig` + `Invoke-Forgum` | pwsh inline config toggle | Same as Bash | Same as Bash | pwsh inline config toggle |
+| Basic fortune | `Import-Module Forgum; forgum` | `pwsh -NoProfile -Command "... forgum"` | Same as Bash | Same as Bash | `set -g status-right "#(...)"` |
+| Fixed cow (tux) | `forgum -CowFile 'tux'` | `pwsh -Command "... forgum -CowFile 'tux'"` | Same as Bash | Same as Bash | `set -g status-right "#(... forgum -CowFile tux ...)"` |
+| Lolcat on | `Set-CFConfig` + `forgum` | pwsh inline config toggle | Same as Bash | Same as Bash | pwsh inline config toggle |
 | Random cow | `$cows \| Get-Random` | `shuf -n1` / array pick | `random 1 (count $cows)` | Same as Bash | N/A |
 | Full combo | Random cow + lolcat + fortune | pwsh -Command with all options | Fish functions | Git-Bash alias | Inline pwsh |
 
@@ -29,7 +29,7 @@ Every combination of Forgum usage across all supported platforms and shells. Eac
 Import-Module Forgum -ErrorAction SilentlyContinue
 
 # Show a cow with a random fortune when PowerShell starts
-Invoke-Forgum
+forgum
 ```
 
 **Add to your profile:**
@@ -50,7 +50,7 @@ notepad $PROFILE
 # Show a cow with a fortune when opening a new terminal
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
     fi
 fi
 ```
@@ -62,7 +62,7 @@ echo '' >> ~/.bashrc
 echo '# Forgum' >> ~/.bashrc
 echo 'if command -v pwsh &>/dev/null; then' >> ~/.bashrc
 echo '    if [ -t 1 ]; then' >> ~/.bashrc
-echo '        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null' >> ~/.bashrc
+echo '        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null' >> ~/.bashrc
 echo '    fi' >> ~/.bashrc
 echo 'fi' >> ~/.bashrc
 source ~/.bashrc
@@ -78,7 +78,7 @@ source ~/.bashrc
 # Show a cow with a fortune when opening a new terminal
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
     fi
 fi
 ```
@@ -90,7 +90,7 @@ echo '' >> ~/.zshrc
 echo '# Forgum' >> ~/.zshrc
 echo 'if command -v pwsh &>/dev/null; then' >> ~/.zshrc
 echo '    if [ -t 1 ]; then' >> ~/.zshrc
-echo '        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null' >> ~/.zshrc
+echo '        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null' >> ~/.zshrc
 echo '    fi' >> ~/.zshrc
 echo 'fi' >> ~/.zshrc
 source ~/.zshrc
@@ -105,7 +105,7 @@ source ~/.zshrc
 
 # Fish uses fish_greeting to show output on startup
 function fish_greeting
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
 end
 ```
 
@@ -115,7 +115,7 @@ end
 echo '' >> ~/.config/fish/config.fish
 echo '# Forgum' >> ~/.config/fish/config.fish
 echo 'function fish_greeting' >> ~/.config/fish/config.fish
-echo '    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null' >> ~/.config/fish/config.fish
+echo '    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null' >> ~/.config/fish/config.fish
 echo 'end' >> ~/.config/fish/config.fish
 source ~/.config/fish/config.fish
 ```
@@ -131,14 +131,14 @@ source ~/.config/fish/config.fish
 # Option A: Using PowerShell Core (pwsh) — recommended
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
     fi
 fi
 
 # Option B: Using Windows PowerShell (powershell.exe) — fallback
 # Uncomment if pwsh is not installed:
 # if [ -t 1 ]; then
-#     powershell.exe -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+#     powershell.exe -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
 # fi
 ```
 
@@ -163,7 +163,7 @@ notepad ~/.bashrc
 Import-Module Forgum -ErrorAction SilentlyContinue
 
 # Always show tux with a random fortune
-Invoke-Forgum -CowFile 'tux'
+forgum -CowFile 'tux'
 ```
 
 ### Bash (~/.bashrc)
@@ -175,7 +175,7 @@ Invoke-Forgum -CowFile 'tux'
 
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile 'tux'" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile 'tux'" 2>/dev/null
     fi
 fi
 ```
@@ -189,7 +189,7 @@ fi
 
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile 'tux'" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile 'tux'" 2>/dev/null
     fi
 fi
 ```
@@ -202,7 +202,7 @@ fi
 # ============================================
 
 function fish_greeting
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile 'tux'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile 'tux'" 2>/dev/null
 end
 ```
 
@@ -215,7 +215,7 @@ end
 
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile 'tux'" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile 'tux'" 2>/dev/null
     fi
 fi
 ```
@@ -239,7 +239,7 @@ $config.lolcat.enabled = $true
 Set-CFConfig -Config $config
 
 # Show tux with fortune in rainbow colors
-Invoke-Forgum -CowFile 'tux'
+forgum -CowFile 'tux'
 ```
 
 ### Bash (~/.bashrc)
@@ -256,7 +256,7 @@ if command -v pwsh &>/dev/null; then
             `$config = Get-CFConfig;
             `$config.lolcat.enabled = `$true;
             Set-CFConfig -Config `$config;
-            Invoke-Forgum -CowFile 'tux'
+            forgum -CowFile 'tux'
         " 2>/dev/null
     fi
 fi
@@ -276,7 +276,7 @@ if command -v pwsh &>/dev/null; then
             `$config = Get-CFConfig;
             `$config.lolcat.enabled = `$true;
             Set-CFConfig -Config `$config;
-            Invoke-Forgum -CowFile 'tux'
+            forgum -CowFile 'tux'
         " 2>/dev/null
     fi
 fi
@@ -295,7 +295,7 @@ function fish_greeting
         `$config = Get-CFConfig;
         `$config.lolcat.enabled = `$true;
         Set-CFConfig -Config `$config;
-        Invoke-Forgum -CowFile 'tux'
+        forgum -CowFile 'tux'
     " 2>/dev/null
 end
 ```
@@ -314,7 +314,7 @@ if command -v pwsh &>/dev/null; then
             `$config = Get-CFConfig;
             `$config.lolcat.enabled = `$true;
             Set-CFConfig -Config `$config;
-            Invoke-Forgum -CowFile 'tux'
+            forgum -CowFile 'tux'
         " 2>/dev/null
     fi
 fi
@@ -336,7 +336,7 @@ Import-Module Forgum -ErrorAction SilentlyContinue
 # Pick a random cow and show a fortune
 $cows = Get-CFCow
 $randomCow = $cows | Get-Random
-Invoke-Forgum -CowFile $randomCow.Name
+forgum -CowFile $randomCow.Name
 ```
 
 ### Bash (~/.bashrc)
@@ -349,7 +349,7 @@ Invoke-Forgum -CowFile $randomCow.Name
 forgum_random_cow() {
     local cows=("default" "tux" "dragon" "cat" "elephant" "doge" "bunny" "moose" "whale" "koala" "penguin" "sheep" "cow" "ghost" "robot")
     local cow=${cows[$RANDOM % ${#cows[@]}]}
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$cow'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$cow'" 2>/dev/null
 }
 
 if command -v pwsh &>/dev/null; then
@@ -369,7 +369,7 @@ fi
 forgum_random_cow() {
     local cows=("default" "tux" "dragon" "cat" "elephant" "doge" "bunny" "moose" "whale" "koala" "penguin" "sheep" "cow" "ghost" "robot")
     local cow=${cows[$((RANDOM % ${#cows[@]}))]}
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$cow'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$cow'" 2>/dev/null
 }
 
 if command -v pwsh &>/dev/null; then
@@ -389,7 +389,7 @@ fi
 function fish_greeting
     set cows default tux dragon cat elephant doge bunny moose whale koala penguin sheep cow ghost robot
     set cow $cows[(random 1 (count $cows))]
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$cow'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$cow'" 2>/dev/null
 end
 ```
 
@@ -403,7 +403,7 @@ end
 forgum_random_cow() {
     local cows=("default" "tux" "dragon" "cat" "elephant" "doge" "bunny" "moose" "whale" "koala" "penguin" "sheep" "cow" "ghost" "robot")
     local cow=${cows[$RANDOM % ${#cows[@]}]}
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$cow'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$cow'" 2>/dev/null
 }
 
 if command -v pwsh &>/dev/null; then
@@ -434,7 +434,7 @@ Set-CFConfig -Config $config
 # Pick random cow and show fortune in rainbow
 $cows = Get-CFCow
 $randomCow = $cows | Get-Random
-Invoke-Forgum -CowFile $randomCow.Name
+forgum -CowFile $randomCow.Name
 ```
 
 ### Bash (~/.bashrc)
@@ -452,7 +452,7 @@ forgum_full() {
         `$config = Get-CFConfig;
         `$config.lolcat.enabled = `$true;
         Set-CFConfig -Config `$config;
-        Invoke-Forgum -CowFile '$cow'
+        forgum -CowFile '$cow'
     " 2>/dev/null
 }
 
@@ -478,7 +478,7 @@ forgum_full() {
         `$config = Get-CFConfig;
         `$config.lolcat.enabled = `$true;
         Set-CFConfig -Config `$config;
-        Invoke-Forgum -CowFile '$cow'
+        forgum -CowFile '$cow'
     " 2>/dev/null
 }
 
@@ -504,7 +504,7 @@ function fish_greeting
         `$config = Get-CFConfig;
         `$config.lolcat.enabled = `$true;
         Set-CFConfig -Config `$config;
-        Invoke-Forgum -CowFile '$cow'
+        forgum -CowFile '$cow'
     " 2>/dev/null
 end
 ```
@@ -524,7 +524,7 @@ forgum_full() {
         `$config = Get-CFConfig;
         `$config.lolcat.enabled = `$true;
         Set-CFConfig -Config `$config;
-        Invoke-Forgum -CowFile '$cow'
+        forgum -CowFile '$cow'
     " 2>/dev/null
 }
 
@@ -571,7 +571,7 @@ if (Get-Command Get-CFConfig -ErrorAction Ignore) {
             Set-CFConfig -Config $config
         }
 
-        Invoke-Forgum @params
+        forgum @params
     }
 }
 ```
@@ -599,7 +599,7 @@ forgum_config_driven() {
                 if (`$config.lolcat.enabled) {
                     Set-CFConfig -Config `$config;
                 };
-                Invoke-Forgum @`$params;
+                forgum @`$params;
             }
         }
     " 2>/dev/null
@@ -635,7 +635,7 @@ forgum_config_driven() {
                 if (`$config.lolcat.enabled) {
                     Set-CFConfig -Config `$config;
                 };
-                Invoke-Forgum @`$params;
+                forgum @`$params;
             }
         }
     " 2>/dev/null
@@ -671,7 +671,7 @@ function fish_greeting
                 if (`$config.lolcat.enabled) {
                     Set-CFConfig -Config `$config;
                 };
-                Invoke-Forgum @`$params;
+                forgum @`$params;
             }
         }
     " 2>/dev/null
@@ -701,7 +701,7 @@ forgum_config_driven() {
                 if (`$config.lolcat.enabled) {
                     Set-CFConfig -Config `$config;
                 };
-                Invoke-Forgum @`$params;
+                forgum @`$params;
             }
         }
     " 2>/dev/null
@@ -774,7 +774,7 @@ set -g status-right-style fg=cyan
 # Forgum - Cow + Fortune on Left Side of tmux
 # ============================================
 
-set -g status-left "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text (Get-Fortune) -CowFile default' 2>/dev/null)"
+set -g status-left "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text (Get-Fortune) -CowFile default' 2>/dev/null)"
 set -g status-interval 300
 set -g status-style bg=black,fg=white
 set -g status-left-style fg=green
@@ -787,7 +787,7 @@ set -g status-left-style fg=green
 # Forgum - Tux in tmux Status Bar
 # ============================================
 
-set -g status-right "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text (Get-Fortune) -CowFile tux' 2>/dev/null)"
+set -g status-right "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text (Get-Fortune) -CowFile tux' 2>/dev/null)"
 set -g status-interval 300
 ```
 
@@ -826,13 +826,13 @@ tmux new-session
 Import-Module Forgum -ErrorAction SilentlyContinue
 
 # Quick fortune — type `ff` to see a cow
-function ff { Invoke-Forgum }
+function ff { forgum }
 
 # Fortune with a specific cow — type `fc tux`
-function fc { param([string]$Cow) Invoke-Forgum -CowFile $Cow }
+function fc { param([string]$Cow) forgum -CowFile $Cow }
 
 # Cowsay with your own message — type `cow hello`
-function cow { param([string]$Text) Invoke-Cowsay -Text $Text }
+function cow { param([string]$Text) forgum -Text $Text }
 
 # Toggle rainbow — type `lolcat`
 function lolcat {
@@ -846,7 +846,7 @@ function lolcat {
 function cowgallery {
     param([int]$Count = 3)
     Get-CFCow | Get-Random -Count $Count | ForEach-Object {
-        Invoke-Cowsay -Text (Get-Fortune) -CowFile $_.Name
+        forgum -Text (Get-Fortune) -CowFile $_.Name
     }
 }
 
@@ -856,7 +856,7 @@ function cowconfig { Get-CFConfig | ConvertTo-Json -Depth 4 }
 # Preview a cow — type `cowpreview dragon`
 function cowpreview {
     param([string]$Cow = 'default', [string]$Text = 'Hello!')
-    Invoke-Cowsay -Text $Text -CowFile $Cow
+    forgum -Text $Text -CowFile $Cow
 }
 
 # Set animation — type `cow-animate typewriter`
@@ -885,8 +885,8 @@ function cow-eyes {
     Write-Host "Cow eyes: $eyes"
 }
 
-# Tab completion for Invoke-Cowsay -CowFile
-Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -ScriptBlock {
+# Tab completion for forgum -CowFile
+Register-ArgumentCompleter -CommandName forgum -ParameterName CowFile -ScriptBlock {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     Get-CFCow | Where-Object { $_ -like "*$wordToComplete*" } | ForEach-Object {
         [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
@@ -902,16 +902,16 @@ Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -Sc
 # ============================================
 
 # Quick fortune
-alias ff='pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"'
+alias ff='pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"'
 
 # Fortune with a specific cow — fc tux
 fc() {
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$1'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$1'" 2>/dev/null
 }
 
 # Cowsay with your own message — cow hello
 cow() {
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$*'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$*'" 2>/dev/null
 }
 
 # Toggle rainbow
@@ -932,7 +932,7 @@ alias cowconfig='pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction Sil
 cowpreview() {
     local cow=${1:-default}
     local text=${2:-Hello!}
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$text' -CowFile '$cow'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$text' -CowFile '$cow'" 2>/dev/null
 }
 
 # Random cow gallery
@@ -941,7 +941,7 @@ cowgallery() {
     pwsh -NoProfile -Command "
         Import-Module Forgum -ErrorAction SilentlyContinue;
         Get-CFCow | Get-Random -Count $count | ForEach-Object {
-            Invoke-Cowsay -Text (Get-Fortune) -CowFile `$_.Name
+            forgum -Text (Get-Fortune) -CowFile `$_.Name
         }
     " 2>/dev/null
 }
@@ -968,17 +968,17 @@ cow-animate() {
 
 # Quick fortune
 function ff
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
 end
 
 # Fortune with a specific cow — fc tux
 function fc
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$argv[1]'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$argv[1]'" 2>/dev/null
 end
 
 # Cowsay with your own message — cow hello
 function cow
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$argv'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$argv'" 2>/dev/null
 end
 
 # Toggle rainbow
@@ -1001,7 +1001,7 @@ end
 function cowpreview
     set cow (test (count $argv) -gt 0; and echo $argv[1]; or echo default)
     set text (test (count $argv) -gt 1; and echo $argv[2]; or echo Hello!)
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$text' -CowFile '$cow'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$text' -CowFile '$cow'" 2>/dev/null
 end
 
 # Random cow gallery
@@ -1010,7 +1010,7 @@ function cowgallery
     pwsh -NoProfile -Command "
         Import-Module Forgum -ErrorAction SilentlyContinue;
         Get-CFCow | Get-Random -Count $count | ForEach-Object {
-            Invoke-Cowsay -Text (Get-Fortune) -CowFile `$_.Name
+            forgum -Text (Get-Fortune) -CowFile `$_.Name
         }
     " 2>/dev/null
 end
@@ -1078,7 +1078,7 @@ function cowpreview {
         [string]$Cow = 'default',
         [string]$Text = 'Hello!'
     )
-    Invoke-Cowsay -Text $Text -CowFile $Cow
+    forgum -Text $Text -CowFile $Cow
 }
 
 # ── cowgallery: Show a random gallery of cows ──
@@ -1087,7 +1087,7 @@ function cowpreview {
 function cowgallery {
     param([int]$Count = 5)
     Get-CFCow | Get-Random -Count $Count | ForEach-Object {
-        Invoke-Cowsay -Text (Get-Fortune) -CowFile $_
+        forgum -Text (Get-Fortune) -CowFile $_
     }
 }
 
@@ -1189,7 +1189,7 @@ cowconfig() {
 cowpreview() {
     local cow=${1:-default}
     local text=${2:-Hello!}
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$text' -CowFile '$cow'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$text' -CowFile '$cow'" 2>/dev/null
 }
 
 # ── cowgallery: Random gallery ──
@@ -1198,7 +1198,7 @@ cowgallery() {
     pwsh -NoProfile -Command "
         Import-Module Forgum -ErrorAction SilentlyContinue;
         Get-CFCow | Get-Random -Count $count | ForEach-Object {
-            Invoke-Cowsay -Text (Get-Fortune) -CowFile `$_.Name
+            forgum -Text (Get-Fortune) -CowFile `$_.Name
         }
     " 2>/dev/null
 }
@@ -1295,7 +1295,7 @@ end
 function cowpreview
     set cow (test (count $argv) -gt 0; and echo $argv[1]; or echo default)
     set text (test (count $argv) -gt 1; and echo $argv[2]; or echo Hello!)
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$text' -CowFile '$cow'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$text' -CowFile '$cow'" 2>/dev/null
 end
 
 # ── cowgallery: Random gallery ──
@@ -1304,7 +1304,7 @@ function cowgallery
     pwsh -NoProfile -Command "
         Import-Module Forgum -ErrorAction SilentlyContinue;
         Get-CFCow | Get-Random -Count $count | ForEach-Object {
-            Invoke-Cowsay -Text (Get-Fortune) -CowFile `$_.Name
+            forgum -Text (Get-Fortune) -CowFile `$_.Name
         }
     " 2>/dev/null
 end
@@ -1422,7 +1422,7 @@ end
   },
   "startup": {
     "enabled": true,
-    "command": "Invoke-Forgum"
+    "command": "forgum"
   },
   "shell": {
     "integration": "auto",
@@ -1496,7 +1496,7 @@ end
 | Field | Type | Default | Description |
 |:------|:-----|:--------|:------------|
 | `enabled` | `boolean` | `true` | Show fortune cow on terminal startup |
-| `command` | `string` | `"Invoke-Forgum"` | Command to run at startup |
+| `command` | `string` | `"forgum"` | Command to run at startup |
 
 #### `shell`
 
@@ -1567,7 +1567,7 @@ In PowerShell profiles, the `$global:FORGUM_STARTUP_DONE` variable prevents the 
 # This pattern ensures the cow only appears once per terminal session
 if (-not $global:FORGUM_STARTUP_DONE) {
     $global:FORGUM_STARTUP_DONE = $true
-    Invoke-Forgum
+    forgum
 }
 ```
 
@@ -1597,15 +1597,15 @@ Import-Module Forgum -ErrorAction SilentlyContinue
 
 ```bash
 # Suppresses stderr if pwsh or Forgum is missing
-pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
 ```
 
 ### Check Before Running
 
 ```powershell
 # PowerShell: check if Forgum is available before using it
-if (Get-Command Invoke-Forgum -ErrorAction Ignore) {
-    Invoke-Forgum
+if (Get-Command forgum -ErrorAction Ignore) {
+    forgum
 } else {
     Write-Host "Forgum not installed. Run install.ps1" -ForegroundColor Yellow
 }
@@ -1614,7 +1614,7 @@ if (Get-Command Invoke-Forgum -ErrorAction Ignore) {
 ```bash
 # Bash/Zsh: check if pwsh is available
 if command -v pwsh &>/dev/null; then
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
 else
     echo "PowerShell not installed. Install pwsh first."
 fi
@@ -1629,7 +1629,7 @@ fi
 ```powershell
 # 3 lines — that's all you need
 Import-Module Forgum -ErrorAction SilentlyContinue
-Invoke-Forgum
+forgum
 ```
 
 ### Full-Featured Profile (PowerShell)
@@ -1644,13 +1644,13 @@ Import-Module Forgum -ErrorAction SilentlyContinue
 # Startup fortune (once per session)
 if (-not $global:FORGUM_STARTUP_DONE) {
     $global:FORGUM_STARTUP_DONE = $true
-    Invoke-Forgum
+    forgum
 }
 
 # Aliases
-function ff { Invoke-Forgum }
-function fc { param([string]$Cow) Invoke-Forgum -CowFile $Cow }
-function cow { param([string]$Text) Invoke-Cowsay -Text $Text }
+function ff { forgum }
+function fc { param([string]$Cow) forgum -CowFile $Cow }
+function cow { param([string]$Text) forgum -Text $Text }
 function lolcat {
     $config = Get-CFConfig
     $config.lolcat.enabled = -not $config.lolcat.enabled
@@ -1658,12 +1658,12 @@ function lolcat {
     Write-Host "Lolcat: $(if ($config.lolcat.enabled) {'ON'} else {'OFF'})"
 }
 function cowconfig { Get-CFConfig | ConvertTo-Json -Depth 4 }
-function cowpreview { param([string]$Cow='default',[string]$Text='Hello!') Invoke-Cowsay -Text $Text -CowFile $Cow }
-function cowgallery { param([int]$Count=5) Get-CFCow | Get-Random -Count $Count | ForEach-Object { Invoke-Cowsay -Text (Get-Fortune) -CowFile $_ } }
+function cowpreview { param([string]$Cow='default',[string]$Text='Hello!') forgum -Text $Text -CowFile $Cow }
+function cowgallery { param([int]$Count=5) Get-CFCow | Get-Random -Count $Count | ForEach-Object { forgum -Text (Get-Fortune) -CowFile $_ } }
 function cow-animate { param([ValidateSet('static','talking','typewriter')]$Mode) $c = Get-CFConfig; $c.animation.mode = $Mode; Set-CFConfig -Config $c; Write-Host "Animation: $Mode" }
 
 # Tab completion
-Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -ScriptBlock {
+Register-ArgumentCompleter -CommandName forgum -ParameterName CowFile -ScriptBlock {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     Get-CFCow | Where-Object { $_ -like "*$wordToComplete*" } | ForEach-Object {
         [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
@@ -1677,7 +1677,7 @@ Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -Sc
 # 5 lines — fortune on terminal open
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
     fi
 fi
 ```
@@ -1692,17 +1692,17 @@ fi
 # Startup
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
     fi
 fi
 
 # Aliases
-alias ff='pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"'
+alias ff='pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"'
 alias cowconfig='pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-CFConfig | ConvertTo-Json -Depth 4"'
 
-fc() { pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$1'" 2>/dev/null; }
-cow() { pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$*'" 2>/dev/null; }
-cowpreview() { pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '${2:-Hello!}' -CowFile '${1:-default}'" 2>/dev/null; }
+fc() { pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$1'" 2>/dev/null; }
+cow() { pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$*'" 2>/dev/null; }
+cowpreview() { pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '${2:-Hello!}' -CowFile '${1:-default}'" 2>/dev/null; }
 lolcat-toggle() { pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; `$c = Get-CFConfig; `$c.lolcat.enabled = -not `$c.lolcat.enabled; Set-CFConfig -Config `$c" 2>/dev/null; }
 cow-animate() { pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; `$c = Get-CFConfig; `$c.animation.mode = '${1:-static}'; Set-CFConfig -Config `$c" 2>/dev/null; }
 ```
@@ -1716,20 +1716,20 @@ cow-animate() { pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction Sile
 
 # Startup
 function fish_greeting
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
 end
 
 # Aliases
 function ff
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
 end
 
 function fc
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$argv[1]'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$argv[1]'" 2>/dev/null
 end
 
 function cow
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$argv'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$argv'" 2>/dev/null
 end
 
 function cowconfig
@@ -1739,7 +1739,7 @@ end
 function cowpreview
     set cow (test (count $argv) -gt 0; and echo $argv[1]; or echo default)
     set text (test (count $argv) -gt 1; and echo $argv[2]; or echo Hello!)
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$text' -CowFile '$cow'" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$text' -CowFile '$cow'" 2>/dev/null
 end
 
 function lolcat-toggle

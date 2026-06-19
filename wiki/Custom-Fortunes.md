@@ -4,7 +4,7 @@ This guide shows you how to add your own quotes and sayings to Forgum. You can a
 
 ## How Fortunes Work
 
-Forgum reads fortunes from a text file. Each fortune is separated by a special character: `%`. When you run `Invoke-Forgum`, it picks a random fortune from the file.
+Forgum reads fortunes from a text file. Each fortune is separated by a special character: `%`. When you run `forgum`, it picks a random fortune from the file.
 
 ## Step 1: Find the Fortune File
 

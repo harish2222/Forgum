@@ -65,8 +65,8 @@ Forgum/
 ├── Forgum.psd1          # Module manifest
 ├── Forgum.psm1          # Module entry point
 ├── Public/                      # Exported functions
-│   ├── Invoke-Cowsay.ps1
-│   ├── Invoke-Forgum.ps1
+│   ├── forgum.ps1
+│   ├── forgum.ps1
 │   ├── Get-Fortune.ps1
 │   ├── Get-CFCow.ps1
 │   ├── Get-CFConfig.ps1
@@ -241,7 +241,7 @@ To add a new cow:
    EOC
    ```
 3. Use `$eyes`, `$tongue`, `$thoughts` for customizable parts
-4. Test with: `Invoke-Cowsay -Text "Test" -CowFile 'your-cow'`
+4. Test with: `forgum -Text "Test" -CowFile 'your-cow'`
 5. Add to test suite
 
 ## Customization Methods
@@ -348,14 +348,14 @@ switch ($Config.animation.mode) {
 ```bash
 #!/bin/bash
 # Save as /usr/local/bin/Forgum
-pwsh -Command "Import-Module Forgum; Invoke-Forgum"
+pwsh -Command "Import-Module Forgum; forgum"
 ```
 
 **Fish wrapper:**
 ```fish
 # Save as ~/.config/fish/functions/Forgum.fish
 function Forgum
-    pwsh -Command "Import-Module Forgum; Invoke-Forgum"
+    pwsh -Command "Import-Module Forgum; forgum"
 end
 ```
 
@@ -363,7 +363,7 @@ end
 ```bash
 # Save as ~/.zshrc function
 Forgum() {
-    pwsh -Command "Import-Module Forgum; Invoke-Forgum"
+    pwsh -Command "Import-Module Forgum; forgum"
 }
 ```
 
@@ -372,7 +372,7 @@ Forgum() {
 Add to your profile:
 ```powershell
 # Cow file tab completion
-Register-ArgumentCompleter -Native -CommandName Invoke-Cowsay -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName forgum -ScriptBlock {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
     $cows = Get-CFCow | Where-Object { $_ -like "$wordToComplete*" }
@@ -407,7 +407,7 @@ function Format-CowJson {
 {
     "label": "Show Fortune",
     "type": "shell",
-    "command": "pwsh -Command \"Import-Module Forgum; Invoke-Forgum\""
+    "command": "pwsh -Command \"Import-Module Forgum; forgum\""
 }
 ```
 

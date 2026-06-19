@@ -27,7 +27,7 @@
 - Added Scoop manifest with autoupdate
 - Created `setup.ps1` interactive setup with 6 shell toggles
 - Figlet banner across all install scripts
-- Fixed double output bug in `Invoke-Forgum -Lolcat`
+- Fixed double output bug in `forgum -Lolcat`
 - Updated README with banner and demo screenshots
 - Renamed repo from CowsayFortune to Forgum
 - **142 tests passing, 0 lint issues**

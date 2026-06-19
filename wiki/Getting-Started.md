@@ -35,7 +35,7 @@ Import-Module ./Forgum/Forgum.psd1
 Type this and press Enter:
 
 ```powershell
-Invoke-Forgum
+forgum
 ```
 
 You should see something like this:
@@ -58,13 +58,13 @@ You should see something like this:
 
 ```powershell
 # Your own message
-Invoke-Cowsay -Text "I love Forgum!"
+forgum -Text "I love Forgum!"
 
 # A different cow
-Invoke-Cowsay -Text "Tux says hi!" -CowFile 'tux'
+forgum -Text "Tux says hi!" -CowFile 'tux'
 
 # A thinking cow
-Invoke-Forgum -Think
+forgum -Think
 
 # Just a fortune (no cow)
 Get-Fortune
@@ -86,7 +86,7 @@ Add to your PowerShell profile (`$PROFILE`):
 
 ```powershell
 Import-Module Forgum -ErrorAction SilentlyContinue
-Invoke-Forgum
+forgum
 ```
 
 ### Bash / Zsh
@@ -95,7 +95,7 @@ Add to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
 forgum() {
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
 }
 forgum
 ```
@@ -106,7 +106,7 @@ Add to your `~/.config/fish/config.fish`:
 
 ```fish
 function forgum
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
 end
 forgum
 ```

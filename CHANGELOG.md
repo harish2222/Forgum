@@ -28,9 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`Show-CFAnimation.ps1`** — passes `--once` to binary, joins `Object[]` output into `[string]` for lolcat compatibility; `dynamic`, `talking`, `typewriter` now route to PowerShell animation functions (`Private/Animation/*.ps1`) instead of being sent to the Rust binary which has no arm for them
 - **`Forgum.psm1`** — rewritten: lazy VT init (skips `Add-Type` when non-TTY), preserves caller's `$ErrorActionPreference`/`$ProgressPreference` via `OnRemove`, forces `animation.mode = 'static'` for auto-start regardless of config, skips auto-start in non-interactive/redirected/ServerRemoteHost sessions
 - **`Invoke-LiveShow.ps1`** — try/catch on `[Console]::KeyAvailable` (throws in redirected sessions)
-- **`Invoke-ForgumLive.ps1`** — CPU spin fix (sleep between key polls), Spacebar/Space key compat
+- **`forgumLive.ps1`** — CPU spin fix (sleep between key polls), Spacebar/Space key compat
 - **`Update-Forgum.ps1`** — GitHub API auth headers, pre-release version cast to `[version]`, zipball download instead of re-running installer
-- **`Invoke-ForgumSetup.ps1`** — `-NonInteractive`/`-Force` passthrough
+- **`forgumSetup.ps1`** — `-NonInteractive`/`-Force` passthrough
 - **`Format-Lolcat.ps1`** — WT_SESSION truecolor detection, ECMA-48 colon subparam stripping
 - **`Dynamic.ps1`** — `hasConsole` flag to avoid VT calls in non-TTY, `Duration = 0` early exit
 - **`Write-TerminalFrame.ps1`** — try/catch cursor position (fails in redirected sessions)
@@ -98,7 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Interactive setup wizard integrated into installers
-- New `Invoke-ForgumSetup` (forgum-setup) command for re-configuration
+- New `forgumSetup` (forgum-setup) command for re-configuration
 - Secure auto-update mechanism via `Update-Forgum`
 
 ### Fixed
@@ -117,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Auto-start no longer overwrites user config on disk (in-memory only)
 - `Set-CFConfig -WhatIf` no longer invalidates cache
-- `Invoke-Forgum` `ValidateLength(2,2)` on Eyes/Tongue parameters
+- `forgum` `ValidateLength(2,2)` on Eyes/Tongue parameters
 - `Talking.ps1` returns `$CowOutput` consistently
 - `Blink.ps1` `$BlinkRate` parameter now actually affects timing
 - `Wave.ps1` guards against no-balloon case
@@ -156,7 +156,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Show-FortuneCow function not defined in setup.ps1 generated profiles
-- Double output bug in Invoke-Forgum -Lolcat
+- Double output bug in forgum -Lolcat
 - Duplicate tab completion blocks in profile.ps1
 - Missing parameter names in cowpreview/cowgallery functions
 - Lolcat toggle not displaying current state
@@ -171,8 +171,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Core Features**
-  - `Invoke-Cowsay` - Display ASCII cow with custom message
-  - `Invoke-Forgum` - Combine cowsay + fortune + optional lolcat
+  - `forgum` - Display ASCII cow with custom message
+  - `forgum` - Combine cowsay + fortune + optional lolcat
   - `Get-Fortune` - Get random fortune from database
   - `Get-CFCow` - List available cows or read specific cow
   - `Get-CFConfig` / `Set-CFConfig` - Configuration management

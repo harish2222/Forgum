@@ -34,12 +34,12 @@ Add these lines:
 
 # Show a cow with a fortune
 function forgum
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
 end
 
 # Show your own message
 function cow
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$argv'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$argv'"
 end
 
 # Get just a fortune (no cow)
@@ -100,7 +100,7 @@ forgum
 function random_cow
     set cows default tux dragon cat elephant doge bunny moose whale
     set cow $cows[(random 1 (count $cows))]
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum -CowFile '$cow'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -CowFile '$cow'"
 end
 random_cow
 ```
@@ -118,7 +118,7 @@ These are complete, ready-to-use snippets for common setups. Add them to your `~
 # Shows a cow with a random fortune every time you open a terminal.
 
 function forgum
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
 end
 
 # Show fortune on every terminal open
@@ -148,7 +148,7 @@ forgum
 
 function forgum_tux
     set fortune (pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-Fortune")
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$fortune' -CowFile 'tux'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$fortune' -CowFile 'tux'"
 end
 
 # Call on startup
@@ -167,7 +167,7 @@ forgum_tux
 
 function forgum_tux_rainbow
     set fortune (pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-Fortune")
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$fortune' -CowFile 'tux' -Lolcat"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$fortune' -CowFile 'tux' -Lolcat"
 end
 
 # Call on startup
@@ -188,7 +188,7 @@ function forgum_random
     set cows default tux dragon cat elephant doge bunny moose whale
     set cow $cows[(random 1 (count $cows))]
     set fortune (pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Get-Fortune")
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text '$fortune' -CowFile '$cow'"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text '$fortune' -CowFile '$cow'"
 end
 
 # Call on startup
@@ -211,7 +211,7 @@ function forgum_config
     else if test -f "$HOME/.config/forgum/config.json"
         set config_file "$HOME/.config/forgum/config.json"
     else
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum"
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum"
         return
     end
 
@@ -223,7 +223,7 @@ function forgum_config
         set lolcat_flag "-Lolcat"
     end
 
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Cowsay -Text \$(Get-Fortune) -CowFile '$cow' $lolcat_flag"
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum -Text \$(Get-Fortune) -CowFile '$cow' $lolcat_flag"
 end
 
 # Call on startup
@@ -250,8 +250,8 @@ set -g status-interval 300
 | `-NoProfile` | Doesn't load PowerShell's profile (faster) |
 | `-Command` | Runs the following PowerShell code |
 | `Import-Module Forgum` | Loads Forgum |
-| `Invoke-Forgum` | Shows cow + fortune |
-| `Invoke-Cowsay -Text` | Shows cow with your message |
+| `forgum` | Shows cow + fortune |
+| `forgum -Text` | Shows cow with your message |
 | `Get-Fortune` | Returns just a fortune |
 | `Get-CFCow` | Lists all cow characters |
 
