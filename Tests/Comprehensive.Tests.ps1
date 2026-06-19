@@ -62,7 +62,7 @@ Describe "Animation Mode Matrix" -Tag 'AnimationMatrix' {
         if ($mode -eq 'dynamic') { $cfg.animation.duration = 1 }
         Set-CFConfig -Config $cfg
         
-        $result = Invoke-Forgum -ErrorAction SilentlyContinue
+        $result = forgum -ErrorAction SilentlyContinue
         $result | Should -Not -BeNullOrEmpty -Because "$mode mode should produce output"
         
         # Restore after each iteration
@@ -92,7 +92,7 @@ Describe "Config Feature Matrix" -Tag 'ConfigMatrix' {
             $cfg.animation.mode = 'static'
             Set-CFConfig -Config $cfg
             
-            $output = Invoke-Forgum -ErrorAction SilentlyContinue
+            $output = forgum -ErrorAction SilentlyContinue
             $output | Should -Not -BeNullOrEmpty
         }
     }
@@ -104,7 +104,7 @@ Describe "Config Feature Matrix" -Tag 'ConfigMatrix' {
             $cfg.animation.mode = 'static'
             Set-CFConfig -Config $cfg
             
-            $output = Invoke-Forgum -ErrorAction SilentlyContinue
+            $output = forgum -ErrorAction SilentlyContinue
             $output | Should -Not -BeNullOrEmpty
         }
 
@@ -114,7 +114,7 @@ Describe "Config Feature Matrix" -Tag 'ConfigMatrix' {
             $cfg.animation.mode = 'static'
             Set-CFConfig -Config $cfg
             
-            $output = Invoke-Forgum -ErrorAction SilentlyContinue
+            $output = forgum -ErrorAction SilentlyContinue
             $output | Should -Not -BeNullOrEmpty
         }
 
@@ -125,7 +125,7 @@ Describe "Config Feature Matrix" -Tag 'ConfigMatrix' {
             $cfg.animation.mode = 'static'
             Set-CFConfig -Config $cfg
             
-            $output = Invoke-Forgum -ErrorAction SilentlyContinue
+            $output = forgum -ErrorAction SilentlyContinue
             $output | Should -Not -BeNullOrEmpty
         }
 
@@ -136,7 +136,7 @@ Describe "Config Feature Matrix" -Tag 'ConfigMatrix' {
             $cfg.animation.mode = 'static'
             Set-CFConfig -Config $cfg
             
-            $output = Invoke-Forgum -ErrorAction SilentlyContinue
+            $output = forgum -ErrorAction SilentlyContinue
             $output | Should -Not -BeNullOrEmpty
         }
     }
@@ -154,19 +154,19 @@ Describe "Edge Cases" -Tag 'EdgeCases' {
 
     It "handles very long text gracefully" {
         $longText = "A" * 1000
-        $output = Invoke-Cowsay -Text $longText
+        $output = forgum $longText
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles special characters in text" {
         $special = 'Test $&*(){}[]|:\"'''
-        $output = Invoke-Cowsay -Text $special
+        $output = forgum $special
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles Unicode text" {
         $unicode = "Hello World 1234567890"
-        $output = Invoke-Cowsay -Text $unicode
+        $output = forgum $unicode
         $output | Should -Not -BeNullOrEmpty
     }
 }
@@ -187,7 +187,7 @@ Describe "Performance Checks" -Tag 'Performance' {
 
     It "generates output in reasonable time" {
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
-        $null = Invoke-Forgum
+        $null = forgum
         $sw.Stop()
         $sw.ElapsedMilliseconds | Should -BeLessThan 10000
     }

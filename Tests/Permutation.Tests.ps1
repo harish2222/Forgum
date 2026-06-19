@@ -40,7 +40,7 @@ Describe "Forgum Permutation Engine" {
                                             Set-CFConfig -Config $config
 
                                             # We don't want to actually sleep during tests
-                                            Invoke-Forgum -Think:$isThink -ErrorAction Stop
+                                            forgum -Think:$isThink -ErrorAction Stop
                                         }
                                     } | Should -Not -Throw
                                 }

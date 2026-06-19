@@ -115,7 +115,7 @@ $script:DefaultConfigSections = @{
 if ($env:FORGUM_NOAUTOSTART -ne '1' -and
     -not [Console]::IsOutputRedirected -and
     $Host.Name -ne 'ServerRemoteHost') {
-    if (Get-Command Invoke-Forgum -ErrorAction Ignore) {
+    if (Get-Command forgum -ErrorAction Ignore) {
         try {
             # Update check
             $realConfig = Get-CFConfig
@@ -132,7 +132,7 @@ if ($env:FORGUM_NOAUTOSTART -ne '1' -and
                     if ([datetime]::UtcNow -gt $lastCheck.AddHours(24)) {
                         $realConfig.update.lastCheck = [datetime]::UtcNow.ToString('o')
                         Set-CFConfig -Config $realConfig
-                        $checkCmd = "Import-Module Forgum; Update-Forgum -CheckOnly"
+                        $checkCmd = "Import-Module Forgum; forgum update -CheckOnly"
                         Start-Process -FilePath "pwsh" -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-Command", $checkCmd -ErrorAction SilentlyContinue
                     }
                 } catch {

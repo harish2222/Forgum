@@ -27,16 +27,16 @@ Describe "Module Loading" -Tag 'Module' {
         { Get-Module Forgum } | Should -Not -Throw
     }
 
-    it "exports exactly 21 functions" {
-        (Get-Command -Module Forgum -CommandType Function).Count | Should -Be 21
+    It "exports exactly 1 function" {
+        (Get-Command -Module Forgum -CommandType Function).Count | Should -Be 1
     }
 
     It "exports setup alias" {
         (Get-Command -Module Forgum -CommandType Alias).Name | Should -Contain 'forgum-setup'
     }
 
-    It "exports all 9 expected functions" {
-        $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup', 'Update-Forgum')
+    It "exports the expected function" {
+        $expected = @('forgum')
         $actual = (Get-Command -Module Forgum -CommandType Function).Name
         
         foreach ($cmd in $expected) {
@@ -45,7 +45,7 @@ Describe "Module Loading" -Tag 'Module' {
     }
 
     It "module code correctly exports functions" {
-        $funcs = @('Invoke-Cowsay', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-Forgum', 'Invoke-ForgumSetup', 'Update-Forgum')
+        $funcs = @('forgum')
         foreach ($func in $funcs) {
             $cmd = Get-Command $func -Module Forgum
             $cmd.Parameters.ContainsKey('Verbose') | Should -Be $true -Because "$func should support -Verbose"
@@ -206,7 +206,7 @@ Describe "Fortune System" -Tag 'Fortune' {
     }
 }
 
-Describe "Invoke-Cowsay" -Tag 'Cowsay' {
+Describe "forgum" -Tag 'Cowsay' {
     BeforeAll {
         if (-not (Get-Module Forgum)) { Import-Module $ModulePath -Force }
         # Reset config to default for clean state
@@ -215,38 +215,38 @@ Describe "Invoke-Cowsay" -Tag 'Cowsay' {
     }
 
     It "renders a cow with text bubble" {
-        $output = Invoke-Cowsay -Text "Test message"
+        $output = forgum "Test message"
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Test message'
         $output | Should -Match '\^__\^|o\.o|oo|\*\*|XX|@@|\$\$|==|--|\.\.'
     }
 
     It "supports custom cow files" {
-        $output = Invoke-Cowsay -Text "Custom cow" -CowFile 'tux'
+        $output = forgum "Custom cow" -CowFile 'tux'
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Custom cow'
     }
 
     It "supports thinking mode with string parameter" {
-        $output = Invoke-Cowsay -Text "Thinking..." -Thoughts 'o'
+        $output = forgum "Thinking..." -Thoughts 'o'
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Thinking'
     }
 
     It "supports custom eyes" {
-        $output = Invoke-Cowsay -Text "Custom eyes" -Eyes 'XX'
+        $output = forgum "Custom eyes" -Eyes 'XX'
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Custom eyes'
         $output | Should -Match 'XX'
     }
 
     It "handles empty text gracefully" {
-        $output = Invoke-Cowsay -Text ""
+        $output = forgum ""
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles multi-line text" {
-        $output = Invoke-Cowsay -Text "Line 1`nLine 2"
+        $output = forgum "Line 1`nLine 2"
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Line 1'
         $output | Should -Match 'Line 2'
@@ -273,7 +273,7 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
         }
 
         It "produces truecolor ANSI output (38;2)" {
-            $output = Invoke-Forgum
+            $output = forgum
             $output | Should -Not -BeNullOrEmpty
             $esc = [char]27
             $output | Should -Match "$esc\[38;2;"
@@ -301,7 +301,7 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
         }
 
         It "produces 256-color ANSI output (38;5)" {
-            $output = Invoke-Forgum
+            $output = forgum
             $output | Should -Not -BeNullOrEmpty
             $esc = [char]27
             $output | Should -Match "$esc\[38;5;"
@@ -322,7 +322,7 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
         }
 
         It "does not colorize output" {
-            $output = Invoke-Forgum
+            $output = forgum
             $esc = [char]27
             $output | Should -Not -Match "$esc\[38;"
             $output | Should -Not -Match "$esc\[48;"
@@ -438,29 +438,6 @@ Describe "Format-CowMessage Alignment" -Tag 'Formatting' {
     }
 }
 
-Describe "Invoke-ForgumSetup" -Tag 'Setup' {
-    BeforeAll {
-        if (-not (Get-Module Forgum)) { Import-Module $ModulePath -Force }
-    }
-    It "exports Invoke-ForgumSetup" {
-        Get-Command Invoke-ForgumSetup -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
-    }
-}
-
-Describe "Update-Forgum" -Tag 'Update' {
-    BeforeAll {
-        if (-not (Get-Module Forgum)) { Import-Module $ModulePath -Force }
-    }
-    It "exports Update-Forgum" {
-        Get-Command Update-Forgum -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
-    }
-
-    It "has a -Force parameter" {
-        $params = (Get-Command Update-Forgum).Parameters
-        $params.ContainsKey('Force') | Should -Be $true
-        $params['Force'].ParameterType.Name | Should -Be 'SwitchParameter'
-    }
-}
 
 Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
     It "invokes forgum-engine binary for flagship modes when present" {

@@ -26,6 +26,7 @@ AfterAll {
     }
 }
 
+InModuleScope 'Forgum' {
 Describe "Stress Tests" -Tag 'Stress' {
     It "handles 100 rapid config changes" {
         1..100 | ForEach-Object {
@@ -45,7 +46,7 @@ Describe "Stress Tests" -Tag 'Stress' {
 
     It "handles 10 rapid cow renders" {
         $results = 1..10 | ForEach-Object {
-            Invoke-Cowsay -Text "Test $_"
+            forgum "Test $_"
         }
         $results | Where-Object { -not $_ } | Should -BeNullOrEmpty
     }
@@ -53,18 +54,18 @@ Describe "Stress Tests" -Tag 'Stress' {
 
 Describe "Boundary Tests" -Tag 'Boundary' {
     It "handles zero-length text" {
-        $output = Invoke-Cowsay -Text ""
+        $output = forgum ""
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles single character text" {
-        $output = Invoke-Cowsay -Text "A"
+        $output = forgum "A"
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles extremely long text (5000 chars)" {
         $longText = "A" * 5000
-        $output = Invoke-Cowsay -Text $longText
+        $output = forgum $longText
         $output | Should -Not -BeNullOrEmpty
         $output.Length | Should -BeGreaterThan 100
     }
@@ -73,13 +74,13 @@ Describe "Boundary Tests" -Tag 'Boundary' {
 Describe "Content Injection Tests" -Tag 'Security' {
     It "handles ANSI escape sequences in text safely" {
         $injected = "Test`e[31mRed`e[0m"
-        $output = Invoke-Cowsay -Text $injected
+        $output = forgum $injected
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles path traversal in cow file names safely" {
         try {
-            $output = Invoke-Cowsay -Text "Test" -CowFile '../../../etc/passwd'
+            $output = forgum "Test" -CowFile '../../../etc/passwd'
             $output | Should -Not -Match 'root:'
             $output | Should -Not -Match '/bin/bash'
         }
@@ -90,7 +91,7 @@ Describe "Content Injection Tests" -Tag 'Security' {
 
     It "handles control characters in text" {
         $ctrl = "Test`n`r`t"
-        $output = Invoke-Cowsay -Text $ctrl
+        $output = forgum $ctrl
         $output | Should -Not -BeNullOrEmpty
     }
 }
@@ -128,9 +129,10 @@ Describe "Memory and Resource Tests" -Tag 'Resource' {
 
     It "does not leak memory on repeated calls" {
         $memStart = [System.GC]::GetTotalMemory($true)
-        1..20 | ForEach-Object { Invoke-Forgum | Out-Null }
+        1..20 | ForEach-Object { forgum | Out-Null }
         $memEnd = [System.GC]::GetTotalMemory($true)
         $growth = $memEnd - $memStart
         $growth | Should -BeLessThan (50MB)
     }
+}
 }

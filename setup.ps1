@@ -20,7 +20,8 @@
 param(
     [switch]$NonInteractive,
     [switch]$Force,
-    [switch]$NoProfile
+    [switch]$NoProfile,
+    [switch]$DisableAutoUpdate
 )
 
 #Requires -Version 5.1
@@ -162,7 +163,8 @@ $animMode = Get-UserSelection -Prompt "Choose animation mode:" -Options @('stati
 
 # ── Toggle 4.5: Daily Auto-Update ──
 Show-Section "Daily Auto-Update"
-$autoUpdate = Get-UserChoice "Enable background daily auto-update check?" $true -NonInteractive:$NonInteractive
+$autoUpdateDef = -not $DisableAutoUpdate.IsPresent
+$autoUpdate = Get-UserChoice "Enable background daily auto-update check?" $autoUpdateDef -NonInteractive:$NonInteractive
 
 # ── Toggle 5: Shell Aliases ──
 Show-Section "Shell Aliases"

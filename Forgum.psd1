@@ -13,17 +13,7 @@
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()
-    AliasesToExport    = @(
-        'forgum-setup'
-        'forgum-show'
-        'forgum-tui'
-        'cowgallery'
-        'cowpreview'
-        'cowconfig'
-        'lolcat-toggle'
-        'cow-animate'
-        'cow-eyes'
-    )
+    AliasesToExport    = @()
     PrivateData       = @{
         PSData = @{
             Tags         = @('cowsay', 'fortune', 'lolcat', 'ascii', 'fun', 'cross-platform', 'terminal')
