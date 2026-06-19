@@ -70,6 +70,14 @@ Get-ChildItem -Path $publicPath -Filter '*.ps1' -Recurse -ErrorAction SilentlyCo
         catch { Write-Warning "Forgum: Failed to load $($_.FullName): $_" }
     }
 
+# Define command aliases
+Set-Alias -Name cowgallery    -Value Show-CFCowGallery   -Scope Script -ErrorAction SilentlyContinue
+Set-Alias -Name cowpreview    -Value Show-CFCowPreview   -Scope Script -ErrorAction SilentlyContinue
+Set-Alias -Name cowconfig     -Value Show-CFConfig       -Scope Script -ErrorAction SilentlyContinue
+Set-Alias -Name lolcat-toggle -Value Toggle-CFLolcat     -Scope Script -ErrorAction SilentlyContinue
+Set-Alias -Name cow-animate   -Value Set-CFCowAnimate    -Scope Script -ErrorAction SilentlyContinue
+Set-Alias -Name cow-eyes      -Value Set-CFCowEyes       -Scope Script -ErrorAction SilentlyContinue
+
 # Module-scoped cache for performance
 $script:CowFileCache = @{}
 $script:FortuneCache = @{}
@@ -130,6 +138,16 @@ if ($env:FORGUM_NOAUTOSTART -ne '1' -and
         } catch {
             Write-Verbose "Forgum auto-start skipped: $_"
             $script:IsAutoStart = $false
+        }
+    }
+}
+
+# Register tab completion for Invoke-Cowsay
+if (Get-Command Register-ArgumentCompleter -ErrorAction SilentlyContinue) {
+    Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -ScriptBlock {
+        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+        Get-CFCow | Where-Object { $_ -like "*$wordToComplete*" } | ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
     }
 }

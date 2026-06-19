@@ -200,38 +200,12 @@ if (-not $NoProfile) {
         
         if ($fortuneOnStartup) {
             $blockLines.Add("")
-            $blockLines.Add("function Show-FortuneCow {")
-            $blockLines.Add("    if (Get-Command Invoke-Forgum -ErrorAction Ignore) {")
-            $blockLines.Add("        `$cowText = Invoke-Forgum")
-            $blockLines.Add("        if (`$cowText) { Write-Host `$cowText }")
-            $blockLines.Add("    }")
-            $blockLines.Add("}")
-            $blockLines.Add("Set-Alias cowfortune Show-FortuneCow")
             $blockLines.Add("if (-not `$global:FORGUM_STARTUP_DONE) {")
             $blockLines.Add("    `$global:FORGUM_STARTUP_DONE = `$true")
-            $blockLines.Add("    Show-FortuneCow")
+            $blockLines.Add("    if (Get-Command Invoke-Forgum -ErrorAction Ignore) { Invoke-Forgum }")
             $blockLines.Add("}")
         }
         
-        if ($addAliases) {
-            $blockLines.Add("")
-            $blockLines.Add("# Forgum Aliases")
-            $blockLines.Add("function cowconfig { Get-CFConfig | ConvertTo-Json -Depth 4 }")
-            $blockLines.Add("function cowpreview { param([string]`$Cow='default',[string]`$Text='Hello!') Invoke-Cowsay -Text `$Text -CowFile `$Cow }")
-            $blockLines.Add("function cowgallery { param([int]`$Count=5) Get-CFCow | Get-Random -Count `$Count | ForEach-Object { Invoke-Cowsay -Text (Get-Fortune) -CowFile `$_ } }")
-            $blockLines.Add("function lolcat-toggle { `$c = Get-CFConfig; `$c.lolcat.enabled = -not `$c.lolcat.enabled; Set-CFConfig -Config `$c; if (`$c.lolcat.enabled) { Write-Host `"Lolcat: ON`" -ForegroundColor Green } else { Write-Host `"Lolcat: OFF`" -ForegroundColor Yellow } }")
-        }
-        
-        if ($addCompletion) {
-            $blockLines.Add("")
-            $blockLines.Add("# Forgum Tab Completion")
-            $blockLines.Add("Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -ScriptBlock {")
-            $blockLines.Add("    param(`$commandName, `$parameterName, `$wordToComplete, `$commandAst, `$fakeBoundParameters)")
-            $blockLines.Add("    Get-CFCow | Where-Object { `$_ -like `"*`$wordToComplete*`" } | ForEach-Object {")
-            $blockLines.Add("        [System.Management.Automation.CompletionResult]::new(`$_, `$_, 'ParameterValue', `$_)")
-            $blockLines.Add("    }")
-            $blockLines.Add("}")
-        }
         $blockLines.Add("# endregion FORGUM")
         
         $forgumBlock = ($blockLines -join "`r`n")

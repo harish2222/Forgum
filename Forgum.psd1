@@ -21,16 +21,28 @@
         'Update-Forgum'
         'Start-ForgumDaemon'
         'Stop-ForgumDaemon'
+        'Show-CFCowGallery'
+        'Show-CFCowPreview'
+        'Toggle-CFLolcat'
         'Set-CFCowAnimate'
         'Set-CFCowEyes'
         'Show-CFConfig'
-        'Show-CFCowGallery'
-        'Show-CFCowPreview'
-        'Switch-CFLolcat'
+        'Invoke-ForgumTUI'
+        'Set-ForgumProfile'
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()
-    AliasesToExport    = @('forgum-setup', 'forgum-show')
+    AliasesToExport    = @(
+        'forgum-setup'
+        'forgum-show'
+        'forgum-tui'
+        'cowgallery'
+        'cowpreview'
+        'cowconfig'
+        'lolcat-toggle'
+        'cow-animate'
+        'cow-eyes'
+    )
     PrivateData       = @{
         PSData = @{
             Tags         = @('cowsay', 'fortune', 'lolcat', 'ascii', 'fun', 'cross-platform', 'terminal')

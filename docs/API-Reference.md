@@ -137,3 +137,42 @@ Applies an animation effect to the provided text.
 $cowText = Invoke-Cowsay -Text "Watch me move!"
 Show-CFAnimation -Text $cowText -Mode "Scroll"
 ```
+
+## Helper Commands & Aliases
+
+Forgum provides several structured helper commands (and shorter aliases) for everyday usage. All commands support standard PowerShell help features (e.g. \Get-Help cowgallery -Detailed\ or \cowgallery -?\).
+
+### \Show-CFCowGallery\ (Alias: \cowgallery\)
+Displays a randomized gallery of cows with fortunes.
+*   **Parameters**: \-Count\ (default: 5)
+*   **Example**: \cowgallery -Count 10\
+
+### \Show-CFCowPreview\ (Alias: \cowpreview\)
+Quickly preview what a specific cow looks like with a custom message.
+*   **Parameters**: \-CowFile\ (default: 'default'), \-Text\ (default: 'Hello!')
+*   **Example**: \cowpreview tux \
+Linux
+rocks!\\
+
+### \Show-CFConfig\ (Alias: \cowconfig\)
+Displays the current Forgum configuration in a formatted JSON layout.
+*   **Example**: \cowconfig\
+
+### \Toggle-CFLolcat\ (Alias: \lolcat-toggle\)
+Instantly toggles the rainbow color mode on or off.
+*   **Example**: \lolcat-toggle\
+
+### \Set-CFCowAnimate\ (Alias: \cow-animate\)
+Changes your globally configured animation mode.
+*   **Parameters**: \-Mode\ (e.g. 'static', 'physics', 'aurora', 'matrix')
+*   **Example**: \cow-animate physics\
+
+### \Set-CFCowEyes\ (Alias: \cow-eyes\)
+Changes the default eyes of your cow.
+*   **Parameters**: \-Preset\ (e.g. 'borg', 'dead', 'greedy') or \-Custom\
+*   **Example**: \cow-eyes -Preset borg\ OR \cow-eyes @@\
+
+### \Invoke-ForgumTUI\ (Alias: \orgum-tui\)
+Opens an interactive, keyboard-navigable Terminal User Interface to tweak your settings visually. You can change animation modes, toggle lolcat, set default cows, and update your profile automatically.
+*   **Example**: \orgum-tui\
+
