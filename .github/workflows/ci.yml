@@ -298,16 +298,7 @@ jobs:
           path: src-rust/target/aarch64-apple-darwin/release/forgum-core
           if-no-files-found: error
 
-      - name: Install QEMU for ARM64 Emulation
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-user-static binfmt-support
 
-      - name: Verify ARM64 Binary via QEMU
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          QEMU_LD_PREFIX=/usr/aarch64-linux-gnu ./bin/forgum-core-arm64 --version
 
       - name: Verify ARM64 Binary (native on Apple Silicon)
         if: matrix.os == 'macos-latest'

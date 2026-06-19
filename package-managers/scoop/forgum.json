@@ -1,9 +1,9 @@
 {
-    "version": "1.1.1",
+    "version": "1.1.2",
     "description": "Cowsay + Fortune + Lolcat PowerShell module with 107 animal cows",
     "homepage": "https://github.com/harish2222/Forgum",
     "license": "MIT",
-    "url": "https://github.com/harish2222/Forgum/releases/download/v1.1.1/Forgum-v1.1.1.zip",
+    "url": "https://github.com/harish2222/Forgum/releases/download/v1.1.2/Forgum-v1.1.2.zip",
     "hash": "eb62426fc4a5559b5904621e37fb3669aa7457931872832206fb27ba58e0e2c7",
     "depends": "pwsh",
     "powershell": {

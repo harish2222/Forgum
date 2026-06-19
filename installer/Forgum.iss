@@ -9,7 +9,7 @@
 ;   winget install HKDEVS.Forgum
 
 #define MyAppName "Forgum"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.1.2"
 #define MyAppPublisher "HKDEVS"
 #define MyAppURL "https://github.com/harish2222/Forgum"
 #define MyAppLicense "MIT"

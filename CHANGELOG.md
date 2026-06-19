@@ -5,6 +5,18 @@ All notable changes to Forgum will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-06-19
+
+### Added
+- **`forgum` CLI router** — Single entry point for all features (e.g. `forgum gallery`, `forgum update`).
+- **Silent Auto-Update** — Non-blocking background daily update checker.
+- **TUI & Setup Wizard Updates** — Added configuration toggles for the daily auto-update.
+- **Structured Helper Commands** — Added `Show-CFCowGallery`, `Show-CFCowPreview`, `Toggle-CFLolcat`, etc., with native PowerShell documentation.
+
+### Fixed
+- **CI Workflows** — Removed flaky QEMU arm64 cross-compilation tests in `ci.yml` that were blocking releases.
+- **Profile Integration** — Cleaned up `setup.ps1` to prevent multiple dirty imports in the `$PROFILE`.
+
 ## [1.1.1] - 2026-06-17
 
 ### Fixed

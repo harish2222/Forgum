@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-1.1.1-blue?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-1.1.2-blue?style=for-the-badge" alt="Version"></a>
   <a href="https://github.com/harish2222/Forgum"><img src="https://img.shields.io/badge/powershell-5.1+-blueviolet?style=for-the-badge&logo=powershell&logoColor=white" alt="PowerShell"></a>
   <a href="https://github.com/harish2222/Forgum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License"></a>
   <a href="https://github.com/harish2222/Forgum/actions"><img src="https://img.shields.io/badge/tests-102%20passing-brightgreen?style=for-the-badge" alt="Tests"></a>
@@ -78,10 +78,13 @@ bash <(curl -fsSL https://raw.githubusercontent.com/harish2222/Forgum/main/insta
 
 ```powershell
 # Get a fortune from a random cow in rainbow colors
-Invoke-Forgum -Lolcat
+forgum -Lolcat
 
-# See the full 106-cow gallery (random sample)
-cowgallery -Count 3
+# View the full configuration UI
+forgum config
+
+# See a gallery of cows
+forgum gallery -Count 3
 ```
 
 ---
@@ -138,62 +141,46 @@ Don't settle for static text files! Forgum supports a highly flexible **Placehol
 
 ---
 
-## 🛠 API Reference
+## 🛠 API Reference (The `forgum` keyword)
+
+The entire functionality of the module has been cleanly infused into a single keyword: `forgum`. It uses advanced PowerShell Parameter Sets to provide native auto-completion and documentation for every feature.
+
+### Core Usage
 
 ```powershell
-Invoke-Cowsay -Text "Hello" [-CowFile <name>] [-Eyes <chars>] [-Tongue <chars>] [-Thoughts <char>]
+# Just render the default cow and fortune
+forgum
+
+# Render custom text with custom eyes and rainbow colors
+forgum "Hello World!" -Lolcat -Cow dragon -Eyes @@
 ```
 
-| Parameter | Default | Description |
-|:----------|:--------|:------------|
-| `Text` | `''` | Message to display |
-| `CowFile` | `'default'` | Cow file name (without `.cow`) |
-| `Eyes` | `'oo'` | Two-character eye string |
-| `Tongue` | `'  '` | Two-character tongue string |
-| `Thoughts` | `'\'` | Thought bubble character |
-
-### `Invoke-Forgum`
+### Subcommands
 
 ```powershell
-Invoke-Forgum [-Think] [-CowFile <name>] [-Eyes <chars>] [-Tongue <chars>]
+# Configuration (Interactive TUI)
+forgum config
+
+# Update Forgum
+forgum update [-Force] [-CheckOnly]
+
+# Show a gallery of cows
+forgum gallery [-Count <int>]
+
+# Preview a specific cow
+forgum preview <cow> "<text>"
+
+# Toggle rainbow mode instantly
+forgum toggle
+
+# Change animation mode globally
+forgum animate <mode>
+
+# Change eyes globally
+forgum eyes <preset|custom>
 ```
 
-### `Get-Fortune`
-
-```powershell
-Get-Fortune [-Database <name>]
-```
-
-### `Get-CFCow`
-
-```powershell
-Get-CFCow [-Name <cowname>]
-```
-
-### `Set-Forgum`
-
-```powershell
-Set-Forgum [-Animation <mode>] [-Cow <name>] [-Eyes <chars>] [-Lolcat <bool>] [-RandomCow <bool>] [-RainbowFrequency <double>]
-```
-
-### `Get-CFConfig` / `Set-CFConfig`
-
-```powershell
-# Get config object
-$config = Get-CFConfig
-
-# Set complete config object
-Set-CFConfig -Config $config
-```
-
-### `Show-CFAnimation`
-
-```powershell
-Show-CFAnimation -CowOutput <string> [-Message <string>]
-```
-
-* `Show-CFAnimation`: Takes a `CowOutput` (string block) and animates it with `-Effect` or default physics. Supports `-Background` to run animations without stealing focus or blocking the terminal prompt.
-* `Invoke-Engine`: Low-level wrapper around the Rust `forgum-engine` executable. Plumbs JSON payloads over `stdin` and handles the raw async/sync execution logic.
+> **Note:** For script authors, low-level cmdlets like `Invoke-Forgum`, `Get-Fortune`, and `Show-CFAnimation` remain fully available and supported. Run `Get-Help forgum -Detailed` for the complete API breakdown.
 
 **Available Flagship Modes:** `aurora`, `plasma`, `ember`, `liquid-chrome`, `shatter`, `portal`, `glitch`, `neon-pulse`
 **Available Legacy Modes:** `static`, `talking`, `typewriter`, `dynamic`, `procedural`, `physics` (and variants)
@@ -386,7 +373,7 @@ Your third fortune here
 
 ### PowerShell startup hangs for 30+ seconds
 
-**Fixed in v1.1.1.** If you are still experiencing this issue, update to the latest version.
+**Fixed in v1.1.2.** If you are still experiencing this issue, update to the latest version.
 
 If PowerShell appears to hang on startup after adding `Import-Module Forgum` (or any `Invoke-Forgum*` command) to your profile, the cause is almost always an animation loop:
 
