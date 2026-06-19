@@ -30,6 +30,7 @@ function Format-Lolcat {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
+        [AllowEmptyString()]
         [string]$Text,
 
         [ValidateRange(0.01, 10.0)]
