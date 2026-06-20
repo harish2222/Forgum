@@ -1,101 +1,71 @@
 function Format-CowMessage {
     <#
     .SYNOPSIS
-        Formats text into a speech balloon with word wrapping.
+        Formats a message into a cowsay speech balloon.
     .DESCRIPTION
-        Wraps text at MaxWidth characters and renders it inside a
-        speech balloon with clean ASCII borders.
+        Wraps text in the || bordered balloon format.
+    .PARAMETER Text
+        The message text to format.
+    .PARAMETER MaxWidth
+        Maximum width for word wrapping (default 60).
     #>
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory)]
-        [AllowEmptyString()]
         [string]$Text,
 
-        [ValidateRange(20, 200)]
         [int]$MaxWidth = 60
     )
 
-    # 1. Pre-process text
-    # Expand tabs to 4 spaces
-    $Text = $Text -replace "`t", "    "
-    # Strip ANSI escape codes
-    $Text = $Text -replace "\x1B\[[0-9;]*[a-zA-Z]", ""
-    # Strip zero-width characters (using literal character codes for absolute certainty)
-    $zeroWidthChars = [char]0x200B, [char]0x200C, [char]0x200D, [char]0xFEFF
-    foreach ($c in $zeroWidthChars) {
-        $Text = $Text.Replace([string]$c, "")
-    }
-    $Text = $Text -replace "`r`n", "`n"
+    $Text = $Text -replace "`t", '    '
+    $Text = $Text -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+    $Text = $Text -replace '[\u200B\u200C\u200D\uFEFF]', ''
 
-    # 2. Word wrap
-    $lines = [System.Collections.Generic.List[string]]::new()
-    $paragraphs = $Text -split '\n'
+    $lines = @()
+    $paragraphs = $Text -split "`n"
 
-    foreach ($paragraph in $paragraphs) {
-        if ([string]::IsNullOrWhiteSpace($paragraph)) {
-            $lines.Add('')
+    foreach ($para in $paragraphs) {
+        if ([string]::IsNullOrWhiteSpace($para)) {
+            $lines += ''
             continue
         }
 
-        $words = $paragraph -split ' '
-        $currentLine = ""
+        $words = $para -split '\s+'
+        $currentLine = ''
 
         foreach ($word in $words) {
-            if ($word.Length -eq 0) {
-                # Preserve multiple spaces
-                if ($currentLine.Length -gt 0) { $currentLine += " " }
-                continue
-            }
-
-            # Handle long words
-            while ($word.Length -gt $MaxWidth) {
-                if ($currentLine.Length -gt 0) {
-                    $lines.Add($currentLine)
-                    $currentLine = ""
-                }
-                $lines.Add($word.Substring(0, $MaxWidth))
-                $word = $word.Substring($MaxWidth)
-            }
-
             if ($currentLine.Length -eq 0) {
                 $currentLine = $word
-            }
-            elseif ($currentLine.Length + 1 + $word.Length -le $MaxWidth) {
-                $currentLine += " " + $word
-            }
-            else {
-                $lines.Add($currentLine)
+            } elseif (($currentLine.Length + 1 + $word.Length) -le $MaxWidth) {
+                $currentLine = "$currentLine $word"
+            } else {
+                $lines += $currentLine
                 $currentLine = $word
             }
         }
+
         if ($currentLine.Length -gt 0) {
-            $lines.Add($currentLine)
+            $lines += $currentLine
         }
     }
 
     if ($lines.Count -eq 0) {
-        $lines.Add('')
+        $lines = @('')
     }
 
-    # 3. Calculate max width (minimum 11 for standard cow thought pointer)
-    $maxLength = 11
+    $maxLineLength = ($lines | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
+    if ($maxLineLength -lt 11) { $maxLineLength = 11 }
+
+    $border = '  ' + ('#' * ($maxLineLength + 8))
+    $result = @($border)
+
     foreach ($line in $lines) {
-        if ($line.Length -gt $maxLength) { $maxLength = $line.Length }
+        $padded = $line.PadRight($maxLineLength)
+        $result += "  ||  $padded  ||"
     }
 
-    # 4. Render balloon
-    # All lines will have length: 2 (indent) + 2 (||) + 1 (space) + $maxLength + 1 (space) + 2 (||) = $maxLength + 8
-    $result = [System.Collections.Generic.List[string]]::new($lines.Count + 2)
-    $borderHashes = '#' * ($maxLength + 6)
-    $borderLine = "  $borderHashes"
-
-    $result.Add($borderLine)
-    foreach ($line in $lines) {
-        $pad = ' ' * ($maxLength - $line.Length)
-        $result.Add("  || $line$pad ||")
-    }
-    $result.Add($borderLine)
+    $result += $border
 
     return ($result -join "`n")
 }

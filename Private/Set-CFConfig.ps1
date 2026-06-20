@@ -39,7 +39,17 @@ function Set-CFConfig {
         $tempPath = Join-Path (Split-Path $path -Parent) ("forgum-" + [System.IO.Path]::GetRandomFileName() + ".tmp")
         try {
             $json | Set-Content -Path $tempPath -Encoding UTF8 -Force -ErrorAction Stop
-            Move-Item -Path $tempPath -Destination $path -Force -ErrorAction Stop
+            $maxRetries = 3
+            for ($i = 0; $i -lt $maxRetries; $i++) {
+                try {
+                    Move-Item -Path $tempPath -Destination $path -Force -ErrorAction Stop
+                    break
+                }
+                catch {
+                    if ($i -eq ($maxRetries - 1)) { throw }
+                    Start-Sleep -Milliseconds 10
+                }
+            }
         }
         catch {
             if (Test-Path $tempPath) { Remove-Item $tempPath -Force -ErrorAction SilentlyContinue }

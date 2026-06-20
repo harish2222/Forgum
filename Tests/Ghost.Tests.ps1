@@ -6,12 +6,13 @@
     Uses deep-copy config isolation.
 #>
 
+$env:FORGUM_NOAUTOSTART = '1'
+$ModuleRoot = Split-Path $PSScriptRoot -Parent
+$ModulePath = Join-Path $ModuleRoot 'Forgum.psd1'
+Get-Module Forgum | Remove-Module Forgum -Force -ErrorAction SilentlyContinue
+Import-Module $ModulePath -Force
+
 BeforeAll {
-    $env:FORGUM_NOAUTOSTART = '1'
-    $ModuleRoot = Split-Path $PSScriptRoot -Parent
-    $ModulePath = Join-Path $ModuleRoot 'Forgum.psd1'
-    Get-Module Forgum | Remove-Module Forgum -Force -ErrorAction SilentlyContinue
-    Import-Module $ModulePath -Force
 }
 
 AfterAll {

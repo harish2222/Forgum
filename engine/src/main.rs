@@ -6,12 +6,18 @@ mod effects;
 mod terminal;
 mod region;
 mod scheduler;
+mod style_matcher;
 
 use protocol::SceneConfig;
 use std::io::{self, Read, Write};
 use framebuffer::FrameBuffer;
 use region::{RegionAllocator, Rect};
-use effects::{Effect, AuroraEffect, EmberEffect, ShatterEffect, PlasmaEffect, LiquidChromeEffect, PortalEffect, GlitchEffect, NeonPulseEffect, PhysicsEffect};
+use effects::{
+    Effect, AuroraEffect, EmberEffect, ShatterEffect, PlasmaEffect,
+    LiquidChromeEffect, PortalEffect, GlitchEffect, NeonPulseEffect, PhysicsEffect,
+    StaticEffect, BreathingEffect, LiquidEffect, SwayEffect, BounceEffect,
+    FlyingEffect, FireEffect, MatrixEffect, PulseEffect, DissolveEffect,
+};
 use terminal::Terminal;
 use scheduler::Scheduler;
 use crossterm::{
@@ -22,8 +28,21 @@ use crossterm::{
 use std::time::Duration;
 use std::path::PathBuf;
 
+#[cfg(unix)]
+fn is_terminal_stdin() -> bool {
+    unsafe { libc::isatty(libc::STDIN_FILENO) != 0 }
+}
+
+#[cfg(not(unix))]
+fn is_terminal_stdin() -> bool {
+    // On Windows, assume piped input when running non-interactively
+    // This is a heuristic — the engine will default to 150 frames for piped input
+    false
+}
+
 fn create_effect(name: &str, cow_text: String) -> Box<dyn Effect> {
     match name {
+        // Flagship visual effects
         "ember" => Box::new(EmberEffect::new(cow_text)),
         "shatter" => Box::new(ShatterEffect::new(cow_text)),
         "plasma" => Box::new(PlasmaEffect::new(cow_text)),
@@ -32,18 +51,53 @@ fn create_effect(name: &str, cow_text: String) -> Box<dyn Effect> {
         "glitch" => Box::new(GlitchEffect::new(cow_text)),
         "neon-pulse" => Box::new(NeonPulseEffect::new(cow_text)),
         "physics" => Box::new(PhysicsEffect::new(cow_text)),
+        // Base animation styles (mapped from animations.json)
+        "static" | "talk" => Box::new(StaticEffect::new(cow_text)),
+        "breathe" | "breathing" => Box::new(BreathingEffect::new(cow_text)),
+        "liquid" | "squish" => Box::new(LiquidEffect::new(cow_text)),
+        "sway" => Box::new(SwayEffect::new(cow_text)),
+        "bounce" => Box::new(BounceEffect::new(cow_text)),
+        "fly" | "flying" => Box::new(FlyingEffect::new(cow_text)),
+        "fire" => Box::new(FireEffect::new(cow_text)),
+        "matrix" => Box::new(MatrixEffect::new(cow_text)),
+        "pulse" => Box::new(PulseEffect::new(cow_text)),
+        "dissolve" => Box::new(DissolveEffect::new(cow_text)),
+        // Aliases from style_matcher
+        "abduction" => Box::new(SwayEffect::new(cow_text)),
+        // Random selection from all effects
         "random" => {
             use rand::seq::SliceRandom;
             let effects = [
-                "ember", "shatter", "plasma", "liquid-chrome",
-                "portal", "glitch", "neon-pulse", "aurora", "physics",
+                "aurora", "ember", "shatter", "plasma", "liquid-chrome",
+                "portal", "glitch", "neon-pulse", "physics",
+                "breathe", "liquid", "sway", "bounce", "fly",
+                "fire", "matrix", "pulse", "dissolve",
             ];
             let mut rng = rand::thread_rng();
             let chosen = *effects.choose(&mut rng).unwrap_or(&"aurora");
             create_effect(chosen, cow_text)
         }
+        // Default fallback
         _ => Box::new(AuroraEffect::new(cow_text)),
     }
+}
+
+fn resolve_effect_name(config: &SceneConfig) -> String {
+    // If effect is explicitly set and not "auto", use it
+    if config.effect != "auto" && !config.effect.is_empty() {
+        return config.effect.clone();
+    }
+    // If style is set, use it directly
+    if let Some(ref style) = config.style {
+        return style.clone();
+    }
+    // If cow_file is provided, use style_matcher to auto-detect
+    if let Some(ref cow_file) = config.cow_file {
+        let cow_style = style_matcher::get_cow_style(cow_file);
+        return cow_style.base.to_lowercase();
+    }
+    // Default to aurora
+    "aurora".to_string()
 }
 
 fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
@@ -54,7 +108,8 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
 
     let (cols, rows) = crossterm::terminal::size()?;
     let mut fb = FrameBuffer::new(cols as usize, rows as usize);
-    let mut effect = create_effect(&config.effect, config.cow_text);
+    let effect_name = resolve_effect_name(&config);
+    let mut effect = create_effect(&effect_name, config.cow_text);
     effect.on_resize(cols as usize, rows as usize);
 
     let mut region_alloc = RegionAllocator::new(Rect::new(0, 0, cols, rows));
@@ -62,7 +117,12 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
     let overlay_id = region_alloc.allocate(Rect::new(ob.0, ob.1, ob.2, ob.3), 100);
 
     let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
-    let max_frames = config.duration.unwrap_or(0);
+    // If duration is 0 (infinite), check if stdin is a pipe — if so, default to 150 frames
+    let max_frames = if config.duration.unwrap_or(0) == 0 && !is_terminal_stdin() {
+        150
+    } else {
+        config.duration.unwrap_or(0)
+    };
     let mut frame_count: u32 = 0;
 
     loop {
@@ -130,7 +190,8 @@ fn render_loop_background(config: SceneConfig) -> io::Result<()> {
 
     let (cols, rows) = crossterm::terminal::size()?;
     let mut fb = FrameBuffer::new(cols as usize, rows as usize);
-    let mut effect = create_effect(&config.effect, config.cow_text);
+    let effect_name = resolve_effect_name(&config);
+    let mut effect = create_effect(&effect_name, config.cow_text);
     effect.on_resize(cols as usize, rows as usize);
 
     let mut region_alloc = RegionAllocator::new(Rect::new(0, 0, cols, rows));
@@ -141,7 +202,12 @@ fn render_loop_background(config: SceneConfig) -> io::Result<()> {
     let overlay_id = region_alloc.allocate(Rect::new(0, 0, cols, ob_y1), 100);
 
     let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
-    let max_frames = config.duration.unwrap_or(0);
+    // If duration is 0 (infinite), check if stdin is a pipe — if so, default to 150 frames
+    let max_frames = if config.duration.unwrap_or(0) == 0 && !is_terminal_stdin() {
+        150
+    } else {
+        config.duration.unwrap_or(0)
+    };
     let mut frame_count: u32 = 0;
 
     loop {
@@ -318,6 +384,17 @@ fn main() -> io::Result<()> {
             return Ok(());
         }
     };
+
+    // Handle init type via JSON
+    if let Some(ref json_type) = config.r#type {
+        if json_type == "init" {
+            // Extract shell from the raw JSON
+            let parsed: serde_json::Value = serde_json::from_str(&buffer).unwrap_or_default();
+            let shell = parsed.get("shell").and_then(|v| v.as_str()).unwrap_or("bash");
+            handle_init(shell);
+            return Ok(());
+        }
+    }
 
     let is_bg = config.background.unwrap_or(false);
     let is_daemon = args.iter().any(|a| a == "--daemon");

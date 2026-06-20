@@ -24,7 +24,11 @@ function Update-Forgum {
         return
     }
 
-    Write-Host "Updating Forgum (current: $currentVersion)..." -ForegroundColor Cyan
+    if ($Force) {
+        Write-Host "Force-updating Forgum (current: $currentVersion)..." -ForegroundColor Cyan
+    } else {
+        Write-Host "Updating Forgum (current: $currentVersion)..." -ForegroundColor Cyan
+    }
     Write-Host "Run: iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/harish2222/Forgum/main/install.ps1'))" -ForegroundColor Yellow
     Write-Host "Or: Update-Module Forgum" -ForegroundColor Yellow
 }

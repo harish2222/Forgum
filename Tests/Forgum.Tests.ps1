@@ -382,7 +382,7 @@ Describe "Animation Modes" -Tag 'Animation' {
 
         It "returns cow text immediately" {
             InModuleScope Forgum {
-                $output = Show-CFAnimation -CowOutput "Test cow" -Message "Hello"
+                $output = Show-CFAnimation -CowOutput "Test cow"
                 $output | Should -Not -BeNullOrEmpty
             }
         }
@@ -407,7 +407,7 @@ Describe "Animation Modes" -Tag 'Animation' {
 
         It "cycles through random cows and fortunes" {
             InModuleScope Forgum {
-                { Show-CFAnimation -CowOutput "Test cow" -Message "Hello" } | Should -Not -Throw
+                { Show-CFAnimation -CowOutput "Test cow" } | Should -Not -Throw
             }
         }
     }
@@ -431,7 +431,7 @@ Describe "Animation Modes" -Tag 'Animation' {
 
         It "runs without throwing" {
             InModuleScope Forgum {
-                { Show-CFAnimation -CowOutput "Test cow" -Message "Hello" } | Should -Not -Throw
+                { Show-CFAnimation -CowOutput "Test cow" } | Should -Not -Throw
             }
         }
     }
@@ -485,7 +485,7 @@ Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
                 $cfg = Get-CFConfig
                 $cfg.animation.mode = 'aurora'
                 Set-CFConfig -Config $cfg
-                { Show-CFAnimation -CowOutput "moo" -Message "real rendering test" } | Should -Not -Throw
+                { Show-CFAnimation -CowOutput "moo" } | Should -Not -Throw
                 Set-CFConfig -Config $script:RestoreConfig
             } -ArgumentList $binPath
         } else {
@@ -501,7 +501,7 @@ Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
             $cfg.animation.mode = 'aurora'
             Set-CFConfig -Config $cfg
 
-            { Show-CFAnimation -CowOutput "moo" -Message "test" } | Should -Not -Throw
+            { Show-CFAnimation -CowOutput "moo" } | Should -Not -Throw
             Set-CFConfig -Config $script:RestoreConfig
         }
     }

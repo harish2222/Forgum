@@ -56,8 +56,18 @@ function Invoke-LiveShow {
             $cowText = Format-Lolcat -Text $cowText -Seed $lolSeed
         }
 
-        $ok = Invoke-Engine -Message $fortune -CowTemplate @($cowText) -Effect $engineEffect -Fps 30 -Duration 0
-        if (-not $ok) {
+        $fullText = $fortune
+        if ($cowText) { $fullText = "$fortune`n$cowText" }
+        $payload = @{
+            type       = 'render'
+            effect     = $engineEffect
+            cow_text   = $fullText
+            background = $false
+            duration   = 0
+            fps        = 30
+        } | ConvertTo-Json -Depth 5 -Compress
+        $result = $payload | Invoke-Engine
+        if ($null -eq $result) {
             Write-Host $fortune
             Write-Host $cowText
         }
@@ -88,8 +98,18 @@ function Invoke-LiveShow {
             $cowText = Format-Lolcat -Text $cowText -Seed $lolSeed
         }
 
-        $ok = Invoke-Engine -Message $fortune -CowTemplate @($cowText) -Effect $engineEffect -Fps 1 -Duration 250
-        if (-not $ok) {
+        $fullText = $fortune
+        if ($cowText) { $fullText = "$fortune`n$cowText" }
+        $payload = @{
+            type       = 'render'
+            effect     = $engineEffect
+            cow_text   = $fullText
+            background = $false
+            duration   = 250
+            fps        = 1
+        } | ConvertTo-Json -Depth 5 -Compress
+        $result = $payload | Invoke-Engine
+        if ($null -eq $result) {
             Write-Host $fortune
             Write-Host $cowText
         }

@@ -23,12 +23,15 @@ Describe 'Invoke-LiveShow' {
 
             $script:lastInvoke = $null
             Mock Invoke-Engine {
-                param([string]$Message, [string[]]$CowTemplate, [string]$Effect, [int]$Fps, [int]$Duration)
+                param([string]$JsonPayload)
+                $obj = $JsonPayload | ConvertFrom-Json
                 $script:lastInvoke = [pscustomobject]@{
-                    Message = $Message; CowText = $CowTemplate[0]
-                    Effect = $Effect; Fps = $Fps; Duration = $Duration
+                    CowText = $obj.cow_text
+                    Effect  = $obj.effect
+                    Fps     = $obj.fps
+                    Duration = $obj.duration
                 }
-                return $true
+                return 'mock-output'
             }
 
             $result = Invoke-LiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $false; Animation = $true }
@@ -49,12 +52,15 @@ Describe 'Invoke-LiveShow' {
 
             $script:lastInvoke = $null
             Mock Invoke-Engine {
-                param([string]$Message, [string[]]$CowTemplate, [string]$Effect, [int]$Fps, [int]$Duration)
+                param([string]$JsonPayload)
+                $obj = $JsonPayload | ConvertFrom-Json
                 $script:lastInvoke = [pscustomobject]@{
-                    Message = $Message; CowText = $CowTemplate[0]
-                    Effect = $Effect; Fps = $Fps; Duration = $Duration
+                    CowText = $obj.cow_text
+                    Effect  = $obj.effect
+                    Fps     = $obj.fps
+                    Duration = $obj.duration
                 }
-                return $true
+                return 'mock-output'
             }
 
             $result = Invoke-LiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $false; Animation = $false }
@@ -79,12 +85,15 @@ Describe 'Invoke-LiveShow' {
 
             $script:lastInvoke = $null
             Mock Invoke-Engine {
-                param([string]$Message, [string[]]$CowTemplate, [string]$Effect, [int]$Fps, [int]$Duration)
+                param([string]$JsonPayload)
+                $obj = $JsonPayload | ConvertFrom-Json
                 $script:lastInvoke = [pscustomobject]@{
-                    Message = $Message; CowText = $CowTemplate[0]
-                    Effect = $Effect; Fps = $Fps; Duration = $Duration
+                    CowText = $obj.cow_text
+                    Effect  = $obj.effect
+                    Fps     = $obj.fps
+                    Duration = $obj.duration
                 }
-                return $true
+                return 'mock-output'
             }
 
             $null = Invoke-LiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $true; Animation = $false }

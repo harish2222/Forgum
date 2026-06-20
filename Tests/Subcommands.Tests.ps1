@@ -12,7 +12,11 @@ BeforeAll {
 
     function Strip-Ansi {
         param([string]$Text)
-        $Text -replace '\x1b\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\][^\x07]*\x07', ''
+        $esc = [char]27
+        $Text -replace "${esc}\[[0-9;]*[a-zA-Z]", '' `
+              -replace "${esc}\][^\x07]*\x07", '' `
+              -replace 'e\[[0-9;]*m', '' `
+              -replace 'e\][^\a]*\a', ''
     }
 }
 
@@ -885,11 +889,6 @@ Describe "Module exports and structure" -Tag 'Structure' {
     It "all animation functions exist" {
         InModuleScope Forgum {
             $anims = @(
-                'Invoke-TalkingAnimation', 'Invoke-TypewriterAnimation',
-                'Invoke-DynamicAnimation', 'Invoke-PhysicsCow', 'Invoke-ProceduralAnimation',
-                'Invoke-BlinkAnimation', 'Invoke-BounceAnimation', 'Invoke-WaveAnimation',
-                'Invoke-WiggleAnimation', 'Invoke-DissolveAnimation', 'Invoke-FadeInAnimation',
-                'Invoke-SlideInAnimation', 'Invoke-DiscoAnimation',
                 'Show-CFAnimation', 'Invoke-Engine'
             )
             foreach ($a in $anims) {

@@ -1,64 +1,60 @@
 function Read-CowFile {
     <#
     .SYNOPSIS
-        Reads and parses a .cow template file with caching.
+        Reads and parses a .cow file template.
     .DESCRIPTION
-        Extracts the $the_cow block from a Perl-format .cow file.
-        Handles escape sequences (\@, \$, \\) and caches results for performance.
+        Extracts the cow template from a .cow file, unescaping Perl sequences.
+    .PARAMETER CowName
+        Name of the cow file (without .cow extension).
+    .PARAMETER CustomPath
+        Optional custom path to a .cow file.
     #>
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory)]
         [string]$CowName,
 
-        [string]$CustomPath
+        [string]$CustomPath = ''
     )
 
-    # Check cache first
-    $cacheKey = if ($CustomPath) { $CustomPath } else { $CowName }
-    if ($script:CowFileCache.ContainsKey($cacheKey)) {
-        return $script:CowFileCache[$cacheKey]
+    if ($script:CowFileCache -and $script:CowFileCache.ContainsKey($CowName)) {
+        return $script:CowFileCache[$CowName]
     }
 
-    # Resolve path
+    $cowsPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Data/Cows'
+
     if ($CustomPath) {
-        $path = [System.IO.Path]::GetFullPath($CustomPath)
-        if ($path -match '[\\/]\.\.[\\/]') {
-            throw "Invalid custom path: '$CustomPath' contains path traversal"
+        if ($CustomPath -match '\.\.') {
+            throw "Path traversal detected in custom path: $CustomPath"
         }
-    }
-    else {
-        $cowsPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Data/Cows'
-        $path = Join-Path $cowsPath "$CowName.cow"
-        # Security: ensure resolved path stays within Cows directory
-        $resolvedPath = [System.IO.Path]::GetFullPath($path)
-        $resolvedBase = [System.IO.Path]::GetFullPath($cowsPath)
-        if (-not $resolvedPath.StartsWith($resolvedBase, [StringComparison]::OrdinalIgnoreCase)) {
-            throw "Invalid cow name: '$CowName' resolves outside the Cows directory"
-        }
-        $path = $resolvedPath
+        $filePath = $CustomPath
+    } else {
+        $filePath = Join-Path $cowsPath "$CowName.cow"
     }
 
-    if (-not (Test-Path $path)) {
-        throw "Cow file not found: $path"
+    if (-not (Test-Path $filePath)) {
+        throw "Cow file not found: $filePath"
     }
 
-    $content = Get-Content $path -Raw -ErrorAction Stop
+    $content = Get-Content -Path $filePath -Raw -ErrorAction Stop
     $content = $content -replace "`r`n", "`n"
 
-    # Extract $the_cow heredoc block
-    # Use \n instead of \s* to preserve leading whitespace in cow template lines
-    if ($content -match '(?s)\$the_cow\s*=\s*<<["'']?EOC["'']?;?\n(.*?)\n\s*EOC') {
-        $content = $Matches[1]
+    $pattern = "(?s)\`$the_cow\s*=\s*<<[""']?EOC[""']?;?\n(.*?)\n\s*EOC"
+    if ($content -match $pattern) {
+        $template = $Matches[1]
+    } else {
+        throw "Failed to parse cow file: $filePath"
     }
 
-    # Unescape Perl escape sequences (order matters: \\ before \@ and \$)
-    $content = $content -replace '\\\\', '\'
-    $content = $content -replace '\\@',  '@'
-    $content = $content -replace '\\\$', '$'
+    $template = $template -replace '\\\\', '\'
+    $template = $template -replace '\\@', '@'
+    $template = $template -replace '\\$', '$'
 
-    # Cache for subsequent calls
-    $script:CowFileCache[$cacheKey] = $content
+    if (-not $script:CowFileCache) {
+        $script:CowFileCache = @{}
+    }
+    $script:CowFileCache[$CowName] = $template
 
-    return $content
+    return $template
 }

@@ -28,7 +28,7 @@ function Invoke-ForgumRun {
     }
 
     if ($animationMode -ne 'static' -and $animationMode -ne '') {
-        Show-CFAnimation -CowOutput $cowOutput -Message $text -Mode $animationMode -Config $config
+        Show-CFAnimation -CowOutput $cowOutput -Mode $animationMode -Config $config
     }
 
     Write-ForgumHistory -Message $text -Cow $cowName

@@ -2,7 +2,7 @@ class Forgum < Formula
   desc "Cross-platform PowerShell module for cowsay, fortune, and lolcat"
   homepage "https://github.com/harish2222/Forgum"
   url "https://github.com/harish2222/Forgum/archive/refs/tags/v1.1.2.tar.gz"
-  sha256 "REPLACE_ME"
+  sha256 "C5489E4F9ED9182C64CFB7B8DC8B349F40438151CC33E2076978427D0C4E50E3"
   license "MIT"
 
   depends_on "powershell"

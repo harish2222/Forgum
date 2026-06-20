@@ -28,6 +28,8 @@ function forgum {
         [Parameter(Position = 0)]
         [string]$SubCommand,
 
+        [string]$Text,
+
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$Arguments
     )
@@ -61,7 +63,11 @@ function forgum {
     }
 
     if ([string]::IsNullOrEmpty($SubCommand)) {
-        Invoke-ForgumRun -Arguments $Arguments
+        if (-not [string]::IsNullOrEmpty($Text)) {
+            Invoke-ForgumRun -Arguments @($Text)
+        } else {
+            Invoke-ForgumRun -Arguments $Arguments
+        }
         return
     }
 

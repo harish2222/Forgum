@@ -12,7 +12,7 @@ function Invoke-ForgumCowsay {
     $text = $parsed.TextString
     $config = Get-CFConfig
 
-    $cowName = if ($parsed.Options.ContainsKey('cow')) { $parsed.Options['cow'] } else { $config.cow.file }
+    $cowName = if ($parsed.Options.ContainsKey('cow')) { $parsed.Options['cow'] } elseif ($config.cow.file) { $config.cow.file } else { 'default' }
     $eyes = if ($parsed.Options.ContainsKey('eyes')) { $parsed.Options['eyes'] } else { $config.cow.eyes }
     $tongue = if ($parsed.Options.ContainsKey('tongue')) { $parsed.Options['tongue'] } else { $config.cow.tongue }
     $thoughts = if ($parsed.Options.ContainsKey('thoughts')) { $parsed.Options['thoughts'] } else { '\' }
