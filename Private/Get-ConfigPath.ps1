@@ -22,15 +22,15 @@ function Get-ConfigPath {
 
     # Prefer PS7 automatic variables; fall back to $env:OS for PS5.1.
     $isPS7 = $PSVersionTable.PSVersion.Major -ge 7
-    $isWindows = if ($isPS7) { [bool]$IsWindows } else { $env:OS -eq 'Windows_NT' }
-    $isLinux   = if ($isPS7) { [bool]$IsLinux }   else { $env:OS -eq 'Linux' }
-    $isMacOS   = if ($isPS7) { [bool]$IsMacOS }   else { $env:OS -eq 'Darwin' }
+    $onWindows = if ($isPS7) { [bool]$IsWindows } else { $env:OS -eq 'Windows_NT' }
+    $onLinux   = if ($isPS7) { [bool]$IsLinux }   else { $env:OS -eq 'Linux' }
+    $onMacOS   = if ($isPS7) { [bool]$IsMacOS }   else { $env:OS -eq 'Darwin' }
 
-    if ($isLinux -or $isMacOS) {
+    if ($onLinux -or $onMacOS) {
         return Join-Path (Join-Path $HOME '.config') 'Forgum/config.json'
     }
 
-    if ($isWindows) {
+    if ($onWindows) {
         return Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell/Forgum/config.json'
     }
 

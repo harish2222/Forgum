@@ -6,8 +6,8 @@ function Get-EngineBinary {
         Searches bin/, engine/target/release/, engine/target/debug/.
         Returns full path or $null if not found.
     #>
-    $isWindows = $IsWindows -or $env:OS -eq 'Windows_NT'
-    $binaryName = if ($isWindows) { 'forgum-engine.exe' } else { 'forgum-engine' }
+    $onWindows = $IsWindows -or $env:OS -eq 'Windows_NT'
+    $binaryName = if ($onWindows) { 'forgum-engine.exe' } else { 'forgum-engine' }
 
     $moduleRoot = Split-Path $PSScriptRoot -Parent
 
