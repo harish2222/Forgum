@@ -36,7 +36,7 @@ function Set-CFConfig {
         $json = $Config | ConvertTo-Json -Depth 10
 
         # Atomic write: write to temp file then move (prevents corruption on crash)
-        $tempPath = "$path.tmp"
+        $tempPath = Join-Path (Split-Path $path -Parent) ("forgum-" + [System.IO.Path]::GetRandomFileName() + ".tmp")
         try {
             $json | Set-Content -Path $tempPath -Encoding UTF8 -Force -ErrorAction Stop
             Move-Item -Path $tempPath -Destination $path -Force -ErrorAction Stop

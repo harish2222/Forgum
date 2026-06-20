@@ -24,7 +24,7 @@
         [int]$Speed = 40
     )
 
-    $lines = $CowOutput -split "`n"
+    $lines = $CowOutput -split "`r?`n"
     $cowHeight = $lines.Count
 
     # Calculate bounce physics
@@ -57,7 +57,8 @@
 
     $sb = [System.Text.StringBuilder]::new($CowOutput.Length * 2)
 
-    foreach ($pos in $positions) {
+    for ($idx = 0; $idx -lt $positions.Count; $idx++) {
+        $pos = $positions[$idx]
         [void]$sb.Clear()
 
         # Print blank lines above cow for positioning
@@ -72,7 +73,7 @@
         }
 
         try {
-            if ($positions.IndexOf($pos) -gt 0) {
+            if ($idx -gt 0) {
                 $totalHeight = $blankLines + $cowHeight
                 if ([Console]::CursorTop -ge $totalHeight) {
                     [Console]::SetCursorPosition(0, [Console]::CursorTop - $totalHeight)

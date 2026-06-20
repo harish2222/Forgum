@@ -9,7 +9,13 @@ function Invoke-ForgumGallery {
         return
     }
 
-    $count = if ($parsed.Options.ContainsKey('count')) { [int]$parsed.Options['count'] } else { 5 }
+    $count = 5
+    if ($parsed.Options.ContainsKey('count')) {
+        $parsedInt = 0
+        if ([int]::TryParse($parsed.Options['count'], [ref]$parsedInt) -and $parsedInt -gt 0) {
+            $count = $parsedInt
+        }
+    }
 
     Show-CFCowGallery -Count $count
 }

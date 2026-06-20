@@ -87,7 +87,6 @@ if (-not (Test-Path $installDir)) {
 }
 Show-Progress 10 100
 
-# Clone or copy
 # Compile Rust engine if cargo is available
 $sourceDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocation.MyCommand.Path -Parent }
 $rustDir = Join-Path $sourceDir "engine"
@@ -107,7 +106,7 @@ if (Test-CommandExists cargo) {
         }
     }
 }
-$moduleItems = @("Forgum.psd1", "Forgum.psm1", "bin", "Public", "Private", "Data", "Tests", "setup.ps1", "LICENSE", "README.md")
+$moduleItems = @("Forgum.psd1", "Forgum.psm1", "Public", "Private", "Data", "bin", "LICENSE", "README.md")
 
 if (Test-CommandExists git) {
     if (Test-Path (Join-Path $sourceDir '.git')) {
@@ -164,7 +163,6 @@ if ($profilePath) {
 # Run setup
 $setupScript = Join-Path $installDir "setup.ps1"
 if (-not (Test-Path $setupScript)) {
-    # Fallback to source dir if running locally
     $setupScript = Join-Path $sourceDir "setup.ps1"
 }
 
@@ -196,18 +194,17 @@ Write-Host ""
 Write-Host "  Installation complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Quick Start:" -ForegroundColor White
-Write-Host "    Invoke-Forgum          # Show a cow with a fortune" -ForegroundColor Green
-Write-Host "    Invoke-Cowsay -Text 'Hello'   # Show a cow with custom text" -ForegroundColor Green
-Write-Host "    Get-Fortune                  # Get a random fortune" -ForegroundColor Green
-Write-Host "    Get-CFCow                    # List all available cows" -ForegroundColor Green
+Write-Host "    forgum                   # Show a cow with a fortune" -ForegroundColor Green
+Write-Host "    forgum cowsay 'Hello'    # Show a cow with custom text" -ForegroundColor Green
+Write-Host "    forgum list              # List available cow templates" -ForegroundColor Green
+Write-Host "    forgum interactive       # Open interactive config menu" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Configuration:" -ForegroundColor White
-Write-Host "    Get-CFConfig                 # View current config" -ForegroundColor Green
-Write-Host "    Set-CFConfig                 # Update config" -ForegroundColor Green
+Write-Host "    forgum config show       # View current config" -ForegroundColor Green
+Write-Host "    forgum config path       # Show config file path" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Enable rainbow colors:" -ForegroundColor Yellow
-Write-Host '    Set-CFConfig -Config @{ lolcat = @{ enabled = $true } }' -ForegroundColor Yellow
+Write-Host "    forgum toggle --lolcat" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  Fortune favors the bold! Enjoy your cows!" -ForegroundColor Magenta
 Write-Host ""
-

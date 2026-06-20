@@ -23,14 +23,15 @@ function Invoke-ForgumRun {
     $cowOutput = Invoke-Cowsay -Text $text -CowFile $cowName -Eyes $config.cow.eyes -Tongue $config.cow.tongue
 
     if ($useLolcat) {
-        $freq = if ($config.lolcat.frequency -and $config.lolcat.frequency -ge 0.01) { $config.lolcat.frequency } else { 0.1 }
-        $spread = if ($config.lolcat.spread -and $config.lolcat.spread -ge 0.1) { $config.lolcat.spread } else { 3.0 }
-        $cowOutput = Format-Lolcat -Text $cowOutput -Frequency $freq -Spread $spread -Truecolor $config.lolcat.truecolor
+        $lp = Get-LolcatParams
+        $cowOutput = Format-Lolcat -Text $cowOutput -Frequency $lp.Frequency -Spread $lp.Spread -Truecolor $lp.Truecolor
     }
 
     if ($animationMode -ne 'static' -and $animationMode -ne '') {
         Show-CFAnimation -CowOutput $cowOutput -Message $text -Mode $animationMode -Config $config
-    } else {
-        $cowOutput
     }
+
+    Write-ForgumHistory -Message $text -Cow $cowName
+
+    return $cowOutput
 }

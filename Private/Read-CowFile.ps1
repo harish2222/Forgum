@@ -23,6 +23,9 @@ function Read-CowFile {
     # Resolve path
     if ($CustomPath) {
         $path = [System.IO.Path]::GetFullPath($CustomPath)
+        if ($path -match '[\\/]\.\.[\\/]') {
+            throw "Invalid custom path: '$CustomPath' contains path traversal"
+        }
     }
     else {
         $cowsPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Data/Cows'

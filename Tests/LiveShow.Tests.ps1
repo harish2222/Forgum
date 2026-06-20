@@ -19,7 +19,7 @@ Describe 'Invoke-LiveShow' {
             Mock Get-CFCow { return @('cow1', 'cow2') }
             Mock Get-Fortune { return 'fortune1' }
             Mock Invoke-Cowsay { return 'cow-text' }
-            Mock Get-Random { return 5000 } -ParameterFilter { $Maximum -eq 100000 }
+            Mock Get-Random { return 5000 } -ParameterFilter { $Maximum -eq 10001 }
 
             $script:lastInvoke = $null
             Mock Invoke-Engine {
@@ -45,7 +45,7 @@ Describe 'Invoke-LiveShow' {
             Mock Get-CFCow { return @('cow1', 'cow2') }
             Mock Get-Fortune { return 'fortune1' }
             Mock Invoke-Cowsay { return 'cow-text' }
-            Mock Get-Random { return 5000 } -ParameterFilter { $Maximum -eq 100000 }
+            Mock Get-Random { return 5000 } -ParameterFilter { $Maximum -eq 10001 }
 
             $script:lastInvoke = $null
             Mock Invoke-Engine {
@@ -71,7 +71,7 @@ Describe 'Invoke-LiveShow' {
             Mock Get-CFCow { return @('cow1', 'cow2') }
             Mock Get-Fortune { return 'fortune1' }
             Mock Invoke-Cowsay { return 'cow-text' }
-            Mock Get-Random { return 5000 } -ParameterFilter { $Maximum -eq 100000 }
+            Mock Get-Random { return 5000 } -ParameterFilter { $Maximum -eq 10001 }
             Mock Format-Lolcat {
                 param([string]$Text, [int]$Seed)
                 return "lolcat-$Seed-$Text"

@@ -22,8 +22,8 @@ function Show-CFCowGallery {
     foreach ($cow in $selected) {
         $fortune = Get-Fortune
         $output = Invoke-Cowsay -Text $fortune -CowFile $cow
-        Write-Host ""
-        Write-Host "=== $cow ===" -ForegroundColor Cyan
-        Write-Host $output
+        Write-Output ""
+        Write-Output "=== $cow ==="
+        Write-Output $output
     }
 }

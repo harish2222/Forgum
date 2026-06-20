@@ -1,4 +1,4 @@
-function Forgum-Blink-Animation {
+function Invoke-BlinkAnimation {
     <#
     .SYNOPSIS
         Cow eyes blink periodically while displaying.
@@ -24,24 +24,27 @@ function Forgum-Blink-Animation {
         [double]$BlinkRate = 0.2
     )
 
-    $lines = $CowOutput -split "`n"
+    $lines = $CowOutput -split "`r?`n"
 
     # Find lines containing eye patterns (parenthesized 2-char expressions)
-    $eyeLineIndices = @()
-    $originalEyeLines = @()
+    $eyeLineIndices = [System.Collections.Generic.List[int]]::new()
+    $originalEyeLines = [System.Collections.Generic.List[string]]::new()
 
     for ($i = 0; $i -lt $lines.Count; $i++) {
         if ($lines[$i] -match '\([^)]{2}\)') {
-            $eyeLineIndices += $i
-            $originalEyeLines += $lines[$i]
+            $eyeLineIndices.Add($i)
+            $originalEyeLines.Add($lines[$i])
         }
     }
 
     # Create closed-eye versions (replace eyes with dashes)
-    $closedEyeLines = @()
+    $closedEyeLines = [System.Collections.Generic.List[string]]::new($originalEyeLines.Count)
     foreach ($line in $originalEyeLines) {
-        $closedEyeLines += ($line -replace '\(([^)]{2})\)', '(- -)')
+        $closedEyeLines.Add($line -replace '\(([^)]{2})\)', '(- -)')
     }
+
+    # O(1) lookup for eye lines via HashSet
+    $eyeLineSet = [System.Collections.Generic.HashSet[int]]::new($eyeLineIndices)
 
     $sb = [System.Text.StringBuilder]::new($CowOutput.Length * 2)
 
@@ -50,17 +53,13 @@ function Forgum-Blink-Animation {
 
         # Determine if this frame is a blink based on BlinkRate
         $blinkInterval = [Math]::Max(2, [Math]::Floor(1.0 / $BlinkRate))
-        $isBlink = ($frame % $blinkInterval -eq 3 -and $frame -ge 3)
+        $isBlink = ($frame % $blinkInterval -eq 0 -and $frame -ge $blinkInterval)
 
         for ($i = 0; $i -lt $lines.Count; $i++) {
             if ($i -gt 0) { [void]$sb.AppendLine() }
 
-            $eyeIdx = -1
-            for ($e = 0; $e -lt $eyeLineIndices.Count; $e++) {
-                if ($eyeLineIndices[$e] -eq $i) { $eyeIdx = $e; break }
-            }
-
-            if ($eyeIdx -ge 0 -and $isBlink) {
+            if ($eyeLineSet.Contains($i) -and $isBlink) {
+                $eyeIdx = $eyeLineIndices.IndexOf($i)
                 [void]$sb.Append($closedEyeLines[$eyeIdx])
             } else {
                 [void]$sb.Append($lines[$i])

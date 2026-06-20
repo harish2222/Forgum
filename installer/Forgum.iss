@@ -58,7 +58,7 @@ Source: "..\uninstall.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 
 [Run]
-Filename: "pwsh.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\setup.ps1"" -InstallOnly"; StatusMsg: "Configuring PowerShell profile..."; Flags: runhidden waituntilterminated skipifsilent skipifdoesntexist
+Filename: "pwsh.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\setup.ps1"" -NonInteractive"; StatusMsg: "Configuring PowerShell profile..."; Flags: runhidden waituntilterminated skipifsilent skipifdoesntexist
 
 [Code]
 function GetPSModulePath: String;

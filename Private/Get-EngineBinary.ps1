@@ -9,7 +9,7 @@ function Get-EngineBinary {
     $isWindows = $IsWindows -or $env:OS -eq 'Windows_NT'
     $binaryName = if ($isWindows) { 'forgum-engine.exe' } else { 'forgum-engine' }
 
-    $moduleRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+    $moduleRoot = Split-Path $PSScriptRoot -Parent
 
     $candidates = @(
         (Join-Path $moduleRoot "bin/$binaryName"),

@@ -16,7 +16,7 @@ function Invoke-TypewriterAnimation {
         [int]$Speed = 50
     )
 
-    $lines = $CowOutput -split "`n"
+    $lines = $CowOutput -split "`r?`n"
     foreach ($line in $lines) {
         foreach ($char in $line.ToCharArray()) {
             Write-Host -NoNewline $char

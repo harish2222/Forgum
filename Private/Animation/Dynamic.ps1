@@ -20,30 +20,22 @@ function Invoke-DynamicAnimation {
     )
 
     $config = Get-CFConfig
-    $moduleRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-    $cowsPath = Join-Path $moduleRoot 'Data\Cows'
-    $fortunesPath = Join-Path $moduleRoot 'Data\Fortunes\fortunes.txt'
-    
-    $cowFiles = Get-ChildItem -Path $cowsPath -Filter '*.cow' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
-    $fortunes = Get-Content $fortunesPath -Raw -ErrorAction SilentlyContinue
-    $fortuneList = if ($fortunes) { $fortunes -split '(?m)^%\s*$' | Where-Object { $_.Trim() } } else { @() }
+    $cowsPath = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'Data' 'Cows'
+    $cowNames = Get-ChildItem -Path $cowsPath -Filter '*.cow' -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty BaseName
 
-    if (-not $cowFiles -or -not $fortuneList) {
-        return "No cows or fortunes available"
+    if (-not $cowNames -or $cowNames.Count -eq 0) {
+        return "No cows available"
     }
 
     $startTime = [DateTime]::UtcNow
     $endTime = $startTime.AddSeconds($Duration)
     $frameDelay = 50
     $lastCycle = $startTime
-    $currentCow = ''
-    $currentFortune = ''
+    $currentOutput = ''
     $firstRun = $true
     $output = ''
 
-    # Detect if we have a real console for cursor manipulation.
-    # [Console]::CursorTop throws on redirected stdout / non-interactive hosts,
-    # so wrap the probe in try/catch and fall back to a non-TTY path.
     $hasConsole = $false
     try {
         $null = [Console]::CursorTop
@@ -52,19 +44,11 @@ function Invoke-DynamicAnimation {
         $hasConsole = $false
     }
 
-    # Early-exit if Duration is zero / negative (caller wants one cycle only).
-    if ($Duration -le 0) {
-        $Duration = 0
-    }
-
     try {
         while ($Duration -le 0 -or [DateTime]::UtcNow -lt $endTime) {
             $now = [DateTime]::UtcNow
             $shouldCycle = ($now - $lastCycle).TotalSeconds -ge $CycleInterval -or $firstRun
 
-            # Check for keypress so user can bail out of the live animation.
-            # Wrapped in try/catch because [Console]::KeyAvailable throws on
-            # redirected stdin (e.g. when piped from another command).
             if ($hasConsole) {
                 $keyPressed = $false
                 try {
@@ -73,70 +57,41 @@ function Invoke-DynamicAnimation {
                     $keyPressed = $false
                 }
                 if ($keyPressed) {
-                    try {
-                        $null = [Console]::ReadKey($true)
-                    } catch {
-                        # ignore - we're exiting anyway
-                    }
+                    try { $null = [Console]::ReadKey($true) } catch {}
                     return $output
                 }
             }
 
             if ($shouldCycle) {
-                $currentCow = Get-Content ($cowFiles | Get-Random) -Raw
-                $currentFortune = $fortuneList | Get-Random
+                $cowName = $cowNames | Get-Random
+                $fortune = Get-Fortune
+                $currentOutput = Invoke-Cowsay -Text $fortune -CowFile $cowName
                 $lastCycle = $now
                 $firstRun = $false
             }
 
-            $cowLines = $currentCow -split "`r?`n"
-            $fortuneLines = $currentFortune.Trim() -split "`r?`n"
-            
-            $maxWidth = ($cowLines | Measure-Object -Property Length -Maximum).Maximum
-            $fortuneLines | ForEach-Object { if ($_.Length -gt $maxWidth) { $maxWidth = $_.Length } }
-            $balloonWidth = [math]::Max($maxWidth, 40)
+            $output = $currentOutput
 
-            $top = '  ' + ('#' * ($balloonWidth + 4))
-            $bottom = '  ' + ('#' * ($balloonWidth + 4))
-            $balloon = @()
-            $balloon += $top
-            foreach ($line in $fortuneLines) {
-                $pad = $balloonWidth - $line.Length
-                $balloon += "  || $line$(' ' * $pad) ||"
-            }
-            $balloon += $bottom
-            $balloon += $cowLines
-
-            $output = $balloon -join "`n"
-            
             if ($config.lolcat.enabled) {
-                $lolcatParams = @{
-                    Text      = $output
-                    Truecolor = $config.lolcat.truecolor
-                    Animate   = $config.lolcat.animate
-                }
-                $output = Format-Lolcat @lolcatParams
+                $freq = if ($config.lolcat.frequency -and $config.lolcat.frequency -ge 0.01) { $config.lolcat.frequency } else { 0.1 }
+                $spread = if ($config.lolcat.spread -and $config.lolcat.spread -ge 0.1) { $config.lolcat.spread } else { 3.0 }
+                $output = Format-Lolcat -Text $output -Frequency $freq -Spread $spread -Truecolor $config.lolcat.truecolor
             }
 
-            # Render with explicit cursor positioning so we don't accumulate
-            # frames on screen. Each frame is preceded by a cursor-up + clear-line
-            # for every line we previously wrote. The whole thing is one Write-Host
-            # call to minimise flicker.
             if ($hasConsole) {
-                $lineCount = $balloon.Count
+                $lineCount = ($currentOutput -split "`r?`n").Count
                 $esc = [char]27
                 $preamble = ''
                 for ($lc = 0; $lc -lt $lineCount; $lc++) {
-                    $preamble += "$($esc)[2K"   # clear entire line
+                    $preamble += "$($esc)[2K"
                     if ($lc -lt ($lineCount - 1)) {
-                        $preamble += "$($esc)[1A"  # move up one line
+                        $preamble += "$($esc)[1A"
                     }
                 }
-                $preamble += "`r"               # carriage return to column 0
+                $preamble += "`r"
                 Write-Host -NoNewline ($preamble + $output)
             }
             else {
-                # Redirected / non-interactive: just emit the frame with a newline.
                 Write-Host $output
             }
 

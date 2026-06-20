@@ -4,32 +4,34 @@
 #     (or /usr/share/fish/vendor_completions.d/forgum.fish)
 #
 # Completion targets:
-#   - Root subcommands / Action tokens
+#   - Root subcommands
 #   - Common flags/args
 
 function __forgum_subcommands
-    echo update upgrade config tui setup gallery preview toggle animate eyes help
-end
-
-# fish completion function
-function forgum
-    # no-op: this function name is used by fish completion system only
+    echo run cowsay list theme export history config interactive toggle animate eyes init daemon live gallery preview update help
 end
 
 complete -c forgum -n '__fish_use_subcommand' -a '(__forgum_subcommands)' -d 'forgum subcommand'
 
-# Generic flags completion (best-effort)
+# Flags
 complete -c forgum -s h -l help -d 'Show help'
-complete -c forgum -l Lolcat -d 'Force lolcat mode on'
-complete -c forgum -l Cow -d 'Alias/cow file override for invocation'
-complete -c forgum -l CowFile -d 'Cow file name'
-complete -c forgum -l Animation -d 'Animation mode override'
-complete -c forgum -l Count -d 'Gallery count'
-complete -c forgum -l PreviewCow -d 'Preview cow name'
-complete -c forgum -l PreviewText -d 'Preview text'
-complete -c forgum -l Mode -d 'Animation mode to set globally'
-complete -c forgum -l Preset -d 'Eyes preset'
-complete -c forgum -l CustomEyes -d 'Custom eyes (2 chars)'
-complete -c forgum -l Force -d 'Force update'
-complete -c forgum -l CheckOnly -d 'Only check for update'
-complete -c forgum -l Background -d 'Enable background for some animations'
+complete -c forgum -l version -d 'Show version'
+complete -c forgum -l cow -d 'Cow template name'
+complete -c forgum -l eyes -d 'Custom eyes (2 chars)'
+complete -c forgum -l tongue -d 'Custom tongue (2 chars)'
+complete -c forgum -l mode -d 'Animation mode'
+complete -c forgum -l count -d 'Number of times to run'
+complete -c forgum -l lolcat -d 'Enable rainbow colors'
+complete -c forgum -l no-lolcat -d 'Disable rainbow colors'
+complete -c forgum -l fortune -d 'Force new random fortune'
+complete -c forgum -l no-color -d 'Disable colors'
+complete -c forgum -l format -d 'Output format (txt, ansi)'
+complete -c forgum -l output -d 'Output file path'
+complete -c forgum -l search -d 'Search cow templates'
+complete -c forgum -l clear -d 'Clear history'
+complete -c forgum -l duration -d 'Animation duration'
+complete -c forgum -l force -d 'Force update'
+complete -c forgum -l check -d 'Only check for update'
+complete -c forgum -l thoughts -d 'Thought bubble character'
+complete -c forgum -l preset -d 'Eye preset name'
+complete -c forgum -l custom -d 'Custom eye characters'

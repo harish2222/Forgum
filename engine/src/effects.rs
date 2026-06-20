@@ -7,11 +7,7 @@ use rand::Rng;
 pub trait Effect {
     fn update(&mut self, dt: f32);
     fn render(&self, fb: &mut FrameBuffer, clip: Rect);
-    #[allow(dead_code)]
-    fn bounds(&self, fb_width: usize, fb_height: usize) -> Rect;
     fn on_resize(&mut self, _new_width: usize, _new_height: usize) {}
-    #[allow(dead_code)]
-    fn cleanup(&mut self) {}
 }
 
 fn center_offset(text_lines: usize, text_width: usize, fb_w: usize, fb_h: usize) -> (usize, usize) {
@@ -47,14 +43,6 @@ impl AuroraEffect {
 
 impl Effect for AuroraEffect {
     fn update(&mut self, dt: f32) { self.time += dt * 50.0; }
-    fn bounds(&self, _fb_width: usize, _fb_height: usize) -> Rect {
-        Rect::new(
-            self.offset_x as u16,
-            self.offset_y as u16,
-            (self.offset_x + self.text_w + 1) as u16,
-            (self.offset_y + self.text_h + 1) as u16,
-        )
-    }
     fn on_resize(&mut self, new_w: usize, new_h: usize) {
         let (ox, oy) = center_offset(self.text_h, self.text_w, new_w, new_h);
         self.offset_x = ox;
@@ -124,14 +112,6 @@ impl Effect for EmberEffect {
             }
         }
     }
-    fn bounds(&self, fb_w: usize, fb_h: usize) -> Rect {
-        Rect::new(
-            self.offset_x as u16,
-            self.offset_y as u16,
-            (self.offset_x + self.width + 1) as u16,
-            (self.offset_y + self.height + 20) as u16,
-        )
-    }
     fn on_resize(&mut self, new_w: usize, new_h: usize) {
         let (ox, oy) = center_offset(self.height, self.width, new_w, new_h);
         self.offset_x = ox;
@@ -180,13 +160,10 @@ impl Effect for EmberEffect {
 }
 
 // 3. Shatter
-#[allow(dead_code)]
 pub struct ShatterEffect {
     particles: ParticlePool,
     time: f32,
     active: bool,
-    origin_x: usize,
-    origin_y: usize,
 }
 
 impl ShatterEffect {
@@ -206,7 +183,7 @@ impl ShatterEffect {
                 cur_x += 1;
             }
         }
-        ShatterEffect { particles: pool, time: 0.0, active: true, origin_x: ox, origin_y: oy }
+        ShatterEffect { particles: pool, time: 0.0, active: true }
     }
 }
 
@@ -231,9 +208,6 @@ impl Effect for ShatterEffect {
             }
         }
         if alive_count == 0 { self.active = false; }
-    }
-    fn bounds(&self, fb_w: usize, fb_h: usize) -> Rect {
-        Rect::new(0, 0, fb_w as u16, fb_h as u16)
     }
     fn render(&self, fb: &mut FrameBuffer, clip: Rect) {
         for i in 0..self.particles.active.len() {
@@ -267,14 +241,6 @@ impl PlasmaEffect {
 
 impl Effect for PlasmaEffect {
     fn update(&mut self, dt: f32) { self.time += dt * 3.0; }
-    fn bounds(&self, _fb_w: usize, _fb_h: usize) -> Rect {
-        Rect::new(
-            self.offset_x as u16,
-            self.offset_y as u16,
-            (self.offset_x + self.text_w + 1) as u16,
-            (self.offset_y + self.text_h + 1) as u16,
-        )
-    }
     fn on_resize(&mut self, new_w: usize, new_h: usize) {
         let (ox, oy) = center_offset(self.text_h, self.text_w, new_w, new_h);
         self.offset_x = ox;
@@ -318,14 +284,6 @@ impl LiquidChromeEffect {
 
 impl Effect for LiquidChromeEffect {
     fn update(&mut self, dt: f32) { self.time += dt * 2.0; }
-    fn bounds(&self, _fb_w: usize, _fb_h: usize) -> Rect {
-        Rect::new(
-            self.offset_x as u16,
-            self.offset_y as u16,
-            (self.offset_x + self.text_w + 1) as u16,
-            (self.offset_y + self.text_h + 1) as u16,
-        )
-    }
     fn on_resize(&mut self, new_w: usize, new_h: usize) {
         let (ox, oy) = center_offset(self.text_h, self.text_w, new_w, new_h);
         self.offset_x = ox;
@@ -367,14 +325,6 @@ impl PortalEffect {
 
 impl Effect for PortalEffect {
     fn update(&mut self, dt: f32) { self.time += dt * 5.0; }
-    fn bounds(&self, _fb_w: usize, _fb_h: usize) -> Rect {
-        Rect::new(
-            self.offset_x as u16,
-            self.offset_y as u16,
-            (self.offset_x + self.text_w + 1) as u16,
-            (self.offset_y + self.text_h + 1) as u16,
-        )
-    }
     fn on_resize(&mut self, new_w: usize, new_h: usize) {
         let (ox, oy) = center_offset(self.text_h, self.text_w, new_w, new_h);
         self.offset_x = ox;
@@ -420,14 +370,6 @@ impl GlitchEffect {
 
 impl Effect for GlitchEffect {
     fn update(&mut self, dt: f32) { self.time += dt; }
-    fn bounds(&self, _fb_w: usize, _fb_h: usize) -> Rect {
-        Rect::new(
-            (self.offset_x as i32 - 3).max(0) as u16,
-            self.offset_y as u16,
-            (self.offset_x + self.text_w + 4) as u16,
-            (self.offset_y + self.text_h + 1) as u16,
-        )
-    }
     fn on_resize(&mut self, new_w: usize, new_h: usize) {
         let (ox, oy) = center_offset(self.text_h, self.text_w, new_w, new_h);
         self.offset_x = ox;
@@ -484,14 +426,6 @@ impl NeonPulseEffect {
 
 impl Effect for NeonPulseEffect {
     fn update(&mut self, dt: f32) { self.time += dt * 3.0; }
-    fn bounds(&self, _fb_w: usize, _fb_h: usize) -> Rect {
-        Rect::new(
-            self.offset_x as u16,
-            self.offset_y as u16,
-            (self.offset_x + self.text_w + 1) as u16,
-            (self.offset_y + self.text_h + 1) as u16,
-        )
-    }
     fn on_resize(&mut self, new_w: usize, new_h: usize) {
         let (ox, oy) = center_offset(self.text_h, self.text_w, new_w, new_h);
         self.offset_x = ox;
@@ -516,6 +450,118 @@ impl Effect for NeonPulseEffect {
                     fb.set_cell_in_region(cur_x, cur_y, cell, clip);
                 }
                 cur_x += 1;
+            }
+        }
+    }
+}
+
+// 9. Physics — breathing bounce with gravity particles
+pub struct PhysicsEffect {
+    cow_text: String,
+    time: f32,
+    offset_x: usize,
+    offset_y: usize,
+    base_offset_y: usize,
+    text_w: usize,
+    text_h: usize,
+    particles: ParticlePool,
+}
+
+impl PhysicsEffect {
+    pub fn new(cow_text: String) -> Self {
+        let (tw, th) = text_dims(&cow_text);
+        let (ox, oy) = center_offset(th, tw, 80, 40);
+        PhysicsEffect {
+            cow_text,
+            time: 0.0,
+            offset_x: ox,
+            offset_y: oy,
+            base_offset_y: oy,
+            text_w: tw,
+            text_h: th,
+            particles: ParticlePool::new(200),
+        }
+    }
+}
+
+impl Effect for PhysicsEffect {
+    fn update(&mut self, dt: f32) {
+        self.time += dt;
+
+        // Bounce: sine wave vertical offset
+        let bounce = (self.time * 2.0).sin() * 3.0;
+        self.offset_y = (self.base_offset_y as f32 + bounce) as usize;
+
+        // Spawn rising particles from the bottom of the cow
+        let mut rng = rand::thread_rng();
+        if rng.gen_ratio(1, 3) {
+            let px = self.offset_x as f32 + rng.gen_range(0.0..self.text_w as f32);
+            let py = (self.offset_y + self.text_h) as f32;
+            let vx = rng.gen_range(-0.5..0.5);
+            let vy = rng.gen_range(-2.0..-0.5);
+            let life = rng.gen_range(1.0..2.5);
+            self.particles.spawn(px, py, vx, vy, life, '.', 180, 220, 255);
+        }
+
+        // Update particles: apply gravity, fade
+        for i in 0..self.particles.active.len() {
+            if self.particles.active[i] {
+                self.particles.life[i] -= dt;
+                if self.particles.life[i] <= 0.0 {
+                    self.particles.active[i] = false;
+                } else {
+                    self.particles.vy[i] += 0.5 * dt; // gravity
+                    self.particles.x[i] += self.particles.vx[i] * dt;
+                    self.particles.y[i] += self.particles.vy[i] * dt;
+                    let fade = (self.particles.life[i] / self.particles.max_life[i]).max(0.0);
+                    let val = (200.0 * fade) as u8;
+                    self.particles.r[i] = val;
+                    self.particles.g[i] = (val as f32 * 1.2).min(255.0) as u8;
+                    self.particles.b[i] = 255;
+                }
+            }
+        }
+    }
+
+    fn on_resize(&mut self, new_w: usize, new_h: usize) {
+        let (ox, oy) = center_offset(self.text_h, self.text_w, new_w, new_h);
+        self.offset_x = ox;
+        self.base_offset_y = oy;
+    }
+
+    fn render(&self, fb: &mut FrameBuffer, clip: Rect) {
+        // Render cow text with a subtle blue tint that pulses with the bounce
+        let pulse = (self.time * 2.0).sin();
+        let r = (80.0 + pulse * 30.0) as u8;
+        let g = (120.0 + pulse * 40.0) as u8;
+        let b = (200.0 + pulse * 55.0) as u8;
+
+        let mut cur_x = self.offset_x;
+        let mut cur_y = self.offset_y;
+        for ch in self.cow_text.chars() {
+            if ch == '\n' {
+                cur_y += 1;
+                cur_x = self.offset_x;
+            } else {
+                if ch != ' ' {
+                    let cell = Cell::new(ch, (r, g, b), (0, 0, 0));
+                    fb.set_cell_in_region(cur_x, cur_y, cell, clip);
+                }
+                cur_x += 1;
+            }
+        }
+
+        // Render particles
+        for i in 0..self.particles.active.len() {
+            if self.particles.active[i] {
+                let px = self.particles.x[i] as usize;
+                let py = self.particles.y[i] as usize;
+                let cell = Cell::new(
+                    self.particles.ch[i],
+                    (self.particles.r[i], self.particles.g[i], self.particles.b[i]),
+                    (0, 0, 0),
+                );
+                fb.set_cell_in_region(px, py, cell, clip);
             }
         }
     }

@@ -89,13 +89,13 @@ function Invoke-PhysicsCow {
         if ($clean.Length -gt $width) { $width = $clean.Length }
     }
     
-    $canvas = @()
+    $canvas = [System.Collections.Generic.List[string]]::new()
     foreach ($line in $cowLines) {
         $clean = $line -replace '\x1b\[[0-9;]*m', ''
         if ($clean.Length -lt $width) {
-            $canvas += $clean + (' ' * ($width - $clean.Length))
+            $canvas.Add($clean + (' ' * ($width - $clean.Length)))
         } else {
-            $canvas += $clean
+            $canvas.Add($clean)
         }
     }
 
@@ -108,14 +108,14 @@ function Invoke-PhysicsCow {
     }
 
     # State for particles
-    $particleList = @()
+    $particleList = [System.Collections.Generic.List[PSCustomObject]]::new()
     # State for dissolve
-    $dissolveMap = @()
+    $dissolveMap = [System.Collections.Generic.List[PSCustomObject]]::new()
     if ($baseEngine -eq 'Dissolve') {
         for ($y = 0; $y -lt $height; $y++) {
             for ($x = 0; $x -lt $width; $x++) {
                 if ($canvas[$y][$x] -ne ' ') {
-                    $dissolveMap += [PSCustomObject]@{ X = $x; Y = $y; Char = $canvas[$y][$x]; VelX = ((Get-Random -Min -10 -Max 11) / 10.0); VelY = ((Get-Random -Min -5 -Max 5) / 10.0) }
+                    $dissolveMap.Add([PSCustomObject]@{ X = $x; Y = $y; Char = $canvas[$y][$x]; VelX = ((Get-Random -Min -10 -Max 11) / 10.0); VelY = ((Get-Random -Min -5 -Max 5) / 10.0) })
                 }
             }
         }
@@ -131,9 +131,9 @@ function Invoke-PhysicsCow {
             $fSpeed = $frame * $speedMultiplier * 0.3
 
             # 1. Base transform on canvas
-            $renderCanvas = @()
+            $renderCanvas = [System.Collections.Generic.List[char[]]]::new()
             for ($y = 0; $y -lt $height; $y++) {
-                $renderCanvas += ,($canvas[$y].ToCharArray())
+                $renderCanvas.Add($canvas[$y].ToCharArray())
             }
 
             $offsetX = 0
@@ -227,7 +227,7 @@ function Invoke-PhysicsCow {
                                 $renderCanvas[$y][$x] = 'o'
                                 # Spawn text bubbles floating up
                                 if ((Get-Random -Max 10) -gt 7) {
-                                    $particleList += [PSCustomObject]@{ X = $x; Y = $y-1; Char = [char](Get-Random -Min 97 -Max 122); Life = 8 }
+                                    $particleList.Add([PSCustomObject]@{ X = $x; Y = $y-1; Char = [char](Get-Random -Min 97 -Max 122); Life = 8 })
                                 }
                             }
                             if ($renderCanvas[$y][$x] -eq '-' -and $isMouthOpen) { $renderCanvas[$y][$x] = 'O' }
@@ -273,7 +273,7 @@ function Invoke-PhysicsCow {
                                 $fireChars = @('^', '*', '.', 'x', '~')
                                 $renderCanvas[$y][$x] = $fireChars[(Get-Random -Max $fireChars.Length)]
                                 if ((Get-Random -Max 10) -gt 6) {
-                                    $particleList += [PSCustomObject]@{ X = $x; Y = $y-1; Char = '^'; Life = 5 }
+                                    $particleList.Add([PSCustomObject]@{ X = $x; Y = $y-1; Char = '^'; Life = 5 })
                                 }
                             }
                         }
@@ -288,8 +288,8 @@ function Invoke-PhysicsCow {
             }
 
             # Prepare final frame array
-            $finalFrame = @()
-            for ($i = 0; $i -lt $height; $i++) { $finalFrame += ,(' ' * $width).ToCharArray() }
+            $finalFrame = [System.Collections.Generic.List[char[]]]::new()
+            for ($i = 0; $i -lt $height; $i++) { $finalFrame.Add((' ' * $width).ToCharArray()) }
 
             if ($baseEngine -eq 'Dissolve') {
                 foreach ($p in $dissolveMap) {
@@ -316,38 +316,38 @@ function Invoke-PhysicsCow {
                 }
             }
 
-            # Apply particles
+            # Spawn config-driven particles
             if ($null -ne $particles -and $particles -ne '') {
-                # Spawn new particles
                 if ((Get-Random -Max 100) -lt 30) {
                     $px = Get-Random -Max $width
                     $py = if ($particles -eq 'Bubbles') { $height - 1 } else { Get-Random -Max $height }
                     $pc = if ($particles -eq 'Fire') { '*' } elseif ($particles -eq 'Zzz') { 'z' } elseif ($particles -eq 'Stars') { '+' } elseif ($particles -eq 'Glitch') { [char](Get-Random -Min 33 -Max 126) } else { 'o' }
                     if ($particles -eq 'Zzz' -and (Get-Random -Max 10) -lt 3) { $pc = 'Z' }
-                    $particleList += [PSCustomObject]@{ X = $px; Y = $py; Char = $pc; Life = 10 }
+                    $particleList.Add([PSCustomObject]@{ X = $px; Y = $py; Char = $pc; Life = 10 })
                 }
+            }
 
-                $newParticles = @()
-                foreach ($p in $particleList) {
-                    if ($particles -eq 'Bubbles') { $p.Y -= 0.5; $p.X += (Get-Random -Min -1 -Max 2) }
-                    elseif ($particles -eq 'Fire') { $p.Y -= 0.8; $p.X += (Get-Random -Min -1 -Max 2) }
-                    elseif ($particles -eq 'Zzz') { $p.Y -= 0.3; $p.X += 0.5 }
-                    elseif ($particles -eq 'Stars') { $p.X -= 1.0 }
-                    elseif ($particles -eq 'Glitch') { $p.Y += (Get-Random -Min -1 -Max 2); $p.X += (Get-Random -Min -1 -Max 2) }
-                    else { $p.Y += 1.0 }
-                    
-                    $p.Life--
-                    if ($p.Life -gt 0 -and $p.Y -ge 0 -and $p.Y -lt $height -and $p.X -ge 0 -and $p.X -lt $width) {
-                        $newParticles += $p
-                        $ix = [int][Math]::Round($p.X)
-                        $iy = [int][Math]::Round($p.Y)
-                        if ($ix -ge 0 -and $ix -lt $width -and $iy -ge 0 -and $iy -lt $height) {
-                            $finalFrame[$iy][$ix] = $p.Char
-                        }
+            # Always clean up and render particles (including those spawned by Talk/Fire effects)
+            $newParticles = [System.Collections.Generic.List[PSCustomObject]]::new()
+            foreach ($p in $particleList) {
+                if ($particles -eq 'Bubbles') { $p.Y -= 0.5; $p.X += (Get-Random -Min -1 -Max 2) }
+                elseif ($particles -eq 'Fire') { $p.Y -= 0.8; $p.X += (Get-Random -Min -1 -Max 2) }
+                elseif ($particles -eq 'Zzz') { $p.Y -= 0.3; $p.X += 0.5 }
+                elseif ($particles -eq 'Stars') { $p.X -= 1.0 }
+                elseif ($particles -eq 'Glitch') { $p.Y += (Get-Random -Min -1 -Max 2); $p.X += (Get-Random -Min -1 -Max 2) }
+                else { $p.Y += 1.0 }
+
+                $p.Life--
+                if ($p.Life -gt 0 -and $p.Y -ge 0 -and $p.Y -lt $height -and $p.X -ge 0 -and $p.X -lt $width) {
+                    $newParticles.Add($p)
+                    $ix = [int][Math]::Round($p.X)
+                    $iy = [int][Math]::Round($p.Y)
+                    if ($ix -ge 0 -and $ix -lt $width -and $iy -ge 0 -and $iy -lt $height) {
+                        $finalFrame[$iy][$ix] = $p.Char
                     }
                 }
-                $particleList = $newParticles
             }
+            $particleList = $newParticles
 
             # Render to StringBuilder with Pulse/Pulse effect if required
             foreach ($bLine in $bubbleLines) {

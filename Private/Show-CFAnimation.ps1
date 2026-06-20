@@ -45,7 +45,7 @@ function Show-CFAnimation {
     }
 
     # PowerShell-native animation modes — these handle their own rendering
-    $psModes = @('talking', 'typewriter', 'dynamic', 'procedural', 'physics')
+    $psModes = @('talking', 'typewriter', 'dynamic', 'procedural', 'physics', 'blink')
     if ($Mode -in $psModes) {
         switch ($Mode) {
             'talking'    { return (Invoke-TalkingAnimation -CowOutput $CowOutput -Message $Message -Duration $duration) }
@@ -55,6 +55,10 @@ function Show-CFAnimation {
             'physics'    {
                 $effCow = if ($CowName) { $CowName } else { $Config.cow.file }
                 return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration -CowName $effCow)
+            }
+            'blink'      {
+                $blinkRate = if ($Config.animation.blinkRate) { $Config.animation.blinkRate } else { 0.2 }
+                return (Invoke-BlinkAnimation -CowOutput $CowOutput -Message $Message -Duration $duration -BlinkRate $blinkRate)
             }
         }
     }

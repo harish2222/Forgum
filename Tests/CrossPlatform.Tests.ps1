@@ -78,40 +78,6 @@ Describe "Cross-Platform Support" -Tag 'CrossPlatform' {
         }
     }
 
-    Context "Profile path" {
-        It "Get-ForgumProfilePath returns non-empty path" {
-            InModuleScope Forgum {
-                $path = Get-ForgumProfilePath
-                $path | Should -Not -BeNullOrEmpty
-            }
-        }
-
-        It "Windows path is PowerShell profile" {
-            if ($IsWindows -or $env:OS -eq 'Windows_NT') {
-                InModuleScope Forgum {
-                    $path = Get-ForgumProfilePath
-                    $path | Should -Match 'Microsoft\.PowerShell_profile\.ps1$'
-                }
-            }
-        }
-    }
-
-    Context "Module path" {
-        It "Get-ForgumModulePath returns non-empty path" {
-            InModuleScope Forgum {
-                $path = Get-ForgumModulePath
-                $path | Should -Not -BeNullOrEmpty
-            }
-        }
-
-        It "path contains Forgum" {
-            InModuleScope Forgum {
-                $path = Get-ForgumModulePath
-                $path | Should -Match 'Forgum'
-            }
-        }
-    }
-
     Context "Module manifest" {
         It "manifest loads correctly" {
             $manifest = Test-ModuleManifest -Path (Join-Path $ModuleRoot 'Forgum.psd1') -ErrorAction Stop

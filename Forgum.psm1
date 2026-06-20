@@ -75,7 +75,7 @@ Get-ChildItem -Path $publicPath -Filter '*.ps1' -Recurse -ErrorAction SilentlyCo
     }
 
 # Module version
-$script:ModuleVersion = '2.0.0'
+$script:ModuleVersion = '1.1.2'
 
 # Define command aliases (legacy compat — aliased to forgum subcommands)
 Set-Alias -Name forgum-show   -Value forgum -Scope Script -ErrorAction SilentlyContinue
@@ -93,18 +93,6 @@ $script:IsAutoStart = $false
 
 # Cache TTL in seconds (avoids stale reads during long sessions)
 $script:ConfigCacheTTL = 30
-
-# Default config sections (module-level constant — avoids recreation per Get-CFConfig call)
-$script:DefaultConfigSections = @{
-    animation = @{ mode = 'physics'; speed = 20; duration = 12; spread = 3.0; blinkRate = 0.2; amplitude = 2; cycleInterval = 3 }
-    cow = @{ file = 'default'; random = $false; mode = $null; eyes = 'oo'; tongue = '  ' }
-    fortune = @{ database = 'fortunes'; databases = @('fortunes'); offensive = $false; lengthFilter = $null }
-    lolcat = @{ enabled = $false; truecolor = $true; frequency = 0.1; spread = 3.0; seed = 0; invert = $false; animate = $false; duration = 12; speed = 20.0 }
-    output = @{ wordWrap = $true; maxWidth = 60; noWrap = $false }
-    startup = @{ enabled = $true; command = 'Invoke-Forgum' }
-    shell = @{ integration = 'auto'; tmux = @{ enabled = $false; pane = 'status-right' } }
-    update = @{ autoCheck = $true; lastCheck = '1970-01-01T00:00:00Z' }
-}
 
 # Auto-start: render a single static cow with lolcat on every import.
 #
@@ -127,20 +115,6 @@ if ($env:FORGUM_NOAUTOSTART -ne '1' -and
 
             if (Test-Path $flagPath) {
                 Write-Host "`n🚀 A new version of Forgum is available! Run 'forgum update' to upgrade.`n" -ForegroundColor Yellow
-            }
-
-            if ($realConfig.update.autoCheck) {
-                try {
-                    $lastCheck = [datetime]($realConfig.update.lastCheck)
-                    if ([datetime]::UtcNow -gt $lastCheck.AddHours(24)) {
-                        $realConfig.update.lastCheck = [datetime]::UtcNow.ToString('o')
-                        Set-CFConfig -Config $realConfig
-                        $checkCmd = "Import-Module Forgum; forgum update -CheckOnly"
-                        Start-Process -FilePath "pwsh" -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-Command", $checkCmd -ErrorAction SilentlyContinue
-                    }
-                } catch {
-                    Write-Verbose "Auto-update check failed to parse timestamp: $_"
-                }
             }
 
             # Signal to Show-CFAnimation that this is auto-start: use --once
@@ -177,9 +151,9 @@ if (-not $script:__ForgumCompletionRegistered -and (Get-Command Register-Argumen
     $script:__ForgumCompletionRegistered = $true
 
     $subCommands = @(
-        'update','upgrade','config','tui','setup',
-        'gallery','preview','toggle','animate','eyes',
-        'help'
+        'run','config','gallery','preview','update','toggle','animate',
+        'eyes','init','live','daemon','cowsay','list','theme','export',
+        'history','interactive','help'
     )
 
     # --- Invoke-Cowsay completion (existing) ---
@@ -190,85 +164,36 @@ if (-not $script:__ForgumCompletionRegistered -and (Get-Command Register-Argumen
         }
     }
 
-    # --- forgum Action completion (subcommands + help) ---
-    Register-ArgumentCompleter -CommandName forgum -ParameterName Action -ScriptBlock {
+    # --- forgum SubCommand completion ---
+    $subCommands = @('run','config','gallery','preview','update','toggle','animate','eyes','init','live','daemon','cowsay','list','theme','export','history','interactive','help')
+    Register-ArgumentCompleter -CommandName forgum -ParameterName SubCommand -ScriptBlock {
         param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
-        $candidates = @($subCommands)
-        if ('help' -like "*$wordToComplete*") { $candidates += 'help' }
-
-        $candidates |
-            Where-Object { $_ -like "*$wordToComplete*" } |
-            ForEach-Object {
+        # If a subcommand is already typed, complete flags for that subcommand
+        $existing = $commandAst.CommandElements | Where-Object { $_.Value -in $subCommands } | Select-Object -First 1
+        if ($existing) {
+            $flags = switch ($existing.Value) {
+                'run'       { @('--cow','--mode','--eyes','--tongue','--thoughts','--lolcat','--no-lolcat','--fortune','--no-color') }
+                'cowsay'    { @('--cow','--eyes','--tongue','--thoughts','--lolcat','--no-lolcat','--no-color') }
+                'export'    { @('--cow','--eyes','--tongue','--output','--format','--no-color') }
+                'config'    { @('--path','--dir','--show','--open') }
+                'list'      { @('--count','--search') }
+                'gallery'   { @('--count') }
+                'history'   { @('--count','--clear') }
+                'init'      { @('--shell') }
+                'animate'   { @('--mode','--duration') }
+                'eyes'      { @('--preset','--custom') }
+                'toggle'    { @('--lolcat') }
+                'theme'     { @('--name') }
+                default     { @() }
+            }
+            $flags | Where-Object { $_ -like "*$wordToComplete*" } | ForEach-Object {
                 [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
             }
-    }
-
-    # --- forgum cow argument completion (Cow/CowFile/PreviewCow) ---
-    $cowNameCompleter = {
-        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-        Get-CFCow |
-            Where-Object { $_ -like "*$wordToComplete*" } |
-            ForEach-Object {
+        } else {
+            $subCommands | Where-Object { $_ -like "*$wordToComplete*" } | ForEach-Object {
                 [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
             }
-    }
-
-    Register-ArgumentCompleter -CommandName forgum -ParameterName Cow -ScriptBlock $cowNameCompleter
-    Register-ArgumentCompleter -CommandName forgum -ParameterName CowFile -ScriptBlock $cowNameCompleter
-    Register-ArgumentCompleter -CommandName forgum -ParameterName PreviewCow -ScriptBlock $cowNameCompleter
-
-    # --- forgum eyes preset completion (best-effort) ---
-    Register-ArgumentCompleter -CommandName forgum -ParameterName Preset -ScriptBlock {
-        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-        try {
-            $config = Get-CFConfig
-            # If config defines a cow.eyes map, complete its keys; otherwise fall back to common presets.
-            $eyePresets =
-                if ($config -and $config.cow -and $config.cow.eyes -and ($config.cow.eyes -is [hashtable] -or $config.cow.eyes -is [System.Collections.IDictionary])) {
-                    @($config.cow.eyes.Keys)
-                } else {
-                    @('oo','borg','dead','xx')
-                }
-
-            $eyePresets |
-                Where-Object { $_ -like "*$wordToComplete*" } |
-                ForEach-Object {
-                    [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-                }
-        } catch {
-            # Fallback
-            @('oo','borg','dead','xx') |
-                Where-Object { $_ -like "*$wordToComplete*" } |
-                ForEach-Object {
-                    [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-                }
-        }
-    }
-
-    # --- forgum animate mode completion (best-effort from config) ---
-    Register-ArgumentCompleter -CommandName forgum -ParameterName Mode -ScriptBlock {
-        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-        try {
-            $config = Get-CFConfig
-            $modes = @()
-            if ($config -and $config.animation -and $config.animation.modes) {
-                $modes = @($config.animation.modes)
-            }
-            if (-not $modes -or $modes.Count -eq 0) {
-                $modes = @('static','talking','physics','typewriter','slide-in','bounce','dissolve','fade-in','blink','wiggle','wave','disco')
-            }
-            $modes |
-                Where-Object { $_ -like "*$wordToComplete*" } |
-                ForEach-Object {
-                    [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-                }
-        } catch {
-            @('static','talking','physics','typewriter','slide-in','bounce','dissolve','fade-in','blink','wiggle','wave','disco') |
-                Where-Object { $_ -like "*$wordToComplete*" } |
-                ForEach-Object {
-                    [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-                }
         }
     }
 }

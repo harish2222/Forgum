@@ -16,7 +16,5 @@ _forgum_cmd_not_found_handle() {
   return 127
 }
 
-# Only install handler if user shell supports it.
-if ! declare -F command_not_found_handle >/dev/null 2>&1; then
-  command_not_found_handle() { _forgum_cmd_not_found_handle "$@"; }
-fi
+# Install handler (unconditionally; overwrites any existing handler)
+command_not_found_handle() { _forgum_cmd_not_found_handle "$@"; }

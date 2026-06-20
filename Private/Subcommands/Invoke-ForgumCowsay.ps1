@@ -1,0 +1,36 @@
+function Invoke-ForgumCowsay {
+    [CmdletBinding()]
+    param([string[]]$Arguments = @())
+
+    $parsed = Parse-ForgumArguments -Arguments $Arguments
+
+    if ($parsed.Help) {
+        Get-HelpMessage -Command 'cowsay'
+        return
+    }
+
+    $text = $parsed.TextString
+    $config = Get-CFConfig
+
+    $cowName = if ($parsed.Options.ContainsKey('cow')) { $parsed.Options['cow'] } else { $config.cow.file }
+    $eyes = if ($parsed.Options.ContainsKey('eyes')) { $parsed.Options['eyes'] } else { $config.cow.eyes }
+    $tongue = if ($parsed.Options.ContainsKey('tongue')) { $parsed.Options['tongue'] } else { $config.cow.tongue }
+    $thoughts = if ($parsed.Options.ContainsKey('thoughts')) { $parsed.Options['thoughts'] } else { '\' }
+    $useLolcat = $parsed.Flags.ContainsKey('lolcat')
+
+    if ([string]::IsNullOrEmpty($text)) {
+        Write-Warning "cowsay requires text. Usage: forgum cowsay <text> [--cow name] [--eyes xx]"
+        return
+    }
+
+    $cowOutput = Invoke-Cowsay -Text $text -CowFile $cowName -Eyes $eyes -Tongue $tongue -Thoughts $thoughts
+
+    if ($useLolcat) {
+        $lp = Get-LolcatParams
+        $cowOutput = Format-Lolcat -Text $cowOutput -Frequency $lp.Frequency -Spread $lp.Spread -Truecolor $lp.Truecolor
+    }
+
+    Write-ForgumHistory -Message $text -Cow $cowName
+
+    $cowOutput
+}

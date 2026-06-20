@@ -65,6 +65,7 @@ function forgum {
         return
     }
 
+    $originalSubCommand = $SubCommand
     $SubCommand = $SubCommand.ToLower()
 
     switch ($SubCommand) {
@@ -79,6 +80,12 @@ function forgum {
         'init'      { Invoke-ForgumInit -Arguments $Arguments }
         'live'      { Invoke-ForgumLiveHandler -Arguments $Arguments }
         'daemon'    { Invoke-ForgumDaemon -Arguments $Arguments }
+        'cowsay'    { Invoke-ForgumCowsay -Arguments $Arguments }
+        'list'      { Invoke-ForgumList -Arguments $Arguments }
+        'theme'     { Invoke-ForgumTheme -Arguments $Arguments }
+        'export'    { Invoke-ForgumExport -Arguments $Arguments }
+        'history'   { Invoke-ForgumHistory -Arguments $Arguments }
+        'interactive'{ Invoke-ForgumInteractive -Arguments $Arguments }
         'help'      {
             if ($Arguments.Count -gt 0) {
                 Get-HelpMessage -Command $Arguments[0]
@@ -86,14 +93,14 @@ function forgum {
                 Get-HelpMessage -Command 'root'
             }
         }
-        { $_ -in '--help', '-h', 'help', 'h' }  { Get-HelpMessage -Command 'root' }
+        { $_ -in '--help', '-h', 'h' }  { Get-HelpMessage -Command 'root' }
         { $_ -in '--version', '-v', 'version', 'v' } { "forgum v$($script:ModuleVersion)" }
         default {
             if ($SubCommand -match '^-') {
                 Write-Warning "Unknown option: $SubCommand. Run 'forgum help' for usage."
                 return
             }
-            $fullText = "$SubCommand $($Arguments -join ' ')"
+            $fullText = "$originalSubCommand $($Arguments -join ' ')"
             Invoke-ForgumRun -Arguments @($fullText)
         }
     }

@@ -75,7 +75,7 @@ Describe "Subcommand: config" -Tag 'Subcommand' {
         $output = forgum config --help 2>&1 | Out-String
         $output | Should -Match 'forgum config'
         $output | Should -Match 'Usage:'
-        $output | Should -Match 'TUI'
+        $output | Should -Match 'config file'
     }
 
     It "config -h returns help text" {
@@ -794,9 +794,9 @@ Describe "Help alias routing" -Tag 'HelpAlias' {
         $output | Should -Match 'forgum update'
     }
 
-    It "help tui routes to config help" {
+    It "help tui routes to interactive help" {
         $output = forgum help tui 2>&1 | Out-String
-        $output | Should -Match 'forgum config'
+        $output | Should -Match 'forgum interactive'
     }
 
     It "help setup routes to config help" {
@@ -853,7 +853,7 @@ Describe "Module exports and structure" -Tag 'Structure' {
                 'Invoke-ForgumRun', 'Invoke-ForgumConfig', 'Invoke-ForgumGallery',
                 'Invoke-ForgumPreview', 'Invoke-ForgumUpdate', 'Invoke-ForgumToggle',
                 'Invoke-ForgumAnimate', 'Invoke-ForgumEyes', 'Invoke-ForgumInit',
-                'Invoke-ForgumLiveHandler', 'Invoke-ForgumDaemon', 'Invoke-ForgumHelp'
+                'Invoke-ForgumLiveHandler', 'Invoke-ForgumDaemon'
             )
             foreach ($h in $handlers) {
                 Get-Command $h -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty

@@ -28,10 +28,6 @@ impl Scheduler {
         }
     }
 
-    pub fn set_target_fps(&mut self, fps: u32) {
-        self.target_fps = fps.max(1).min(120);
-    }
-
     pub fn adapt(&mut self, damage_count: usize) {
         if damage_count == 0 {
             self.idle_frames += 1;
@@ -66,14 +62,6 @@ impl Scheduler {
 
     pub fn should_render(&self, damage_count: usize) -> bool {
         damage_count > 0 || self.idle_frames < self.idle_threshold
-    }
-
-    pub fn current_fps(&self) -> u32 {
-        self.current_fps
-    }
-
-    pub fn frame_elapsed(&self) -> Duration {
-        self.last_frame.elapsed()
     }
 }
 

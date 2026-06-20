@@ -24,7 +24,7 @@
         [int]$Duration = 12
     )
 
-    $lines = $CowOutput -split "`n"
+    $lines = $CowOutput -split "`r?`n"
     $totalLines = $lines.Count
     $esc = [char]27
 

@@ -35,6 +35,12 @@ function Get-HelpMessage {
     init       [shell]                   Generate shell hooks
     live                                 Live showcase mode
     daemon     start|stop                Background daemon
+    cowsay     <text> [options]          Direct cowsay
+    list       [--search] [--count]     List cow templates
+    theme      [list|set|reset]          Manage color themes
+    export     <text> [options]          Export cow art to file
+    history    [--count] [--clear]       Show recent cows
+    interactive                           Interactive config TUI
     help       [command]                 Show help
 
   Global Options:
@@ -93,21 +99,23 @@ function Get-HelpMessage {
 
         'config' = @"
 
-  forgum config - Open interactive configuration TUI
+  forgum config - Open config file location
 
   Usage:
-    forgum config [options]
+    forgum config [action] [options]
+
+  Arguments:
+    action                                Action to perform
+                                          (default: open in editor)
 
   Options:
     --help, -h                            Show this help
 
-  The TUI lets you change:
-    - Animation mode (static, aurora, plasma, etc.)
-    - Default cow file
-    - Cow eyes and tongue
-    - Lolcat (rainbow) settings
-    - Output formatting (word wrap, max width)
-    - Fortune settings
+  Actions:
+    (no action)                           Open config in default editor
+    path                                  Print config file path
+    dir                                   Print config directory path
+    show                                  Print config contents
 
   Config file locations:
     Windows:   ~/Documents/PowerShell/Forgum/config.json
@@ -115,8 +123,10 @@ function Get-HelpMessage {
     macOS:     ~/.config/Forgum/config.json
 
   Examples:
-    forgum config                         # Open TUI
-    forgum config --help                  # Show this help
+    forgum config                         # Open in editor
+    forgum config path                    # Show file path
+    forgum config dir                     # Show directory path
+    forgum config show                    # Print config contents
 
 "@
 
@@ -377,6 +387,160 @@ function Get-HelpMessage {
 
 "@
 
+        'cowsay' = @"
+
+  forgum cowsay - Direct cowsay (bypass random fortune)
+
+  Usage:
+    forgum cowsay <text> [options]
+
+  Arguments:
+    text                                  Text for the cow to say (required)
+
+  Options:
+    --cow <name>                          Use specific cow file
+    --eyes <xx>                           Two-character eye string
+    --tongue <xx>                         Two-character tongue string
+    --thoughts <char>                     Thought bubble character
+    --lolcat                              Enable rainbow colors
+    --help, -h                            Show this help
+
+  Examples:
+    forgum cowsay "Hello!"                # Simple cowsay
+    forgum cowsay "Moo" --cow tux         # Tux cow
+    forgum cowsay "Hi" --eyes @@          # Custom eyes
+    forgum cowsay "Yo" --lolcat           # Rainbow colors
+
+"@
+
+        'list' = @"
+
+  forgum list - List available cow templates
+
+  Usage:
+    forgum list [options]
+
+  Options:
+    --search <term>                       Filter cows by name
+    --count <N>                           Show N random cows
+    --help, -h                            Show this help
+
+  Examples:
+    forgum list                           # List all cows
+    forgum list --search cat              # Find cats
+    forgum list --count 5                 # Show 5 random cows
+
+"@
+
+        'theme' = @"
+
+  forgum theme - Manage color themes
+
+  Usage:
+    forgum theme [action] [name] [options]
+
+  Arguments:
+    action                                list, set, or reset
+    name                                  Theme name (for set)
+
+  Options:
+    --help, -h                            Show this help
+
+  Available Themes:
+    rainbow     Bright rainbow colors
+    fire        Warm fire tones
+    ocean       Cool ocean blues
+    matrix      Green matrix style
+    pastel      Soft pastel colors
+    mono        No color (monochrome)
+    off         Disable colors
+
+  Examples:
+    forgum theme                          # List all themes
+    forgum theme set rainbow              # Set rainbow theme
+    forgum theme reset                    # Reset to default
+
+"@
+
+        'export' = @"
+
+  forgum export - Export cow art to a file
+
+  Usage:
+    forgum export <text> [options]
+
+  Arguments:
+    text                                  Text for the cow to say (required)
+
+  Options:
+    --cow <name>                          Use specific cow file
+    --eyes <xx>                           Two-character eye string
+    --tongue <xx>                         Two-character tongue string
+    --format <fmt>                        Output format: txt, ans (default: txt)
+    --output <path>                       Output file path
+    --no-color                            Strip ANSI color codes
+    --help, -h                            Show this help
+
+  Formats:
+    txt         Plain text (ANSI codes stripped)
+    ans         Keep ANSI escape codes
+
+  Examples:
+    forgum export "Hello!"                # Export to forgum-export-*.txt
+    forgum export "Moo" --cow tux         # Tux cow to file
+    forgum export "Hi" --format ans       # Keep ANSI codes
+    forgum export "Yo" --output art.txt   # Custom output path
+
+"@
+
+        'history' = @"
+
+  forgum history - Show recent cows rendered
+
+  Usage:
+    forgum history [options]
+
+  Options:
+    --count <N>                           Number of entries to show
+                                          (default: 10)
+    --clear                               Clear all history
+    --help, -h                            Show this help
+
+  Examples:
+    forgum history                        # Show last 10
+    forgum history --count 20             # Show last 20
+    forgum history --clear                # Clear history
+
+"@
+
+        'interactive' = @"
+
+  forgum interactive - Open interactive config TUI menu
+
+  Usage:
+    forgum interactive [options]
+
+  Options:
+    --help, -h                            Show this help
+
+  Opens a terminal-based interactive menu where you can:
+    - Change animation mode
+    - Change cow file
+    - Change cow eyes and tongue
+    - Toggle lolcat (rainbow) on/off
+    - Toggle random cow on/off
+    - Reset to defaults
+    - Open config file in editor
+
+  Navigate with number keys, press Enter to select.
+  Press 0 to exit and save.
+
+  Examples:
+    forgum interactive                    # Open TUI
+    forgum tui                            # Short alias
+
+"@
+
     }
 
     if ([string]::IsNullOrEmpty($Command) -or $Command -eq 'help') {
@@ -391,7 +555,7 @@ function Get-HelpMessage {
 
     $aliases = @{
         'upgrade'       = 'update'
-        'tui'           = 'config'
+        'tui'           = 'interactive'
         'setup'         = 'config'
         'show'          = 'gallery'
         'preview-cow'   = 'preview'
@@ -400,6 +564,13 @@ function Get-HelpMessage {
         'set-eyes'      = 'eyes'
         'start-daemon'  = 'daemon'
         'stop-daemon'   = 'daemon'
+        'say'           = 'cowsay'
+        'ls'            = 'list'
+        'colors'        = 'theme'
+        'save'          = 'export'
+        'log'           = 'history'
+        'menu'          = 'interactive'
+        'h'             = 'root'
     }
 
     if ($aliases.ContainsKey($Command)) {

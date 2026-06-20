@@ -37,16 +37,6 @@ pub fn hsv_to_rgb(h: f32, s: f32, v: f32) -> Rgb {
     )
 }
 
-// Blending functions mirroring CSS mix-blend-mode
-#[allow(dead_code)]
-pub fn blend_multiply(base: Rgb, blend: Rgb) -> Rgb {
-    Rgb::new(
-        ((base.r as f32 * blend.r as f32) / 255.0) as u8,
-        ((base.g as f32 * blend.g as f32) / 255.0) as u8,
-        ((base.b as f32 * blend.b as f32) / 255.0) as u8,
-    )
-}
-
 pub fn blend_color_dodge(base: Rgb, blend: Rgb) -> Rgb {
     let dodge = |b: u8, l: u8| -> u8 {
         if l == 255 {
@@ -63,15 +53,13 @@ pub fn blend_color_dodge(base: Rgb, blend: Rgb) -> Rgb {
     )
 }
 
-// Apply a localized radial glow simulating a light source
 pub fn apply_radial_glow(x: usize, y: usize, light_x: f32, light_y: f32, radius: f32, light_color: Rgb, base_color: Rgb) -> Rgb {
     let dx = x as f32 - light_x;
-    let dy = (y as f32 - light_y) * 2.0; // Terminal characters are twice as tall as they are wide
+    let dy = (y as f32 - light_y) * 2.0;
     let distance = (dx * dx + dy * dy).sqrt();
 
     if distance < radius {
         let intensity = 1.0 - (distance / radius);
-        // Linear fade for the intensity
         let glow_color = Rgb::new(
             (light_color.r as f32 * intensity) as u8,
             (light_color.g as f32 * intensity) as u8,
@@ -113,16 +101,5 @@ mod tests {
         assert!(dodged.r > 100);
         assert!(dodged.g > 100);
         assert!(dodged.b > 100);
-    }
-
-    #[test]
-    fn test_blend_multiply() {
-        let base = Rgb { r: 255, g: 128, b: 0 };
-        let blend = Rgb { r: 128, g: 255, b: 255 };
-        let multiplied = blend_multiply(base, blend);
-        
-        assert_eq!(multiplied.r, 128);
-        assert_eq!(multiplied.g, 128);
-        assert_eq!(multiplied.b, 0);
     }
 }

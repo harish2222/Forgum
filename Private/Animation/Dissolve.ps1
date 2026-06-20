@@ -24,7 +24,7 @@
         [int]$Duration = 15
     )
 
-    $lines = $CowOutput -split "`n"
+    $lines = $CowOutput -split "`r?`n"
     $maxLen = 0
     foreach ($line in $lines) {
         if ($line.Length -gt $maxLen) { $maxLen = $line.Length }

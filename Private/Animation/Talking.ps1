@@ -20,7 +20,7 @@ function Invoke-TalkingAnimation {
     )
 
     $mouthFrames = @('o', 'O', '0', 'O')
-    $cowLines = $CowOutput -split "`n"
+    $cowLines = $CowOutput -split "`r?`n"
 
     # Find the eye line (contains the mouth pattern in default cow)
     $eyeLineIndex = -1

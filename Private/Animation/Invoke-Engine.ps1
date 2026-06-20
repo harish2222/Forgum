@@ -69,18 +69,42 @@ function Invoke-Engine {
     try {
         if ($Background) {
             $proc = [System.Diagnostics.Process]::new()
-            $proc.StartInfo.FileName = $enginePath
-            $proc.StartInfo.Arguments = '--daemon'
-            $proc.StartInfo.RedirectStandardInput = $true
-            $proc.StartInfo.UseShellExecute = $false
-            $proc.StartInfo.CreateNoWindow = $true
-            $proc.Start()
-            $proc.StandardInput.Write($json)
-            $proc.StandardInput.Close()
-            return $true
+            try {
+                $proc.StartInfo.FileName = $enginePath
+                $proc.StartInfo.Arguments = '--daemon'
+                $proc.StartInfo.RedirectStandardInput = $true
+                $proc.StartInfo.UseShellExecute = $false
+                $proc.StartInfo.CreateNoWindow = $true
+                $proc.Start()
+                $proc.StandardInput.Write($json)
+                $proc.StandardInput.Close()
+                if (-not $proc.WaitForExit(5000)) {
+                    $proc.Kill()
+                    Write-Warning "forgum-engine timed out after 5s and was killed."
+                }
+                return $true
+            } finally {
+                if ($null -ne $proc) { $proc.Dispose() }
+            }
         } else {
-            $json | & $enginePath
-            return $true
+            $proc = [System.Diagnostics.Process]::new()
+            try {
+                $proc.StartInfo.FileName = $enginePath
+                $proc.StartInfo.RedirectStandardInput = $true
+                $proc.StartInfo.RedirectStandardOutput = $true
+                $proc.StartInfo.UseShellExecute = $false
+                $proc.StartInfo.CreateNoWindow = $true
+                $proc.Start()
+                $proc.StandardInput.Write($json)
+                $proc.StandardInput.Close()
+                if (-not $proc.WaitForExit(10000)) {
+                    $proc.Kill()
+                    Write-Warning "forgum-engine timed out after 10s and was killed."
+                }
+                return $true
+            } finally {
+                if ($null -ne $proc) { $proc.Dispose() }
+            }
         }
     } catch {
         Write-Warning "Failed to execute Rust engine: $_"

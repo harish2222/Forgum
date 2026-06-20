@@ -323,7 +323,7 @@ setup_profile() {
 
 # Forgum
 function fish_greeting
-    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; Invoke-Forgum" 2>/dev/null
+    pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; forgum" 2>/dev/null
 end
 FISH
         else
@@ -332,7 +332,7 @@ FISH
 # Forgum (requires animation.mode = "static" in config to avoid startup hang)
 if command -v pwsh &>/dev/null; then
     if [ -t 1 ]; then
-        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; \$cfg = Get-CFConfig 2>\$null; if (\$cfg -and \$cfg.animation.mode -eq 'static') { Invoke-Forgum }" 2>/dev/null
+        pwsh -NoProfile -Command "Import-Module Forgum -ErrorAction SilentlyContinue; \$cfg = Get-CFConfig 2>\$null; if (\$cfg -and \$cfg.animation.mode -eq 'static') { forgum }" 2>/dev/null
     fi
 fi
 SHELL
@@ -431,13 +431,12 @@ main() {
 
     # Interactive Setup Prompt
     echo ""
-    echo -e "${CYAN}${BOLD}Do you want to run the interactive setup wizard now? [Y/n]${NC}"
+    echo -e "${CYAN}${BOLD}Do you want to configure Forgum now? [Y/n]${NC}"
     read -r run_setup
     if [[ -z "$run_setup" || "$run_setup" =~ ^[Yy]$ ]]; then
         if check_command pwsh; then
-            pwsh -c "Import-Module Forgum; Invoke-ForgumSetup"
+            pwsh -c "Import-Module Forgum; forgum interactive"
         else
-            # Try common paths if not in PATH yet
             local pwsh_path=""
             for p in "/usr/bin/pwsh" "/usr/local/bin/pwsh" "/snap/bin/pwsh" "/opt/microsoft/powershell/7/pwsh"; do
                 if [ -x "$p" ]; then
@@ -446,13 +445,13 @@ main() {
                 fi
             done
             if [ -n "$pwsh_path" ]; then
-                "$pwsh_path" -c "Import-Module Forgum; Invoke-ForgumSetup"
+                "$pwsh_path" -c "Import-Module Forgum; forgum interactive"
             else
-                echo -e "  ${YELLOW}⚠ PowerShell (pwsh) not found in PATH. Please restart your shell and run 'Invoke-ForgumSetup'.${NC}"
+                echo -e "  ${YELLOW}⚠ PowerShell (pwsh) not found in PATH. Please restart your shell and run 'forgum interactive'.${NC}"
             fi
         fi
     else
-        echo -e "${YELLOW}You can run 'forgum-setup' later to configure your experience.${NC}"
+        echo -e "${YELLOW}You can run 'forgum interactive' later to configure your experience.${NC}"
     fi
 
     # Done!
@@ -461,13 +460,20 @@ main() {
     echo -e "${GREEN}${BOLD}  Installation complete!${NC}"
     echo ""
     echo -e "  ${CYAN}Quick start:${NC}"
-    echo -e "    pwsh -Command \"Import-Module Forgum; Invoke-Forgum\""
+    echo -e "    pwsh -Command \"Import-Module Forgum; forgum\""
+    echo ""
+    echo -e "  ${CYAN}Commands:${NC}"
+    echo -e "    forgum                   # Show a cow with a fortune"
+    echo -e "    forgum cowsay 'Hello'    # Show a cow with custom text"
+    echo -e "    forgum list              # List available cow templates"
+    echo -e "    forgum interactive       # Open interactive config menu"
+    echo -e "    forgum help              # Show all commands"
     echo ""
     echo -e "  ${CYAN}Config:${NC}"
-    echo -e "    Get-CFConfig | ConvertTo-Json"
+    echo -e "    forgum config show       # View current config"
+    echo -e "    forgum config path       # Show config file path"
     echo ""
     echo -e "  ${CYAN}Uninstall:${NC}"
-    echo -e "    pwsh -File \"\$HOME/Documents/PowerShell/Modules/Forgum/uninstall.ps1\""
     echo -e "    rm -rf ~/Documents/PowerShell/Modules/Forgum"
     echo -e "    rm -rf ~/.local/share/powershell/Modules/Forgum"
     echo ""

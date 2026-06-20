@@ -11,16 +11,6 @@ impl Rect {
         Rect { x0, y0, x1, y1 }
     }
 
-    #[allow(dead_code)]
-    pub fn width(self) -> u16 {
-        self.x1.saturating_sub(self.x0)
-    }
-
-    #[allow(dead_code)]
-    pub fn height(self) -> u16 {
-        self.y1.saturating_sub(self.y0)
-    }
-
     pub fn contains(self, x: u16, y: u16) -> bool {
         x >= self.x0 && x < self.x1 && y >= self.y0 && y < self.y1
     }
@@ -36,11 +26,6 @@ impl Rect {
             None
         }
     }
-
-    #[allow(dead_code)]
-    pub fn contains_rect(self, inner: Rect) -> bool {
-        inner.x0 >= self.x0 && inner.y0 >= self.y0 && inner.x1 <= self.x1 && inner.y1 <= self.y1
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -50,8 +35,6 @@ pub struct RegionId(pub usize);
 pub struct Region {
     pub id: RegionId,
     pub bounds: Rect,
-    #[allow(dead_code)]
-    pub priority: u8,
     pub visible: bool,
 }
 
@@ -82,23 +65,17 @@ impl RegionAllocator {
         }
     }
 
-    pub fn allocate(&mut self, bounds: Rect, priority: u8) -> RegionId {
+    pub fn allocate(&mut self, bounds: Rect, _priority: u8) -> RegionId {
         let id = RegionId(self.next_id);
         self.next_id += 1;
         let mut region = Region {
             id,
             bounds,
-            priority,
             visible: true,
         };
         self.clamp_to_canvas(&mut region);
         self.regions.push(region);
         id
-    }
-
-    #[allow(dead_code)]
-    pub fn release(&mut self, id: RegionId) {
-        self.regions.retain(|r| r.id != id);
     }
 
     pub fn resize_region(&mut self, id: RegionId, new_bounds: Rect) -> bool {
@@ -116,41 +93,8 @@ impl RegionAllocator {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn set_visible(&mut self, id: RegionId, visible: bool) {
-        if let Some(region) = self.regions.iter_mut().find(|r| r.id == id) {
-            region.visible = visible;
-        }
-    }
-
     pub fn get(&self, id: RegionId) -> Option<&Region> {
         self.regions.iter().find(|r| r.id == id)
-    }
-
-    #[allow(dead_code)]
-    pub fn visible_regions(&self) -> impl Iterator<Item = &Region> {
-        self.regions.iter().filter(|r| r.visible)
-    }
-
-    #[allow(dead_code)]
-    pub fn compose_viewport(&self) -> Rect {
-        let mut x0 = self.canvas.x1;
-        let mut y0 = self.canvas.y1;
-        let mut x1 = self.canvas.x0;
-        let mut y1 = self.canvas.y0;
-
-        for region in self.visible_regions() {
-            x0 = x0.min(region.bounds.x0);
-            y0 = y0.min(region.bounds.y0);
-            x1 = x1.max(region.bounds.x1);
-            y1 = y1.max(region.bounds.y1);
-        }
-
-        if x0 < x1 && y0 < y1 {
-            Rect { x0, y0, x1, y1 }
-        } else {
-            self.canvas
-        }
     }
 
     fn clamp_to_canvas(&self, region: &mut Region) {
@@ -187,7 +131,7 @@ mod tests {
         let mut alloc = RegionAllocator::new(canvas);
         let id = alloc.allocate(Rect::new(0, 0, 80, 30), 100);
         assert!(alloc.get(id).is_some());
-        alloc.release(id);
+        alloc.regions.retain(|r| r.id != id);
         assert!(alloc.get(id).is_none());
     }
 
@@ -208,15 +152,5 @@ mod tests {
         alloc.resize_canvas(Rect::new(0, 0, 60, 25));
         assert_eq!(alloc.get(id).unwrap().bounds.x1, 60);
         assert_eq!(alloc.get(id).unwrap().bounds.y1, 25);
-    }
-
-    #[test]
-    fn test_compose_viewport() {
-        let canvas = Rect::new(0, 0, 80, 40);
-        let mut alloc = RegionAllocator::new(canvas);
-        alloc.allocate(Rect::new(10, 5, 40, 15), 100);
-        alloc.allocate(Rect::new(5, 10, 35, 20), 90);
-        let vp = alloc.compose_viewport();
-        assert_eq!(vp, Rect::new(5, 5, 40, 20));
     }
 }

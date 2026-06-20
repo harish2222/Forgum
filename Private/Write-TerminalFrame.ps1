@@ -54,7 +54,7 @@ function Write-TerminalFrame {
         }
         else {
             # Fallback for CI/redirected output: just emit the frame as-is.
-            Write-Host ($lines -join "`n")
+            Write-Output ($lines -join "`n")
         }
     }
 }

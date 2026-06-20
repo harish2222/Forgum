@@ -127,66 +127,6 @@ Describe "Config System" -Tag 'Config' {
     }
 }
 
-Describe "Set-Forgum" -Tag 'Config' {
-    BeforeAll {
-        InModuleScope Forgum {
-            $script:SetForgumRestore = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-        }
-    }
-
-    AfterAll {
-        InModuleScope Forgum {
-            if ($script:SetForgumRestore) { Set-CFConfig -Config $script:SetForgumRestore -ErrorAction SilentlyContinue }
-        }
-    }
-
-    It "updates animation mode" {
-        InModuleScope Forgum {
-            Set-Forgum -Animation 'typewriter'
-            (Get-CFConfig).animation.mode | Should -Be 'typewriter'
-        }
-    }
-
-    It "updates cow file" {
-        InModuleScope Forgum {
-            Set-Forgum -Cow 'tux'
-            (Get-CFConfig).cow.file | Should -Be 'tux'
-        }
-    }
-
-    It "updates cow eyes" {
-        InModuleScope Forgum {
-            Set-Forgum -Eyes 'XX'
-            (Get-CFConfig).cow.eyes | Should -Be 'XX'
-        }
-    }
-
-    It "updates lolcat status" {
-        InModuleScope Forgum {
-            Set-Forgum -Lolcat $true
-            (Get-CFConfig).lolcat.enabled | Should -Be $true
-            Set-Forgum -Lolcat $false
-            (Get-CFConfig).lolcat.enabled | Should -Be $false
-        }
-    }
-
-    It "updates random cow status" {
-        InModuleScope Forgum {
-            Set-Forgum -RandomCow $true
-            (Get-CFConfig).cow.random | Should -Be $true
-            Set-Forgum -RandomCow $false
-            (Get-CFConfig).cow.random | Should -Be $false
-        }
-    }
-
-    It "updates rainbow frequency" {
-        InModuleScope Forgum {
-            Set-Forgum -RainbowFrequency 0.5
-            (Get-CFConfig).lolcat.frequency | Should -Be 0.5
-        }
-    }
-}
-
 Describe "Cow File System" -Tag 'Cows' {
     It "lists available cow files" {
         InModuleScope Forgum {

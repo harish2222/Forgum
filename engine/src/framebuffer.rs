@@ -70,6 +70,7 @@ impl FrameBuffer {
         }
     }
 
+    #[cfg(test)]
     pub fn get_cell(&self, x: usize, y: usize) -> Cell {
         if x < self.width && y < self.height {
             self.back[y * self.width + x]
@@ -86,16 +87,6 @@ impl FrameBuffer {
         }
     }
 
-    pub fn mark_all_dirty(&mut self) {
-        for cell in self.back.iter_mut() {
-            cell.dirty = true;
-        }
-    }
-
-    pub fn is_dirty(&self) -> bool {
-        self.damage_count > 0
-    }
-
     pub fn compute_damage(&mut self) {
         self.damage_count = 0;
         for i in 0..self.back.len().min(self.front.len()) {
@@ -106,6 +97,11 @@ impl FrameBuffer {
                 self.back[i].dirty = false;
             }
         }
+    }
+
+    #[cfg(test)]
+    pub fn is_dirty(&self) -> bool {
+        self.damage_count > 0
     }
 
     pub fn damage_count(&self) -> usize {
@@ -161,11 +157,6 @@ impl FrameBuffer {
             }
         }
         Ok(written)
-    }
-
-    pub fn render_full<W: Write>(&mut self, out: &mut W) -> std::io::Result<usize> {
-        let clip = Rect::new(0, 0, self.width as u16, self.height as u16);
-        self.render_region(out, clip)
     }
 }
 

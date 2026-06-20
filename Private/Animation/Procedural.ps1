@@ -32,13 +32,13 @@ function Invoke-ProceduralAnimation {
         if ($clean.Length -gt $width) { $width = $clean.Length }
     }
     
-    $canvas = @()
+    $canvas = [System.Collections.Generic.List[string]]::new()
     foreach ($line in $lines) {
         $clean = $line -replace '\x1b\[[0-9;]*m', ''
         if ($clean.Length -lt $width) {
-            $canvas += $clean + (' ' * ($width - $clean.Length))
+            $canvas.Add($clean + (' ' * ($width - $clean.Length)))
         } else {
-            $canvas += $clean
+            $canvas.Add($clean)
         }
     }
 
@@ -51,14 +51,14 @@ function Invoke-ProceduralAnimation {
     $esc = [char]27
 
     # State variables
-    $snowflakes = @()
-    $matrixCols = @()
+    $snowflakes = [System.Collections.Generic.List[PSCustomObject]]::new()
+    $matrixCols = [System.Collections.Generic.List[PSCustomObject]]::new()
     for ($i = 0; $i -lt $width; $i++) {
-        $matrixCols += [PSCustomObject]@{
+        $matrixCols.Add([PSCustomObject]@{
             Pos = Get-Random -Minimum (-$height) -Maximum 0
             Speed = Get-Random -Minimum 1 -Maximum 3
             Char = [char](Get-Random -Minimum 33 -Maximum 126)
-        }
+        })
     }
 
     # Hide cursor
@@ -73,13 +73,14 @@ function Invoke-ProceduralAnimation {
             switch ($Effect) {
                 'Snow' {
                     if ((Get-Random -Minimum 0 -Maximum 100) -lt 40) {
-                        $snowflakes += [PSCustomObject]@{ X = (Get-Random -Minimum 0 -Maximum ($width - 1)); Y = 0 }
+                        $spawnMax = [Math]::Max(1, $width - 1)
+                        $snowflakes.Add([PSCustomObject]@{ X = (Get-Random -Minimum 0 -Maximum $spawnMax); Y = 0 })
                     }
 
-                    $newSnow = @()
+                    $newSnow = [System.Collections.Generic.List[PSCustomObject]]::new()
                     foreach ($sf in $snowflakes) {
                         $sf.Y++
-                        if ($sf.Y -lt $height) { $newSnow += $sf }
+                        if ($sf.Y -lt $height) { $newSnow.Add($sf) }
                     }
                     $snowflakes = $newSnow
 

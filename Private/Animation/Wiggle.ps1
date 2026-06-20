@@ -24,23 +24,22 @@
         [int]$Amplitude = 2
     )
 
-    $lines = $CowOutput -split "`n"
+    $lines = $CowOutput -split "`r?`n"
 
     # Generate wiggle pattern: oscillating offsets with damping
     $offsets = [System.Collections.Generic.List[int]]::new()
     $direction = 1
-    $currentAmp = $Amplitude
+    $currentAmp = [double]$Amplitude
 
     for ($i = 0; $i -lt $Duration; $i++) {
-        $offsets.Add([int]($currentAmp * $direction))
+        $offsets.Add([int][Math]::Round($currentAmp * $direction))
 
         # Reverse direction every 2 frames
         if ($i % 2 -eq 1) {
             $direction *= -1
-            # Decrease amplitude every full cycle
-            if ($direction -gt 0) {
-                $currentAmp = [Math]::Max(0, $currentAmp - 1)
-            }
+            # Exponential decay: 0.85 per cycle keeps motion visible longer
+            $currentAmp *= 0.85
+            if ($currentAmp -lt 0.1) { $currentAmp = 0 }
         }
     }
 

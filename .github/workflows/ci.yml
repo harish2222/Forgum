@@ -24,20 +24,15 @@ jobs:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
-      - name: Rust Security Audit (Core)
+      - name: Rust Security Audit
         run: |
           cargo install cargo-audit
-          cd src-rust && cargo audit
-      - name: Rust Security Audit (Engine)
-        run: |
           cd engine && cargo audit
       - name: Install cargo-mutants
         run: cargo install --version 24.11.0 cargo-mutants
       - name: Mutation Testing
         run: |
-          cd src-rust
-          timeout 300 cargo mutants --no-times --file src/main.rs
-          cd ../engine
+          cd engine
           timeout 300 cargo mutants --no-times
       - name: PowerShell Static Analysis
         shell: pwsh
@@ -122,13 +117,6 @@ jobs:
           $expectedAliases = @(
             'forgum-setup'
             'forgum-show'
-            'forgum-tui'
-            'cowgallery'
-            'cowpreview'
-            'cowconfig'
-            'lolcat-toggle'
-            'cow-animate'
-            'cow-eyes'
           )
           $missingAliases = $expectedAliases | Where-Object { $_ -notin $aliasKeys }
           if ($missingAliases) {
@@ -204,8 +192,7 @@ jobs:
 
       - name: Run Rust Tests
         run: |
-          cd src-rust && cargo test --verbose
-          cd ../engine && cargo test --verbose
+          cd engine && cargo test --verbose
 
       - name: Install Targets (Windows)
         if: matrix.os == 'windows-latest'
@@ -228,108 +215,94 @@ jobs:
       - name: Build Windows Binaries
         if: matrix.os == 'windows-latest'
         run: |
-          cd src-rust
-          cargo build --release --target x86_64-pc-windows-msvc
-          cargo build --release --target aarch64-pc-windows-msvc
-          cd ../engine
+          cd engine
           cargo build --release --target x86_64-pc-windows-msvc
           cargo build --release --target aarch64-pc-windows-msvc
           cd ..
           mkdir -p bin
-          cp src-rust/target/x86_64-pc-windows-msvc/release/forgum-core.exe bin/forgum-core.exe
-          cp src-rust/target/aarch64-pc-windows-msvc/release/forgum-core.exe bin/forgum-core-arm64.exe
-          cp engine/target/x86_64-pc-windows-msvc/release/engine.exe bin/forgum-engine.exe
-          cp engine/target/aarch64-pc-windows-msvc/release/engine.exe bin/forgum-engine-arm64.exe
+          cp engine/target/x86_64-pc-windows-msvc/release/forgum-engine.exe bin/forgum-engine.exe
+          cp engine/target/aarch64-pc-windows-msvc/release/forgum-engine.exe bin/forgum-engine-arm64.exe
         shell: bash
 
       - name: Build Linux Binaries
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
-          cd src-rust
-          cargo build --release --target x86_64-unknown-linux-gnu
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc cargo build --release --target aarch64-unknown-linux-gnu
-          cd ../engine
+          cd engine
           cargo build --release --target x86_64-unknown-linux-gnu
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc cargo build --release --target aarch64-unknown-linux-gnu
           cd ..
           mkdir -p bin
-          cp src-rust/target/x86_64-unknown-linux-gnu/release/forgum-core bin/forgum-core
-          cp src-rust/target/aarch64-unknown-linux-gnu/release/forgum-core bin/forgum-core-arm64
-          cp engine/target/x86_64-unknown-linux-gnu/release/engine bin/forgum-engine
-          cp engine/target/aarch64-unknown-linux-gnu/release/engine bin/forgum-engine-arm64
-          chmod +x bin/forgum-core bin/forgum-core-arm64 bin/forgum-engine bin/forgum-engine-arm64
+          cp engine/target/x86_64-unknown-linux-gnu/release/forgum-engine bin/forgum-engine
+          cp engine/target/aarch64-unknown-linux-gnu/release/forgum-engine bin/forgum-engine-arm64
+          chmod +x bin/forgum-engine bin/forgum-engine-arm64
         shell: bash
 
       - name: Build macOS Binaries
         if: matrix.os == 'macos-latest'
         run: |
-          cd src-rust
-          cargo build --release --target x86_64-apple-darwin
-          cargo build --release --target aarch64-apple-darwin
-          cd ../engine
+          cd engine
           cargo build --release --target x86_64-apple-darwin
           cargo build --release --target aarch64-apple-darwin
           cd ..
           mkdir -p bin
-          lipo -create -output bin/forgum-core-mac src-rust/target/x86_64-apple-darwin/release/forgum-core src-rust/target/aarch64-apple-darwin/release/forgum-core
-          lipo -create -output bin/forgum-engine-mac engine/target/x86_64-apple-darwin/release/engine engine/target/aarch64-apple-darwin/release/engine
-          chmod +x bin/forgum-core-mac bin/forgum-engine-mac
+          lipo -create -output bin/forgum-engine-mac engine/target/x86_64-apple-darwin/release/forgum-engine engine/target/aarch64-apple-darwin/release/forgum-engine
+          chmod +x bin/forgum-engine-mac
         shell: bash
 
       - name: Upload Windows x64 Artifact
         if: matrix.os == 'windows-latest' && matrix.pwsh == '7.4'
         uses: actions/upload-artifact@v4
         with:
-          name: forgum-core-x86_64-pc-windows-msvc
-          path: src-rust/target/x86_64-pc-windows-msvc/release/forgum-core.exe
+          name: forgum-engine-x86_64-pc-windows-msvc
+          path: engine/target/x86_64-pc-windows-msvc/release/forgum-engine.exe
           if-no-files-found: error
 
       - name: Upload Windows ARM64 Artifact
         if: matrix.os == 'windows-latest' && matrix.pwsh == '7.4'
         uses: actions/upload-artifact@v4
         with:
-          name: forgum-core-aarch64-pc-windows-msvc
-          path: src-rust/target/aarch64-pc-windows-msvc/release/forgum-core.exe
+          name: forgum-engine-aarch64-pc-windows-msvc
+          path: engine/target/aarch64-pc-windows-msvc/release/forgum-engine.exe
           if-no-files-found: error
 
       - name: Upload Linux x64 Artifact
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: forgum-core-x86_64-unknown-linux-gnu
-          path: src-rust/target/x86_64-unknown-linux-gnu/release/forgum-core
+          name: forgum-engine-x86_64-unknown-linux-gnu
+          path: engine/target/x86_64-unknown-linux-gnu/release/forgum-engine
           if-no-files-found: error
 
       - name: Upload Linux ARM64 Artifact
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: forgum-core-aarch64-unknown-linux-gnu
-          path: src-rust/target/aarch64-unknown-linux-gnu/release/forgum-core
+          name: forgum-engine-aarch64-unknown-linux-gnu
+          path: engine/target/aarch64-unknown-linux-gnu/release/forgum-engine
           if-no-files-found: error
 
       - name: Upload macOS x64 Artifact
         if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: forgum-core-x86_64-apple-darwin
-          path: src-rust/target/x86_64-apple-darwin/release/forgum-core
+          name: forgum-engine-x86_64-apple-darwin
+          path: engine/target/x86_64-apple-darwin/release/forgum-engine
           if-no-files-found: error
 
       - name: Upload macOS ARM64 Artifact
         if: matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: forgum-core-aarch64-apple-darwin
-          path: src-rust/target/aarch64-apple-darwin/release/forgum-core
+          name: forgum-engine-aarch64-apple-darwin
+          path: engine/target/aarch64-apple-darwin/release/forgum-engine
           if-no-files-found: error
 
       - name: Verify ARM64 Binary (native on Apple Silicon)
         if: matrix.os == 'macos-latest'
         run: |
-          file ./bin/forgum-core-arm64 || true
-          ./bin/forgum-core-arm64 --version || true
+          file ./bin/forgum-engine-mac || true
+          ./bin/forgum-engine-mac --version || true
         shell: bash
 
       - name: Cache Pester + modules
@@ -438,14 +411,11 @@ jobs:
 
       - name: Build Rust Binary (Release)
         run: |
-          cd src-rust
-          cargo build --release
-          cd ../engine
+          cd engine
           cargo build --release
           cd ..
           mkdir -p bin
-          cp src-rust/target/release/forgum-core.exe bin/forgum-core.exe
-          cp engine/target/release/engine.exe bin/forgum-engine.exe
+          cp engine/target/release/forgum-engine.exe bin/forgum-engine.exe
         shell: bash
 
       - name: Measure Performance
@@ -486,8 +456,8 @@ jobs:
 
       - name: Merge macOS Universal Binary
         run: |
-          lipo -create -output bin_artifacts/forgum-core-mac bin_artifacts/forgum-core-x86_64-apple-darwin/forgum-core bin_artifacts/forgum-core-aarch64-apple-darwin/forgum-core
-          chmod +x bin_artifacts/forgum-core-mac
+          lipo -create -output bin_artifacts/forgum-engine-mac bin_artifacts/forgum-engine-x86_64-apple-darwin/forgum-engine bin_artifacts/forgum-engine-aarch64-apple-darwin/forgum-engine
+          chmod +x bin_artifacts/forgum-engine-mac
         shell: bash
 
       - name: Create release package
@@ -514,17 +484,16 @@ jobs:
           New-Item -ItemType Directory -Path $binDir -Force | Out-Null
 
           # Copy artifacts
-          Copy-Item -Path "bin_artifacts/forgum-core-x86_64-pc-windows-msvc/forgum-core.exe" -Destination "$binDir/forgum-core.exe" -ErrorAction Stop
-          Copy-Item -Path "bin_artifacts/forgum-core-aarch64-pc-windows-msvc/forgum-core.exe" -Destination "$binDir/forgum-core-arm64.exe" -ErrorAction Stop
-          Copy-Item -Path "bin_artifacts/forgum-core-x86_64-unknown-linux-gnu/forgum-core" -Destination "$binDir/forgum-core" -ErrorAction Stop
-          Copy-Item -Path "bin_artifacts/forgum-core-aarch64-unknown-linux-gnu/forgum-core" -Destination "$binDir/forgum-core-arm64" -ErrorAction Stop
-          Copy-Item -Path "bin_artifacts/forgum-core-mac" -Destination "$binDir/forgum-core-mac" -ErrorAction Stop
-          # Assume engine artifacts are built and copied appropriately.
+          Copy-Item -Path "bin_artifacts/forgum-engine-x86_64-pc-windows-msvc/forgum-engine.exe" -Destination "$binDir/forgum-engine.exe" -ErrorAction Stop
+          Copy-Item -Path "bin_artifacts/forgum-engine-aarch64-pc-windows-msvc/forgum-engine.exe" -Destination "$binDir/forgum-engine-arm64.exe" -ErrorAction Stop
+          Copy-Item -Path "bin_artifacts/forgum-engine-x86_64-unknown-linux-gnu/forgum-engine" -Destination "$binDir/forgum-engine" -ErrorAction Stop
+          Copy-Item -Path "bin_artifacts/forgum-engine-aarch64-unknown-linux-gnu/forgum-engine" -Destination "$binDir/forgum-engine-arm64" -ErrorAction Stop
+          Copy-Item -Path "bin_artifacts/forgum-engine-mac" -Destination "$binDir/forgum-engine-mac" -ErrorAction Stop
 
           if (-not ($IsWindows -or ($env:OS -eq 'Windows_NT'))) {
-              & chmod +x "$binDir/forgum-core"
-              & chmod +x "$binDir/forgum-core-arm64"
-              & chmod +x "$binDir/forgum-core-mac"
+              & chmod +x "$binDir/forgum-engine"
+              & chmod +x "$binDir/forgum-engine-arm64"
+              & chmod +x "$binDir/forgum-engine-mac"
           }
 
           # Create zip using bash zip (more reliable than Compress-Archive for long paths)

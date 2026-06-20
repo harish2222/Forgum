@@ -22,7 +22,7 @@
     )
 
     $esc = [char]27
-    $lines = $CowOutput -split "`n"
+    $lines = $CowOutput -split "`r?`n"
 
     # Find the balloon lines (containing ||) to identify where text is
     $balloonStart = -1

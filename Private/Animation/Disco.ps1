@@ -25,12 +25,31 @@ function Invoke-DiscoAnimation {
     )
 
     $esc = [char]27
-    $lines = $CowOutput -split "`n"
+    $lines = $CowOutput -split "`r?`n"
     $sb = [System.Text.StringBuilder]::new($CowOutput.Length * 10)
 
     for ($frame = 0; $frame -lt $Duration; $frame++) {
         [void]$sb.Clear()
         $hueShift = $frame * 25
+
+        # Pre-compute 360-entry RGB lookup table (O(1) per char instead of HSV-to-RGB each time)
+        $rgbTable = [string[]]::new(360)
+        for ($h = 0; $h -lt 360; $h++) {
+            $hi = $h / 60.0
+            $f = $hi - [Math]::Floor($hi)
+            $q = 255 * (1 - $f)
+            $t = 255 * $f
+            $r = 0; $g = 0; $b = 0
+            switch ([int][Math]::Floor($hi) % 6) {
+                0 { $r = 255; $g = [int]$t; $b = 0 }
+                1 { $r = [int]$q; $g = 255; $b = 0 }
+                2 { $r = 0; $g = 255; $b = [int]$t }
+                3 { $r = 0; $g = [int]$q; $b = 255 }
+                4 { $r = [int]$t; $g = 0; $b = 255 }
+                5 { $r = 255; $g = 0; $b = [int]$q }
+            }
+            $rgbTable[$h] = "${r};${g};${b}"
+        }
 
         for ($i = 0; $i -lt $lines.Count; $i++) {
             if ($i -gt 0) { [void]$sb.AppendLine() }
@@ -45,26 +64,9 @@ function Invoke-DiscoAnimation {
                     continue
                 }
 
-                # Calculate hue based on position and frame
+                # Calculate hue based on position and frame — O(1) lookup
                 $hue = (($c * 15) + $hueShift + ($i * 40)) % 360
-
-                # HSV to RGB conversion
-                $h = $hue / 60.0
-                $f = $h - [Math]::Floor($h)
-                $q = 255 * (1 - $f)
-                $t = 255 * $f
-                $r = 0; $g = 0; $b = 0
-
-                switch ([int][Math]::Floor($h) % 6) {
-                    0 { $r = 255; $g = [int]$t; $b = 0 }
-                    1 { $r = [int]$q; $g = 255; $b = 0 }
-                    2 { $r = 0; $g = 255; $b = [int]$t }
-                    3 { $r = 0; $g = [int]$q; $b = 255 }
-                    4 { $r = [int]$t; $g = 0; $b = 255 }
-                    5 { $r = 255; $g = 0; $b = [int]$q }
-                }
-
-                [void]$sb.Append("${esc}[38;2;${r};${g};${b}m${char}${esc}[39m")
+                [void]$sb.Append("${esc}[38;2;${rgbTable[$hue]}m${char}${esc}[39m")
             }
         }
 

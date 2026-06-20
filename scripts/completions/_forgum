@@ -11,26 +11,38 @@
 #compdef forgum
 
 _forgum_subcommands=(
-  update upgrade config tui setup gallery preview toggle animate eyes help
+  run cowsay list theme export history config interactive toggle animate eyes init daemon live gallery preview update help
 )
 
 local curcontext="$curcontext" state line
 typeset -A opt_args
 
-# Decide what to complete based on the current word
-curcontext="${curcontext}:forgum:${CURRENT_WORD}"
+_forgum_flags=(
+  '(-h --help)'{-h,--help}'[Show help]'
+  '(-v --version)'{-v,--version}'[Show version]'
+  '--cow[Cow template name]:cow:_files'
+  '--eyes[Custom eyes (2 chars)]:eyes:'
+  '--tongue[Custom tongue (2 chars)]:tongue:'
+  '--thoughts[Thought bubble character]:thoughts:'
+  '--mode[Animation mode]:mode:(static talking typewriter bounce wave wiggle dissolve fade-in slide-in disco blink dynamic procedural physics aurora plasma ember liquid-chrome shatter portal glitch neon-pulse random)'
+  '--count[Number of times to run]:count:'
+  '--lolcat[Enable rainbow colors]'
+  '--no-lolcat[Disable rainbow colors]'
+  '--fortune[Force new random fortune]'
+  '--no-color[Disable colors]'
+  '--format[Output format]:format:(txt ansi)'
+  '--output[Output file path]:output:_files'
+  '--search[Search cow templates]:search:'
+  '--clear[Clear history]'
+  '--duration[Animation duration]:duration:'
+  '--force[Force update]'
+  '--check[Only check for update]'
+  '--preset[Eye preset name]:preset:'
+  '--custom[Custom eye characters]:custom:'
+)
+
 _arguments -C \
-  '(-h --help)'{-h,--help}'[Show help]' \
-  '(-Lolcat)'{-Lolcat}'[Enable lolcat for invocation]' \
-  '(-CowFile)'{-CowFile}'[Cow file name]' \
-  '(-Cow)'{-Cow}'[Alias for -CowFile]' \
-  '(-Force)'{-Force}'[Force update]' \
-  '(-CheckOnly)'{-CheckOnly}'[Only check for update]' \
-  '(-Count)'{-Count}'[Gallery count]:count:' \
-  '(-Mode)'{-Mode}'[Animation mode]:mode:' \
-  '(-Preset)'{-Preset}'[Eyes preset]:preset:' \
-  '(-CustomEyes)'{-CustomEyes}'[Custom eyes (2 chars)]:customeyes:' \
-  '(-Background)'{-Background}'[Enable background for some animations]' \
+  "${_forgum_flags[@]}" \
   '1:subcommand:->subcmd' \
   '*::arg:->args'
 
@@ -39,18 +51,40 @@ case "$state" in
     compadd -- ${_forgum_subcommands[@]}
     ;;
   args)
-    # If completing a subcommand token
-    # Otherwise complete generic flags/known args.
-    if [[ "$words[CURRENT-1]" == "gallery" ]]; then
-      # -Count expects an int; offer 1..10
-      if [[ "$CURRENT_WORD" == -* ]]; then
-        compadd -- -Count
-      else
-        compadd -- {1..10}
-      fi
-    else
-      # Generic flag completion (best-effort)
-      compadd -- -Lolcat -Cow -CowFile -Count -PreviewCow -PreviewText -Mode -Preset -CustomEyes -Force -CheckOnly -Background -Animation
-    fi
+    case "$words[CURRENT-1]" in
+      run)
+        compadd -- --cow --mode --lolcat --no-lolcat --fortune --help
+        ;;
+      gallery)
+        compadd -- --count --help
+        ;;
+      list)
+        compadd -- --search --count --help
+        ;;
+      theme)
+        compadd -- set list reset --help
+        ;;
+      export)
+        compadd -- --cow --eyes --tongue --format --output --no-color --help
+        ;;
+      history)
+        compadd -- --clear --count --help
+        ;;
+      config)
+        compadd -- path dir show --help
+        ;;
+      cowsay)
+        compadd -- --cow --eyes --tongue --thoughts --lolcat --no-color --help
+        ;;
+      live)
+        compadd -- --duration --help
+        ;;
+      update)
+        compadd -- --force --check --help
+        ;;
+      *)
+        compadd -- ${_forgum_subcommands[@]}
+        ;;
+    esac
     ;;
 esac

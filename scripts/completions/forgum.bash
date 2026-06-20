@@ -7,19 +7,17 @@
 #
 # Completion covers:
 #   forgum <subcommand> and Action text tokens
-#   args: -Lolcat, -Cow, -CowFile, -Count, -PreviewCow, -PreviewText, -Mode, -Preset, -CustomEyes
-#
-# Note: This completion assumes the root CLI command is named `forgum`.
+#   args: --lolcat, --cow, --eyes, --mode, --count, --format, --output, etc.
 
-_forgum_subcommands="update upgrade config tui setup gallery preview toggle animate eyes help"
+_forgum_subcommands="run cowsay list theme export history config interactive toggle animate eyes init daemon live gallery preview update help"
 
 _forgum_complete() {
-  local cur prev word
+  local cur prev
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  # If completing subcommands / action token
+  # Complete subcommands
   local sub
   for sub in $_forgum_subcommands; do
     if [[ "$sub" == "$cur"* ]]; then
@@ -27,13 +25,20 @@ _forgum_complete() {
     fi
   done
 
-  # If completing known flags/args
+  # Complete known flags/args
   if [[ "$cur" == -* ]]; then
     COMPREPLY+=(
-      $(compgen -W "-Lolcat -Cow -Animation -CowFile -Count -PreviewCow -PreviewText -Mode -Preset -CustomEyes -Force -CheckOnly -Background" -- "$cur")
+      $(compgen -W "--help --version --cow --eyes --tongue --thoughts --mode --count --lolcat --no-lolcat --fortune --no-color --format --output --search --clear --duration --force --check --preset --custom" -- "$cur")
     )
     return 0
   fi
+
+  # Subcommand-specific completions
+  case "$prev" in
+    --cow|--eyes|--tongue|--thoughts|--mode|--format|--output|--search|--preset|--custom)
+      # Expecting user input (no further completion)
+      ;;
+  esac
 
   return 0
 }

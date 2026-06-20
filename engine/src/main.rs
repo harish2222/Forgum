@@ -1,5 +1,4 @@
 mod framebuffer;
-mod compositor;
 mod particles;
 mod color;
 mod protocol;
@@ -12,7 +11,7 @@ use protocol::SceneConfig;
 use std::io::{self, Read, Write};
 use framebuffer::FrameBuffer;
 use region::{RegionAllocator, Rect};
-use effects::{Effect, AuroraEffect, EmberEffect, ShatterEffect, PlasmaEffect, LiquidChromeEffect, PortalEffect, GlitchEffect, NeonPulseEffect};
+use effects::{Effect, AuroraEffect, EmberEffect, ShatterEffect, PlasmaEffect, LiquidChromeEffect, PortalEffect, GlitchEffect, NeonPulseEffect, PhysicsEffect};
 use terminal::Terminal;
 use scheduler::Scheduler;
 use crossterm::{
@@ -32,11 +31,12 @@ fn create_effect(name: &str, cow_text: String) -> Box<dyn Effect> {
         "portal" => Box::new(PortalEffect::new(cow_text)),
         "glitch" => Box::new(GlitchEffect::new(cow_text)),
         "neon-pulse" => Box::new(NeonPulseEffect::new(cow_text)),
+        "physics" => Box::new(PhysicsEffect::new(cow_text)),
         "random" => {
             use rand::seq::SliceRandom;
             let effects = [
                 "ember", "shatter", "plasma", "liquid-chrome",
-                "portal", "glitch", "neon-pulse", "aurora",
+                "portal", "glitch", "neon-pulse", "aurora", "physics",
             ];
             let mut rng = rand::thread_rng();
             let chosen = *effects.choose(&mut rng).unwrap_or(&"aurora");
@@ -55,6 +55,7 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
     let (cols, rows) = crossterm::terminal::size()?;
     let mut fb = FrameBuffer::new(cols as usize, rows as usize);
     let mut effect = create_effect(&config.effect, config.cow_text);
+    effect.on_resize(cols as usize, rows as usize);
 
     let mut region_alloc = RegionAllocator::new(Rect::new(0, 0, cols, rows));
     let ob = term.overlay_bounds();
@@ -121,7 +122,7 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
 }
 
 fn render_loop_background(config: SceneConfig) -> io::Result<()> {
-    let mut term = Terminal::detect();
+    let _term = Terminal::detect();
     let mut stdout = io::stdout();
 
     // Background mode: DO NOT hide cursor, DO NOT enter raw mode
@@ -130,6 +131,7 @@ fn render_loop_background(config: SceneConfig) -> io::Result<()> {
     let (cols, rows) = crossterm::terminal::size()?;
     let mut fb = FrameBuffer::new(cols as usize, rows as usize);
     let mut effect = create_effect(&config.effect, config.cow_text);
+    effect.on_resize(cols as usize, rows as usize);
 
     let mut region_alloc = RegionAllocator::new(Rect::new(0, 0, cols, rows));
 

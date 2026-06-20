@@ -14,10 +14,11 @@ class Forgum < Formula
   def caveats
     <<~EOS
       To use Forgum, add the following to your PowerShell profile:
-        Import-Module #{prefix}/Forgum.psd1`n    EOS
+        Import-Module #{prefix}/Forgum.psd1
+    EOS
   end
 
   test do
-    system "pwsh", "-Command", "Import-Module #{prefix}/Forgum.psd1; Invoke-Cowsay -Text 'Homebrew test'"
+    system "pwsh", "-Command", "Import-Module #{prefix}/Forgum.psd1; forgum cowsay 'Homebrew test'"
   end
 end

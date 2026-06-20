@@ -14,8 +14,8 @@ function Parse-ForgumArguments {
     #>
     param(
         [string[]]$Arguments = @(),
-        [string[]]$KnownFlags = @('help','json','force','check','lolcat','no-lolcat','fortune'),
-        [string[]]$KnownOptions = @('cow','mode','count','text','preset','custom','shell','duration','eyes')
+        [string[]]$KnownFlags = @('help','json','force','check','lolcat','no-lolcat','fortune','no-color','clear'),
+        [string[]]$KnownOptions = @('cow','mode','count','text','preset','custom','shell','duration','eyes','tongue','thoughts','output','format','search')
     )
 
     $result = @{

@@ -51,7 +51,7 @@ function Invoke-LiveShow {
 
         $cowText = $baseCow
         if ($Toggles.Lolcat) {
-            $lolSeed = Get-Random -Maximum 100000
+            $lolSeed = Get-Random -Maximum 10001
             $cowText = Format-Lolcat -Text $cowText -Seed $lolSeed
         }
 
@@ -78,20 +78,12 @@ function Invoke-LiveShow {
 
         $baseCow = Invoke-Cowsay -Text $fortune -CowFile $cowName
 
-        # For "static" we keep effect stable but non-animated by using a low FPS + short duration.
-        $engineEffect = switch ($mode) {
-            'wiggle'   { 'plasma' }
-            'bounce'   { 'plasma' }
-            'wave'     { 'plasma' }
-            'dissolve' { 'plasma' }
-            'fade-in'  { 'plasma' }
-            'disco'    { 'plasma' }
-            default     { 'plasma' }
-        }
+        # All legacy modes map to plasma effect for the engine
+        $engineEffect = 'plasma'
 
         $cowText = $baseCow
         if ($Toggles.Lolcat) {
-            $lolSeed = Get-Random -Maximum 100000
+            $lolSeed = Get-Random -Maximum 10001
             $cowText = Format-Lolcat -Text $cowText -Seed $lolSeed
         }
 

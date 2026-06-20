@@ -1,5 +1,7 @@
+#[cfg(test)]
 use std::env;
 
+#[cfg(test)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Multiplexer {
     None,
@@ -7,13 +9,6 @@ pub enum Multiplexer {
     Zellij,
     Screen,
     Wezterm,
-}
-
-impl Multiplexer {
-    #[allow(dead_code)]
-    pub fn is_some(self) -> bool {
-        self != Multiplexer::None
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,33 +20,22 @@ pub struct TermSize {
 #[derive(Debug, Clone, Copy)]
 pub struct PromptRegion {
     pub y_start: u16,
-    #[allow(dead_code)]
-    pub y_end: u16,
-    #[allow(dead_code)]
-    pub is_interactive: bool,
 }
 
 pub struct Terminal {
     pub size: TermSize,
-    #[allow(dead_code)]
-    pub mux: Multiplexer,
     raw_mode_enabled: bool,
-    #[allow(dead_code)]
-    alternate_screen: bool,
 }
 
 impl Terminal {
     pub fn detect() -> Self {
-        let mux = detect_multiplexer();
         let size = crossterm::terminal::size()
             .map(|(c, r)| TermSize { cols: c, rows: r })
             .unwrap_or(TermSize { cols: 80, rows: 24 });
 
         Terminal {
             size,
-            mux,
             raw_mode_enabled: false,
-            alternate_screen: false,
         }
     }
 
@@ -61,58 +45,10 @@ impl Terminal {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn enter_raw_mode(&mut self) -> std::io::Result<()> {
-        if !self.raw_mode_enabled {
-            crossterm::terminal::enable_raw_mode()?;
-            self.raw_mode_enabled = true;
-        }
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub fn leave_raw_mode(&mut self) -> std::io::Result<()> {
-        if self.raw_mode_enabled {
-            crossterm::terminal::disable_raw_mode()?;
-            self.raw_mode_enabled = false;
-        }
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub fn enter_alternate_screen(&mut self, out: &mut impl std::io::Write) -> std::io::Result<()> {
-        if !self.alternate_screen && self.mux == Multiplexer::None {
-            crossterm::execute!(out, crossterm::terminal::EnterAlternateScreen)?;
-            self.alternate_screen = true;
-        }
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub fn leave_alternate_screen(&mut self, out: &mut impl std::io::Write) -> std::io::Result<()> {
-        if self.alternate_screen {
-            crossterm::execute!(out, crossterm::terminal::LeaveAlternateScreen)?;
-            self.alternate_screen = false;
-        }
-        Ok(())
-    }
-
     pub fn prompt_region(&self) -> PromptRegion {
-        let is_interactive = atty_is_tty();
-
-        if !is_interactive {
-            return PromptRegion {
-                y_start: 0,
-                y_end: self.size.rows,
-                is_interactive: false,
-            };
-        }
-
         let prompt_y = self.size.rows.saturating_sub(3).max(1);
         PromptRegion {
             y_start: prompt_y,
-            y_end: self.size.rows,
-            is_interactive: true,
         }
     }
 
@@ -121,11 +57,6 @@ impl Terminal {
         let y0 = 0u16;
         let y1 = prompt.y_start;
         (0, y0, self.size.cols, y1)
-    }
-
-    #[allow(dead_code)]
-    pub fn is_tty() -> bool {
-        atty_is_tty()
     }
 }
 
@@ -137,6 +68,7 @@ impl Drop for Terminal {
     }
 }
 
+#[cfg(test)]
 fn detect_multiplexer() -> Multiplexer {
     if env::var("TMUX").is_ok() {
         return Multiplexer::Tmux;
@@ -151,17 +83,6 @@ fn detect_multiplexer() -> Multiplexer {
         return Multiplexer::Wezterm;
     }
     Multiplexer::None
-}
-
-fn atty_is_tty() -> bool {
-    #[cfg(unix)]
-    {
-        unsafe { libc::isatty(libc::STDIN_FILENO) != 0 && libc::isatty(libc::STDOUT_FILENO) != 0 }
-    }
-    #[cfg(not(unix))]
-    {
-        true
-    }
 }
 
 #[cfg(test)]
@@ -184,9 +105,7 @@ mod tests {
     fn test_overlay_bounds_respects_prompt() {
         let term = Terminal {
             size: TermSize { cols: 80, rows: 40 },
-            mux: Multiplexer::None,
             raw_mode_enabled: false,
-            alternate_screen: false,
         };
         let (x0, y0, x1, y1) = term.overlay_bounds();
         assert_eq!(x0, 0);

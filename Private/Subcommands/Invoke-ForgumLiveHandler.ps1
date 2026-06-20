@@ -9,7 +9,13 @@ function Invoke-ForgumLiveHandler {
         return
     }
 
-    $duration = if ($parsed.Options.ContainsKey('duration')) { [int]$parsed.Options['duration'] } else { 5 }
+    $duration = 5
+    if ($parsed.Options.ContainsKey('duration')) {
+        $parsedInt = 0
+        if ([int]::TryParse($parsed.Options['duration'], [ref]$parsedInt) -and $parsedInt -gt 0) {
+            $duration = $parsedInt
+        }
+    }
 
     Invoke-ForgumLive -Duration $duration
 }

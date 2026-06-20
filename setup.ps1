@@ -168,7 +168,7 @@ $autoUpdate = Get-UserChoice "Enable background daily auto-update check?" $autoU
 
 # ── Toggle 5: Shell Aliases ──
 Show-Section "Shell Aliases"
-$addAliases = Get-UserChoice "Add quick aliases (cowconfig, cowpreview, cowgallery, etc.)?" $true -NonInteractive:$NonInteractive
+$addAliases = Get-UserChoice "Add quick aliases (forgum-show, forgum-setup, etc.)?" $true -NonInteractive:$NonInteractive
 
 # ── Toggle 6: Tab Completion ──
 Show-Section "Tab Completion"
