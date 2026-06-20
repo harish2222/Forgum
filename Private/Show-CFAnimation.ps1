@@ -77,30 +77,10 @@ function Show-CFAnimation {
         return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration)
     }
 
-    # Legacy static/rust modes — use Rust binary if available, else static
-    $isWin = $IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6) -or ($env:OS -eq 'Windows_NT')
-    $isMac = $IsMacOS
+    # Legacy static/rust modes — use Rust engine binary if available, else static
+    $binPath = Get-EngineBinary
 
-    if ($isWin) {
-        $arch = $env:PROCESSOR_ARCHITECTURE
-        $binName = if ($arch -eq 'ARM64' -or $arch -eq 'Arm64') { "forgum-core-arm64.exe" } else { "forgum-core.exe" }
-    } elseif ($isMac) {
-        $binName = "forgum-core-mac"
-    } else {
-        $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
-        $binName = if ($arch -eq 'Arm64' -or $arch -eq 'ARM64') { "forgum-core-arm64" } else { "forgum-core" }
-    }
-
-    $binPath = Join-Path (Split-Path $PSScriptRoot -Parent) "bin\$binName"
-    if (-not (Test-Path $binPath)) {
-        $fallbackName = if ($isWin) { "forgum-core.exe" } else { "forgum-core" }
-        $fallbackPath = Join-Path (Split-Path $PSScriptRoot -Parent) "bin\$fallbackName"
-        if (Test-Path $fallbackPath) {
-            $binPath = $fallbackPath
-        }
-    }
-
-    if (Test-Path $binPath) {
+    if ($binPath) {
         $isAutoStart = $script:IsAutoStart
         $frames = $duration
         if (-not $frames -or $frames -lt 1) { $frames = 30 }
@@ -120,7 +100,7 @@ function Show-CFAnimation {
         if ($null -eq $rendered) { return $CowOutput }
         return ($rendered -join "`n")
     } else {
-        Write-Warning "forgum-core not found, falling back to static"
+        Write-Warning "forgum-engine not found, falling back to static"
         return $CowOutput
     }
 }

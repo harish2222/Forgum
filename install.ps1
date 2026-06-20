@@ -90,7 +90,7 @@ Show-Progress 10 100
 # Clone or copy
 # Compile Rust engine if cargo is available
 $sourceDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocation.MyCommand.Path -Parent }
-$rustDir = Join-Path $sourceDir "src-rust"
+$rustDir = Join-Path $sourceDir "engine"
 $binDir = Join-Path $sourceDir "bin"
 if (Test-CommandExists cargo) {
     if (Test-Path $rustDir) {
@@ -100,7 +100,7 @@ if (Test-CommandExists cargo) {
         cargo build --release --quiet
         Set-Location $origDir
         if (-not (Test-Path $binDir)) { New-Item -ItemType Directory -Path $binDir -Force | Out-Null }
-        $exeName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-core.exe" } else { "forgum-core" }
+        $exeName = if ($IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6)) { "forgum-engine.exe" } else { "forgum-engine" }
         $compiledPath = Join-Path $rustDir "target/release/$exeName"
         if (Test-Path $compiledPath) {
             Copy-Item -Path $compiledPath -Destination (Join-Path $binDir $exeName) -Force

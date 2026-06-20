@@ -123,9 +123,9 @@ Describe "Cross-Platform Support" -Tag 'CrossPlatform' {
             $manifest.ExportedFunctions.Keys.Count | Should -Be 1
         }
 
-        It "version is 2.0.0" {
+        It "version is 1.1.2" {
             $manifest = Test-ModuleManifest -Path (Join-Path $ModuleRoot 'Forgum.psd1') -ErrorAction Stop
-            $manifest.Version.ToString() | Should -Be '2.0.0'
+            $manifest.Version.ToString() | Should -Be '1.1.2'
         }
     }
 }

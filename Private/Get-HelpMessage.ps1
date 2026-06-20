@@ -263,13 +263,10 @@ function Get-HelpMessage {
     --help, -h                            Show this help
 
   Eye Presets:
-    borg          [==]          Dead          [xx]
-    Greedy        [$ $]         Eyes          [oo]
-    Excited       [!!]          Kiss          [**]
-    Long          [OO]          Angry         [@@]
-    Merry         [--]          Shifty       [..]
-    Tired         [--)          Wide          [OO]
-    Stoned        [o.o]         Wide          [Oo]
+    borg          [==]          dead          [xx]
+    greedy        [$$]          paranoia      [@@]
+    stoned        [**]          tired         [ --]
+    wasted        [OO]          youthful      [..]
 
   Examples:
     forgum eyes borg                      # Set borg preset

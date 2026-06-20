@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Forgum.psm1'
-    ModuleVersion     = '2.0.0'
+    ModuleVersion     = '1.1.2'
     GUID              = 'f7e6b3a1-2d84-4c9f-a5e0-1b3d7c8f9e2a'
     Author            = 'HKDEVS'
     CompanyName       = 'HKDEVS'
@@ -21,17 +21,21 @@
             ProjectUri   = 'https://github.com/harish2222/Forgum'
             IconUri      = 'https://raw.githubusercontent.com/harish2222/Forgum/main/icon.png'
             ReleaseNotes = @'
-## v2.0.0
+## v1.1.2
 - Feature: Unified CLI — single `forgum` command with subcommands: run, config, gallery, preview, update, toggle, animate, eyes, init, live, daemon, help
 - Feature: `forgum init <shell>` generates native shell hooks for bash, zsh, fish, and PowerShell
 - Feature: `forgum help [command]` provides comprehensive help for every command and argument
 - Feature: Rust engine background rendering — animations run independently while shell stays usable
 - Feature: Cross-platform native shell hooks via Get-ForgumShellHook
+- Feature: Silent auto-update — non-blocking background daily update checker
+- Feature: TUI & Setup Wizard configuration toggles for auto-update
 - Breaking: Module exports only `forgum` — all other functions are now Private
 - Fix: All subcommand help returns via pipeline (not Write-Host) for testability
 - Fix: forgum.ps1 switch routing for PowerShell dash-stripped params
 - Fix: Invoke-Cowsay validation rejects empty config values gracefully
 - Fix: Get-ForgumShellHook single-quoted templates avoid PowerShell subexpression interpretation
+- Fix: CI workflows — removed flaky QEMU arm64 cross-compilation tests
+- Fix: Profile integration — cleaned up setup.ps1 to prevent multiple dirty imports
 - Test: 130/130 tests passing across 8 test files
 
 ## v1.0.9

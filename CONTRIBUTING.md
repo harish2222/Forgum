@@ -177,20 +177,19 @@ function Get-Fortune {
 ### Running Tests
 
 ```powershell
-# Run all tests
+# Run all tests (130 tests across 8 files)
+Import-Module ./Forgum.psd1 -Force
 Invoke-Pester -Path ./Tests/
 
-# Run CLI tests (unified CLI routing)
-Invoke-Pester -Path ./Tests/CLI.Tests.ps1              # 31 tests
-
-# Run engine tests (Rust engine integration)
-Invoke-Pester -Path ./Tests/Engine.Tests.ps1            # 14 tests
-
-# Run cross-platform tests
-Invoke-Pester -Path ./Tests/CrossPlatform.Tests.ps1     # 14 tests
-
-# Run core feature tests
-Invoke-Pester -Path ./Tests/Forgum.Tests.ps1            # 40 tests
+# Run specific test suites
+Invoke-Pester -Path ./Tests/CLI.Tests.ps1              # 31 tests — unified CLI routing
+Invoke-Pester -Path ./Tests/Engine.Tests.ps1            # 14 tests — Rust engine integration
+Invoke-Pester -Path ./Tests/CrossPlatform.Tests.ps1     # 14 tests — cross-platform detection
+Invoke-Pester -Path ./Tests/Forgum.Tests.ps1            # 40 tests — core features
+Invoke-Pester -Path ./Tests/Comprehensive.Tests.ps1     # 12 tests — comprehensive feature coverage
+Invoke-Pester -Path ./Tests/LiveShow.Tests.ps1          #  3 tests — live show mode
+Invoke-Pester -Path ./Tests/Visual.Tests.ps1            #  4 tests — visual rendering
+Invoke-Pester -Path ./Tests/Ghost.Tests.ps1             # 11 tests — ghostwriting/edge cases
 
 # Run with detailed output
 Invoke-Pester -Path ./Tests/CLI.Tests.ps1 -Verbose
@@ -199,9 +198,59 @@ Invoke-Pester -Path ./Tests/CLI.Tests.ps1 -Verbose
 Invoke-Pester -Path ./Tests/CLI.Tests.ps1 -TestName "renders cow with message"
 ```
 
-**Notes:**
-- All private function tests must use `InModuleScope Forgum { }` wrapper to access internal functions.
-- Cow output goes to the Information stream (stream 6). Capture it with `6>&1`.
+### Test Architecture
+
+**130 tests** across 8 files. Key patterns:
+
+#### `InModuleScope Forgum { }` — Required for Private functions
+
+Pester cannot call module-internal functions directly. Wrap all private function calls:
+
+```powershell
+It "reads config" {
+    InModuleScope Forgum {
+        $config = Get-CFConfig
+        $config | Should -Not -BeNullOrEmpty
+    }
+}
+```
+
+Without this wrapper, calls like `Get-CFConfig` fail with "command not found" because the function is Private (not exported).
+
+#### Stream capture — `6>&1` for cow output
+
+`Write-Host` and `Write-Information` go to stream 6 (Information), not stdout. To capture cow output in tests:
+
+```powershell
+It "renders cow" {
+    InModuleScope Forgum {
+        $result = forgum -Text "test" 6>&1
+        $result | Should -BeLike "*test*"
+    }
+}
+```
+
+Using `2>&1` only captures stderr — it will miss cow output entirely.
+
+#### Engine binary tests — inconclusive when binary missing
+
+Engine tests (Engine.Tests.ps1) are **inconclusive** (not failed) when `forgum-engine` is not in `bin/`. This is expected in development environments. To make them pass:
+
+```powershell
+cd engine && cargo build --release
+Copy-Item engine/target/release/forgum-engine.exe bin/
+```
+
+#### Config isolation — always use `$testConfigPath`
+
+Tests that modify config must use a temporary path to avoid corrupting the real config:
+
+```powershell
+BeforeAll {
+    $testConfigPath = Join-Path $TestDrive 'test-config.json'
+    # ... write test config to $testConfigPath
+}
+```
 
 ### Writing Tests
 
@@ -231,6 +280,8 @@ Aim for:
 - Edge cases covered
 - Error conditions tested
 - Security scenarios tested
+- All private function tests wrapped in `InModuleScope Forgum { }`
+- Cow output captured with `6>&1`
 
 ## Pull Request Process
 

@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-2.0.0-blue?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-1.1.2-blue?style=for-the-badge" alt="Version"></a>
   <a href="https://github.com/harish2222/Forgum"><img src="https://img.shields.io/badge/powershell-5.1+-blueviolet?style=for-the-badge&logo=powershell&logoColor=white" alt="PowerShell"></a>
   <a href="https://github.com/harish2222/Forgum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License"></a>
   <a href="https://github.com/harish2222/Forgum/actions"><img src="https://img.shields.io/badge/tests-130%20passing-brightgreen?style=for-the-badge" alt="Tests"></a>
@@ -253,7 +253,7 @@ You can customize Forgum by editing its configuration file. Run `Get-CFConfig` t
 
 > **Note:** Non-`static` animation modes are for interactive use only. The module automatically forces `static` mode during startup to prevent terminal hangs.
 >
-> **Dispatch:** `dynamic`, `talking`, and `typewriter` are rendered by PowerShell animation functions in `Private/Animation/`. The Rust binary (`forgum-core.exe`) handles `static`, `aurora`, `ember`, `shatter`, `plasma`, `liquid-chrome`, `portal`, `glitch`, `neon-pulse`, and the remaining modes.
+> **Dispatch:** `dynamic`, `talking`, `typewriter`, `procedural`, and `physics` are rendered by PowerShell animation functions in `Private/Animation/`. The Rust binary (`forgum-engine`) handles `static`, `aurora`, `ember`, `shatter`, `plasma`, `liquid-chrome`, `portal`, `glitch`, `neon-pulse`, and the remaining modes.
 
 ---
 
@@ -413,6 +413,44 @@ If PowerShell appears to hang on startup after adding `Import-Module Forgum` (or
   ```
 
 After applying the fix, restart your PowerShell window. Startup should return to under one second.
+
+### Engine animations not working
+
+If Rust-powered animations (`aurora`, `plasma`, `ember`, etc.) fall back to native physics:
+
+1. **Check if the engine binary exists:**
+   ```powershell
+   Import-Module Forgum
+   Get-EngineBinary  # Should return a path, or $null if not found
+   ```
+2. **Rebuild the engine** (requires Rust toolchain):
+   ```bash
+   cd engine && cargo build --release
+   ```
+3. **Copy the binary to `bin/`:**
+   ```powershell
+   Copy-Item engine/target/release/forgum-engine.exe bin/  # Windows
+   cp engine/target/release/forgum-engine bin/              # Linux/macOS
+   ```
+
+### Shell hooks not loading (`forgum init`)
+
+If `eval "$(pwsh -Command 'Import-Module Forgum; forgum init bash')"` produces an error:
+
+1. Ensure PowerShell is available in your `PATH`
+2. Test manually: `pwsh -Command 'Import-Module Forgum; forgum init bash'`
+3. If the module isn't installed, import from the repo: `pwsh -Command 'Import-Module ./Forgum.psd1; forgum init bash'`
+
+### Config file location
+
+Forgum stores config in a platform-appropriate location:
+- **Windows:** `~/Documents/PowerShell/Forgum/config.json`
+- **Linux/macOS:** `~/.config/Forgum/config.json`
+
+To find yours:
+```powershell
+(Get-CFConfig | ConvertTo-Json -Depth 1) -replace '\\', '/'
+```
 
 ---
 
