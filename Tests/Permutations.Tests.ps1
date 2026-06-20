@@ -20,8 +20,8 @@ BeforeAll {
         $Text -replace '\x1b\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\][^\x07]*\x07', ''
     }
 
-    # All 12 subcommands
-    $AllSubCommands = @('run','config','gallery','preview','update','toggle','animate','eyes','init','live','daemon','help')
+    # All 18 subcommands
+    $AllSubCommands = @('run','config','gallery','preview','update','toggle','animate','eyes','init','live','daemon','help','cowsay','list','theme','export','history','interactive')
 
     # All valid animation modes from help
     $FlagshipModes = @('aurora','plasma','ember','liquid-chrome','shatter','portal','glitch','neon-pulse')
@@ -854,7 +854,10 @@ Describe "Module structure — comprehensive" -Tag 'Structure' {
     It "all animation functions exist" {
         InModuleScope Forgum {
             @('Invoke-TalkingAnimation','Invoke-TypewriterAnimation',
-              'Invoke-DynamicAnimation','Invoke-PhysicsCow',
+              'Invoke-DynamicAnimation','Invoke-PhysicsCow','Invoke-ProceduralAnimation',
+              'Invoke-BlinkAnimation','Invoke-BounceAnimation','Invoke-WaveAnimation',
+              'Invoke-WiggleAnimation','Invoke-DissolveAnimation','Invoke-FadeInAnimation',
+              'Invoke-SlideInAnimation','Invoke-DiscoAnimation',
               'Show-CFAnimation','Invoke-Engine') |
               ForEach-Object {
                 Get-Command $_ -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty -Because "$_ should exist"

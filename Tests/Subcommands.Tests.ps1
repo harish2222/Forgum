@@ -853,7 +853,9 @@ Describe "Module exports and structure" -Tag 'Structure' {
                 'Invoke-ForgumRun', 'Invoke-ForgumConfig', 'Invoke-ForgumGallery',
                 'Invoke-ForgumPreview', 'Invoke-ForgumUpdate', 'Invoke-ForgumToggle',
                 'Invoke-ForgumAnimate', 'Invoke-ForgumEyes', 'Invoke-ForgumInit',
-                'Invoke-ForgumLiveHandler', 'Invoke-ForgumDaemon'
+                'Invoke-ForgumLiveHandler', 'Invoke-ForgumDaemon', 'Invoke-ForgumCowsay',
+                'Invoke-ForgumList', 'Invoke-ForgumTheme', 'Invoke-ForgumExport',
+                'Invoke-ForgumHistory', 'Invoke-ForgumInteractive'
             )
             foreach ($h in $handlers) {
                 Get-Command $h -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
@@ -868,7 +870,11 @@ Describe "Module exports and structure" -Tag 'Structure' {
                 'Get-ForgumShellHook', 'Get-ForgumShell', 'Show-CFCowGallery',
                 'Show-CFCowPreview', 'Toggle-CFLolcat', 'Set-CFCowAnimate',
                 'Set-CFCowEyes', 'Start-ForgumDaemon', 'Stop-ForgumDaemon',
-                'Invoke-ForgumLive', 'Invoke-ForgumTUI', 'Update-Forgum'
+                'Invoke-ForgumLive', 'Invoke-ForgumTUI', 'Update-Forgum',
+                'Get-LolcatParams', 'Write-ForgumHistory', 'Get-ForgumPlatform',
+                'Read-CowFile', 'Format-CowMessage', 'Get-CFConfig', 'Set-CFConfig',
+                'Get-CFCow', 'Get-Fortune', 'Read-FortuneFile', 'Invoke-Cowsay',
+                'Write-TerminalFrame', 'Set-Forgum'
             )
             foreach ($h in $helpers) {
                 Get-Command $h -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty -Because "$h should exist"
@@ -880,7 +886,10 @@ Describe "Module exports and structure" -Tag 'Structure' {
         InModuleScope Forgum {
             $anims = @(
                 'Invoke-TalkingAnimation', 'Invoke-TypewriterAnimation',
-                'Invoke-DynamicAnimation', 'Invoke-PhysicsCow',
+                'Invoke-DynamicAnimation', 'Invoke-PhysicsCow', 'Invoke-ProceduralAnimation',
+                'Invoke-BlinkAnimation', 'Invoke-BounceAnimation', 'Invoke-WaveAnimation',
+                'Invoke-WiggleAnimation', 'Invoke-DissolveAnimation', 'Invoke-FadeInAnimation',
+                'Invoke-SlideInAnimation', 'Invoke-DiscoAnimation',
                 'Show-CFAnimation', 'Invoke-Engine'
             )
             foreach ($a in $anims) {

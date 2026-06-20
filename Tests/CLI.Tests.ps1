@@ -45,6 +45,12 @@ Describe "forgum CLI" -Tag 'CLI' {
             $output | Should -Match 'init'
             $output | Should -Match 'daemon'
             $output | Should -Match 'live'
+            $output | Should -Match 'cowsay'
+            $output | Should -Match 'list'
+            $output | Should -Match 'theme'
+            $output | Should -Match 'export'
+            $output | Should -Match 'history'
+            $output | Should -Match 'interactive'
         }
 
         It "lists animation modes" {

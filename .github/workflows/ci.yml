@@ -150,7 +150,7 @@ jobs:
         shell: pwsh
         run: |
           $animFiles = Get-ChildItem ./Private/Animation/*.ps1 -ErrorAction SilentlyContinue
-          $expected = @('Static', 'Talking', 'Typewriter', 'SlideIn', 'Bounce', 'Dissolve', 'FadeIn', 'Blink', 'Wiggle', 'Wave', 'Disco', 'Dynamic')
+          $expected = @('Static', 'Talking', 'Typewriter', 'SlideIn', 'Bounce', 'Dissolve', 'FadeIn', 'Blink', 'Wiggle', 'Wave', 'Disco', 'Dynamic', 'Procedural', 'PhysicsCow', 'Invoke-Engine')
           if ($animFiles.Count -lt $expected.Count) {
             Write-Host "Expected $($expected.Count) animation files" -ForegroundColor Red
             exit 1
