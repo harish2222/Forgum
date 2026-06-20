@@ -128,9 +128,10 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
     let ob = term.overlay_bounds();
     let overlay_id = region_alloc.allocate(Rect::new(ob.0, ob.1, ob.2, ob.3), 100);
 
+    let has_terminal = is_terminal_stdin();
     let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
     // If duration is 0 (infinite), check if stdin is a pipe — if so, default to 150 frames
-    let max_frames = if config.duration.unwrap_or(0) == 0 && !is_terminal_stdin() {
+    let max_frames = if config.duration.unwrap_or(0) == 0 && !has_terminal {
         150
     } else {
         config.duration.unwrap_or(0)
@@ -140,24 +141,28 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
     loop {
         let dt = 0.016;
 
-        if event::poll(Duration::from_millis(0))? {
-            match event::read()? {
-                Event::Key(KeyEvent { code, modifiers, .. }) => {
-                    match code {
-                        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Enter => break,
-                        KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => break,
+        if has_terminal {
+            if let Ok(true) = event::poll(Duration::from_millis(0)) {
+                if let Ok(evt) = event::read() {
+                    match evt {
+                        Event::Key(KeyEvent { code, modifiers, .. }) => {
+                            match code {
+                                KeyCode::Char('q') | KeyCode::Esc | KeyCode::Enter => break,
+                                KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => break,
+                                _ => {}
+                            }
+                        }
+                        Event::Resize(new_cols, new_rows) => {
+                            term.refresh_size();
+                            fb.resize(new_cols as usize, new_rows as usize);
+                            region_alloc.resize_canvas(Rect::new(0, 0, new_cols, new_rows));
+                            let nob = term.overlay_bounds();
+                            region_alloc.resize_region(overlay_id, Rect::new(nob.0, nob.1, nob.2, nob.3));
+                            effect.on_resize(new_cols as usize, new_rows as usize);
+                        }
                         _ => {}
                     }
                 }
-                Event::Resize(new_cols, new_rows) => {
-                    term.refresh_size();
-                    fb.resize(new_cols as usize, new_rows as usize);
-                    region_alloc.resize_canvas(Rect::new(0, 0, new_cols, new_rows));
-                    let nob = term.overlay_bounds();
-                    region_alloc.resize_region(overlay_id, Rect::new(nob.0, nob.1, nob.2, nob.3));
-                    effect.on_resize(new_cols as usize, new_rows as usize);
-                }
-                _ => {}
             }
         }
 
@@ -213,9 +218,10 @@ fn render_loop_background(config: SceneConfig) -> io::Result<()> {
     let ob_y1 = overlay_height.min(rows.saturating_sub(3));
     let overlay_id = region_alloc.allocate(Rect::new(0, 0, cols, ob_y1), 100);
 
+    let has_terminal = is_terminal_stdin();
     let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
     // If duration is 0 (infinite), check if stdin is a pipe — if so, default to 150 frames
-    let max_frames = if config.duration.unwrap_or(0) == 0 && !is_terminal_stdin() {
+    let max_frames = if config.duration.unwrap_or(0) == 0 && !has_terminal {
         150
     } else {
         config.duration.unwrap_or(0)
@@ -225,13 +231,20 @@ fn render_loop_background(config: SceneConfig) -> io::Result<()> {
     loop {
         let dt = 0.016;
 
-        // Non-blocking: just check for quit keys
-        if event::poll(Duration::from_millis(0))? {
-            if let Event::Key(k) = event::read()? {
-                match k.code {
-                    KeyCode::Char('q') | KeyCode::Esc | KeyCode::Enter => break,
-                    KeyCode::Char('c') if k.modifiers.contains(KeyModifiers::CONTROL) => break,
-                    _ => {}
+        // Non-blocking: just check for quit keys (skip if no terminal)
+        if has_terminal {
+            if let Ok(true) = event::poll(Duration::from_millis(0)) {
+                if let Ok(evt) = event::read() {
+                    match evt {
+                        Event::Key(k) => {
+                            match k.code {
+                                KeyCode::Char('q') | KeyCode::Esc | KeyCode::Enter => break,
+                                KeyCode::Char('c') if k.modifiers.contains(KeyModifiers::CONTROL) => break,
+                                _ => {}
+                            }
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
