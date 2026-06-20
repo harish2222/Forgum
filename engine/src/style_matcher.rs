@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub struct CowStyle {
     pub base: &'static str,
     pub particles: Option<&'static str>,
@@ -115,5 +116,83 @@ pub fn get_cow_style(filename: &str) -> CowStyle {
         "small.cow" => CowStyle { base: "Liquid", particles: None, speed: 1.0 },
         "wizard.cow" => CowStyle { base: "Pulse", particles: Some("Stars"), speed: 1.0 },
         _ => CowStyle { base: "Talk", particles: None, speed: 1.0 },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_known_cow_default() {
+        let style = get_cow_style("default.cow");
+        assert_eq!(style.base, "Talk");
+        assert!(style.particles.is_none());
+        assert!((style.speed - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_known_cow_dragon() {
+        let style = get_cow_style("dragon.cow");
+        assert_eq!(style.base, "Fire");
+        assert_eq!(style.particles, Some("Fire"));
+    }
+
+    #[test]
+    fn test_known_cow_tux() {
+        let style = get_cow_style("tux.cow");
+        assert_eq!(style.base, "Sway");
+        assert!(style.particles.is_none());
+    }
+
+    #[test]
+    fn test_known_cow_dolphin() {
+        let style = get_cow_style("dolphin.cow");
+        assert_eq!(style.base, "Squish");
+        assert_eq!(style.particles, Some("Bubbles"));
+        assert!((style.speed - 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_known_cow_nyan() {
+        let style = get_cow_style("nyan.cow");
+        assert_eq!(style.base, "Fly");
+        assert_eq!(style.particles, Some("Stars"));
+        assert!((style.speed - 2.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_unknown_cow_defaults_to_talk() {
+        let style = get_cow_style("nonexistent-xyz.cow");
+        assert_eq!(style.base, "Talk");
+        assert!(style.particles.is_none());
+        assert!((style.speed - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_empty_string_defaults_to_talk() {
+        let style = get_cow_style("");
+        assert_eq!(style.base, "Talk");
+    }
+
+    #[test]
+    fn test_speed_varies_by_cow() {
+        let slow = get_cow_style("dolphin.cow");
+        let fast = get_cow_style("nyan.cow");
+        assert!(slow.speed < fast.speed);
+    }
+
+    #[test]
+    fn test_all_styles_are_valid() {
+        let valid_bases = ["Talk", "Liquid", "Breathe", "Sway", "Squish",
+                          "Fly", "Fire", "Matrix", "Dissolve", "Pulse", "Abduction"];
+        let cows = ["default.cow", "cat.cow", "sheep.cow", "goat.cow", "dolphin.cow",
+                    "golden-eagle.cow", "dragon.cow", "owl.cow", "hedgehog.cow",
+                    "alien.cow", "weeping-angel.cow"];
+        for cow in cows {
+            let style = get_cow_style(cow);
+            assert!(valid_bases.contains(&style.base),
+                "Cow '{}' has invalid base '{}'", cow, style.base);
+        }
     }
 }

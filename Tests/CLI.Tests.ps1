@@ -9,6 +9,7 @@ BeforeAll {
         if ($m) { Remove-Module Forgum -Force -ErrorAction SilentlyContinue }
     } while ($m)
     Import-Module $ModulePath -Force
+    function Remove-Ansi($text) { $text -replace "`e\[[0-9;]*m", '' }
 }
 
 Describe "forgum CLI" -Tag 'CLI' {
@@ -171,8 +172,8 @@ Describe "forgum CLI" -Tag 'CLI' {
         }
 
         It "runs with text argument" {
-            $output = forgum "Test message" 6>&1 2>&1 | Out-String
-            $output | Should -Match 'Test message'
+            $raw = forgum "Test message" 6>&1 2>&1 | Out-String
+            Remove-Ansi $raw | Should -Match 'Test message'
         }
     }
 

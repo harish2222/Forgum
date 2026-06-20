@@ -52,6 +52,8 @@ function Set-Forgum {
     if ($PSBoundParameters.ContainsKey('RandomCow'))        { $config.cow.random = $RandomCow }
     if ($PSBoundParameters.ContainsKey('RainbowFrequency')) { $config.lolcat.frequency = $RainbowFrequency }
 
-    Set-CFConfig -Config $config
-    Write-Host "Forgum configuration updated successfully." -ForegroundColor Green
+    if ($PSCmdlet.ShouldProcess("Forgum configuration", "Update")) {
+        Set-CFConfig -Config $config
+        Write-Host "Forgum configuration updated successfully." -ForegroundColor Green
+    }
 }

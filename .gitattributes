@@ -1,0 +1,30 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Force LF for these file types
+*.ps1 text eol=lf
+*.psm1 text eol=lf
+*.psd1 text eol=lf
+*.ps1xml text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.rs text eol=lf
+*.sh text eol=lf
+*.fish text eol=lf
+*.zsh text eol=lf
+*.bash text eol=lf
+*.txt text eol=lf
+*.cfg text eol=lf
+*.cow text eol=lf
+
+# Keep CRLF for Windows-specific files
+*.ps1 windows text eol=crlf
+
+# Binary files
+*.exe binary
+*.dll binary
+*.dylib binary
+*.so binary

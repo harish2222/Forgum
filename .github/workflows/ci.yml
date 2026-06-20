@@ -2,10 +2,12 @@ name: Forgum CI
 
 on:
   push:
-    branches: [main, animation]
+    branches: [main]
     tags: ["v*"]
   pull_request:
-    branches: [main, animation]
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,36 +18,15 @@ permissions:
 
 env:
   MODULE_NAME: Forgum
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  security-audit:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-    steps:
-      - uses: actions/checkout@v4
-      - name: Rust Security Audit
-        run: |
-          cargo install cargo-audit
-          cd engine && cargo audit
-      - name: Install cargo-mutants
-        run: cargo install --version 24.11.0 cargo-mutants
-      - name: Mutation Testing
-        run: |
-          cd engine
-          timeout 300 cargo mutants --no-times
-      - name: PowerShell Static Analysis
-        shell: pwsh
-        run: |
-          Install-Module PSScriptAnalyzer -Force
-          Invoke-ScriptAnalyzer -Path . -Settings ./PSScriptAnalyzerSettings.psd1 -EnableExit
+  # ────────────────────────────────────────────
+  # Phase 0: Fast parallel feedback
+  # ────────────────────────────────────────────
 
-  # ────────────────────────────────────────────
-  # Phase 1: Fast feedback (parallel)
-  # ────────────────────────────────────────────
   lint:
     runs-on: ubuntu-latest
-    name: Lint
+    name: Lint (PSScriptAnalyzer)
     env:
       PSSA_VERSION: "1.24.0"
     steps:
@@ -76,6 +57,9 @@ jobs:
             'PSUseDeclaredVarsMoreThanAssignments'
             'PSAvoidUsingEmptyCatchBlock'
             'PSUseShouldProcessForStateChangingFunctions'
+            'PSUseApprovedVerbs'
+            'PSUseProcessBlockForPipelineCommand'
+            'PSShouldProcess'
           )
           $results = Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error,Warning -ExcludeRule $excludedRules
           if ($results) {
@@ -105,7 +89,6 @@ jobs:
           Write-Host "Exports ($($exportKeys.Count)): $($exportKeys -join ', ')"
           Write-Host "Aliases ($($aliasKeys.Count)): $($aliasKeys -join ', ')"
 
-          # Post-refactor: old public functionality now lives under the `forgum` keyword.
           $expectedExports = @('forgum')
           $missingExports = $expectedExports | Where-Object { $_ -notin $exportKeys }
           if ($missingExports) {
@@ -113,7 +96,6 @@ jobs:
             exit 1
           }
 
-          # Validate aliases are present too.
           $expectedAliases = @(
             'forgum-setup'
             'forgum-show'
@@ -146,40 +128,53 @@ jobs:
 
           Write-Host "Data files verified." -ForegroundColor Green
 
-      - name: Verify animation files
+      - name: Verify animation infrastructure
         shell: pwsh
         run: |
           $animFiles = Get-ChildItem ./Private/Animation/*.ps1 -ErrorAction SilentlyContinue
-          $expected = @('Static', 'Talking', 'Typewriter', 'SlideIn', 'Bounce', 'Dissolve', 'FadeIn', 'Blink', 'Wiggle', 'Wave', 'Disco', 'Dynamic', 'Procedural', 'PhysicsCow', 'Invoke-Engine')
-          if ($animFiles.Count -lt $expected.Count) {
-            Write-Host "Expected $($expected.Count) animation files" -ForegroundColor Red
+          if (-not ($animFiles | Where-Object BaseName -eq 'Invoke-Engine')) {
+            Write-Host "Missing Private/Animation/Invoke-Engine.ps1" -ForegroundColor Red
             exit 1
           }
-          foreach ($name in $expected) {
-            if (-not ($animFiles | Where-Object BaseName -eq $name)) {
-              Write-Host "Missing animation: $name" -ForegroundColor Red
-              exit 1
-            }
-          }
-          Write-Host "All $($expected.Count) animation files present." -ForegroundColor Green
+          Write-Host "Animation infrastructure verified." -ForegroundColor Green
+
+  rust-audit:
+    runs-on: ubuntu-latest
+    name: Rust Audit
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-audit-${{ runner.os }}-${{ hashFiles('engine/Cargo.lock') }}
+          restore-keys: cargo-audit-${{ runner.os }}-
+
+      - name: Rust Security Audit
+        run: |
+          cargo install cargo-audit
+          cd engine && cargo audit
 
   # ────────────────────────────────────────────
-  # Phase 2: Tests (depends on Phase 1)
+  # Phase 0: Tests (depends only on lint + validate, NOT security)
   # ────────────────────────────────────────────
+
   test:
-    needs: [lint, validate, security-audit]
+    needs: [lint, validate]
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             pwsh: "7.4"
+          - os: windows-latest
+            pwsh: "7.4"
           - os: macos-latest
             pwsh: "7.4"
-          - os: windows-latest
-            pwsh: "7.4"
-          - os: windows-latest
-            pwsh: "5.1"
     runs-on: ${{ matrix.os }}
     name: Test (${{ matrix.os }} pwsh ${{ matrix.pwsh }})
     timeout-minutes: 15
@@ -189,6 +184,16 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: |
+            engine/target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ runner.os }}-${{ hashFiles('engine/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
 
       - name: Run Rust Tests
         run: |
@@ -246,12 +251,13 @@ jobs:
           cargo build --release --target aarch64-apple-darwin
           cd ..
           mkdir -p bin
-          lipo -create -output bin/forgum-engine-mac engine/target/x86_64-apple-darwin/release/forgum-engine engine/target/aarch64-apple-darwin/release/forgum-engine
-          chmod +x bin/forgum-engine-mac
+          cp engine/target/x86_64-apple-darwin/release/forgum-engine bin/forgum-engine-x64
+          cp engine/target/aarch64-apple-darwin/release/forgum-engine bin/forgum-engine-arm64
+          chmod +x bin/forgum-engine-x64 bin/forgum-engine-arm64
         shell: bash
 
       - name: Upload Windows x64 Artifact
-        if: matrix.os == 'windows-latest' && matrix.pwsh == '7.4'
+        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: forgum-engine-x86_64-pc-windows-msvc
@@ -259,7 +265,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Windows ARM64 Artifact
-        if: matrix.os == 'windows-latest' && matrix.pwsh == '7.4'
+        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: forgum-engine-aarch64-pc-windows-msvc
@@ -298,13 +304,6 @@ jobs:
           path: engine/target/aarch64-apple-darwin/release/forgum-engine
           if-no-files-found: error
 
-      - name: Verify ARM64 Binary (native on Apple Silicon)
-        if: matrix.os == 'macos-latest'
-        run: |
-          file ./bin/forgum-engine-mac || true
-          ./bin/forgum-engine-mac --version || true
-        shell: bash
-
       - name: Cache Pester + modules
         uses: actions/cache@v4
         with:
@@ -314,7 +313,6 @@ jobs:
           key: modules-pester-5.7-${{ runner.os }}-${{ hashFiles('**/Forgum.psd1') }}
 
       - name: Install Pester (pwsh)
-        if: matrix.pwsh != '5.1'
         shell: pwsh
         run: |
           if (-not (Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version.Major -ge 5 })) {
@@ -322,17 +320,7 @@ jobs:
           }
           Get-Module -ListAvailable -Name Pester | Where-Object Version.Major -ge 5 | Select-Object Name, Version | Format-Table -AutoSize
 
-      - name: Install Pester (powershell)
-        if: matrix.pwsh == '5.1'
-        shell: powershell
-        run: |
-          if (-not (Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version.Major -ge 5 })) {
-            Install-Module -Name Pester -Force -SkipPublisherCheck -Scope CurrentUser -MinimumVersion 5.7.0 -MaximumVersion 5.99.99
-          }
-          Get-Module -ListAvailable -Name Pester | Where-Object Version.Major -ge 5 | Select-Object Name, Version | Format-Table -AutoSize
-
-      - name: Run Pester Tests (pwsh)
-        if: matrix.pwsh != '5.1'
+      - name: Run Pester Tests
         shell: pwsh
         env:
           FORGUM_NOAUTOSTART: "1"
@@ -353,29 +341,7 @@ jobs:
             exit 1
           }
 
-      - name: Run Pester Tests (powershell)
-        if: matrix.pwsh == '5.1'
-        shell: powershell
-        env:
-          FORGUM_NOAUTOSTART: "1"
-        run: |
-          $results = Invoke-Pester -Path './Tests' -PassThru -Output Detailed
-
-          Write-Host ""
-          Write-Host "========================================" -ForegroundColor Cyan
-          Write-Host "Tests: $($results.TotalCount) | Passed: $($results.PassedCount) | Failed: $($results.FailedCount) | Skipped: $($results.SkippedCount)" -ForegroundColor Cyan
-          Write-Host "Duration: $($results.Duration)" -ForegroundColor Cyan
-          Write-Host "========================================" -ForegroundColor Cyan
-
-          if ($results.FailedCount -gt 0) {
-            $results.TestResult | Where-Object Result -eq 'Failed' | ForEach-Object {
-              Write-Host "FAILED: $($_.Name)" -ForegroundColor Red
-              Write-Host "  Error: $($_.ErrorRecord.DisplayErrorMessage)" -ForegroundColor Red
-            }
-            exit 1
-          }
-
-      - name: Test Other Shell Integrations (Bash, Zsh, Fish)
+      - name: Test Shell Integrations (Bash, Zsh, Fish)
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
@@ -383,22 +349,23 @@ jobs:
           sudo apt-get install -y zsh fish bash
 
           echo "Testing Bash..."
-          OUTPUT_BASH=$(bash -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; Invoke-Forgum"')
+          OUTPUT_BASH=$(bash -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; forgum run ''Bash test''"')
           echo "$OUTPUT_BASH" | grep -E "(__|\(oo\))" > /dev/null || (echo "Bash test failed: $OUTPUT_BASH" && exit 1)
 
           echo "Testing Zsh..."
-          OUTPUT_ZSH=$(zsh -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; Invoke-Forgum"')
+          OUTPUT_ZSH=$(zsh -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; forgum run ''Zsh test''"')
           echo "$OUTPUT_ZSH" | grep -E "(__|\(oo\))" > /dev/null || (echo "Zsh test failed: $OUTPUT_ZSH" && exit 1)
 
           echo "Testing Fish..."
-          OUTPUT_FISH=$(fish -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; Invoke-Forgum"')
+          OUTPUT_FISH=$(fish -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; forgum run ''Fish test''"')
           echo "$OUTPUT_FISH" | grep -E "(__|\(oo\))" > /dev/null || (echo "Fish test failed: $OUTPUT_FISH" && exit 1)
 
           echo "All shell integration tests passed!"
 
   # ────────────────────────────────────────────
-  # Phase 2.5: Performance Gate
+  # Phase 1: Performance Gate
   # ────────────────────────────────────────────
+
   perf-gate:
     needs: [test]
     runs-on: windows-latest
@@ -408,6 +375,16 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: |
+            engine/target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ runner.os }}-${{ hashFiles('engine/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
 
       - name: Build Rust Binary (Release)
         run: |
@@ -423,7 +400,7 @@ jobs:
         run: |
           $elapsed = Measure-Command {
             Import-Module ./Forgum.psd1 -Force
-            Invoke-Forgum -Lolcat
+            forgum run "perf-test" 2>&1 | Out-Null
           }
           Write-Host "Total Seconds: $($elapsed.TotalSeconds)"
           if ($elapsed.TotalSeconds -gt 5.0) {
@@ -433,10 +410,41 @@ jobs:
           Write-Host "Performance within acceptable limits." -ForegroundColor Green
 
   # ────────────────────────────────────────────
+  # Phase 2: Mutation Testing (weekly cron only)
+  # ────────────────────────────────────────────
+
+  cargo-mutants:
+    runs-on: ubuntu-latest
+    name: Mutation Testing
+    if: github.event_name == 'schedule'
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            engine/target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-mutants-${{ runner.os }}-${{ hashFiles('engine/Cargo.lock') }}
+          restore-keys: cargo-mutants-${{ runner.os }}-
+
+      - name: Install cargo-mutants
+        run: cargo install --version 24.11.0 cargo-mutants
+
+      - name: Run Mutation Testing
+        run: |
+          cd engine
+          cargo mutants --no-times --fail-under 0
+
+  # ────────────────────────────────────────────
   # Phase 3: Package (only on tags)
   # ────────────────────────────────────────────
+
   build:
-    needs: [test, perf-gate]
+    needs: [test, perf-gate, rust-audit]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: macos-latest
     name: Build
@@ -496,7 +504,7 @@ jobs:
               & chmod +x "$binDir/forgum-engine-mac"
           }
 
-          # Create zip using bash zip (more reliable than Compress-Archive for long paths)
+          # Create zip using bash zip
           $zipPath = Join-Path $env:RUNNER_TEMP "Forgum-v$version.zip"
           Push-Location $stagingDir
           try {
@@ -520,3 +528,78 @@ jobs:
           name: "Forgum v${{ steps.version.outputs.tag }}"
           generate_release_notes: true
           files: Forgum-v*.zip
+
+  # ────────────────────────────────────────────
+  # Full matrix on main push (after tests pass)
+  # ────────────────────────────────────────────
+
+  test-full:
+    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            pwsh: "5.1"
+    runs-on: ${{ matrix.os }}
+    name: Test (${{ matrix.os }} pwsh ${{ matrix.pwsh }})
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: |
+            engine/target
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ runner.os }}-${{ hashFiles('engine/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+
+      - name: Run Rust Tests
+        run: cd engine && cargo test --verbose
+
+      - name: Build Binaries
+        run: |
+          cd engine
+          cargo build --release
+          cd ..
+          mkdir -p bin
+          cp engine/target/release/forgum-engine.exe bin/forgum-engine.exe 2>/dev/null || cp engine/target/release/forgum-engine bin/forgum-engine
+          chmod +x bin/forgum-engine 2>/dev/null || true
+        shell: bash
+
+      - name: Cache Pester + modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/powershell/Modules
+            ~/Documents/PowerShell/Modules
+          key: modules-pester-5.7-${{ runner.os }}-${{ hashFiles('**/Forgum.psd1') }}
+
+      - name: Install Pester
+        shell: ${{ matrix.pwsh == '5.1' && 'powershell' || 'pwsh' }}
+        run: |
+          if (-not (Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version.Major -ge 5 })) {
+            Install-Module -Name Pester -Force -SkipPublisherCheck -Scope CurrentUser -MinimumVersion 5.7.0 -MaximumVersion 5.99.99
+          }
+
+      - name: Run Pester Tests
+        shell: ${{ matrix.pwsh == '5.1' && 'powershell' || 'pwsh' }}
+        env:
+          FORGUM_NOAUTOSTART: "1"
+        run: |
+          $results = Invoke-Pester -Path './Tests' -PassThru -Output Detailed
+          Write-Host "Tests: $($results.TotalCount) | Passed: $($results.PassedCount) | Failed: $($results.FailedCount)" -ForegroundColor Cyan
+          if ($results.FailedCount -gt 0) {
+            $results.TestResult | Where-Object Result -eq 'Failed' | ForEach-Object {
+              Write-Host "FAILED: $($_.Name)" -ForegroundColor Red
+              Write-Host "  Error: $($_.ErrorRecord.DisplayErrorMessage)" -ForegroundColor Red
+            }
+            exit 1
+          }

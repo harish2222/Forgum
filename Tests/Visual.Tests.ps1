@@ -38,9 +38,9 @@ Describe "Write-TerminalFrame" {
         # This is tricky to test without complex mocking of [Console]
         # But we can at least verify it handles the -Frame parameter correctly.
         $script:CapturedOutput = ""
-        Mock Write-Host { 
-            param([Parameter(ValueFromPipeline)]$Object, [switch]$NoNewline) 
-            $script:CapturedOutput += $Object 
+        Mock Write-Host {
+            param([Parameter(ValueFromPipeline)]$Object, [switch]$NoNewline)
+            process { $script:CapturedOutput += $Object }
         }
         
         # We can't easily mock [Console]::IsOutputRedirected because it's a static property.

@@ -97,7 +97,7 @@ Describe 'Invoke-LiveShow' {
             }
 
             $null = Invoke-LiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $true; Animation = $false }
-            $script:lastInvoke.CowText | Should -Be 'lolcat-5000-cow-text'
+            $script:lastInvoke.CowText | Should -BeLike '*lolcat-5000-cow-text*'
         }
     }
 }

@@ -4,7 +4,7 @@ BeforeAll {
     $script:TestConfigDir = Join-Path ([System.IO.Path]::GetTempPath()) "forgum-test-$(Get-Random)"
     New-Item -ItemType Directory -Path $script:TestConfigDir -Force | Out-Null
 
-    function Strip-Ansi($text) { $text -replace '\x1b\[[0-9;]*m', '' }
+    function Remove-Ansi($text) { $text -replace 'e\[[0-9;]*m', '' -replace '\x1b\[[0-9;]*m', '' }
 }
 
 AfterAll {
@@ -21,25 +21,25 @@ Describe "forgum cowsay" -Tag 'NewSubcommand' {
 
     It "cowsay contains the message text" {
         $raw = forgum cowsay "CowsayTest" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*CowsayTest*'
+        Remove-Ansi $raw | Should -BeLike '*CowsayTest*'
     }
 
     It "cowsay contains balloon borders" {
         $raw = forgum cowsay "BorderTest" 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -Match '##'
         $output | Should -Match '\|\|'
     }
 
     It "cowsay --cow tux uses tux" {
         $raw = forgum cowsay "TuxTest" --cow tux 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -Match 'TuxTest'
     }
 
     It "cowsay --eyes @@ sets custom eyes" {
         $raw = forgum cowsay "EyesTest" --eyes '@@' 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -Match '@@'
     }
 

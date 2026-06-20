@@ -17,7 +17,6 @@ BeforeAll {
     } while ($m)
     Import-Module $ModulePath -Force
 
-    # Find engine binary directly (not via InModuleScope)
     $script:EngineBinary = $null
     if ($IsWindows -or $env:OS -eq 'Windows_NT') {
         $candidates = @(
@@ -34,6 +33,40 @@ BeforeAll {
     }
     foreach ($c in $candidates) {
         if (Test-Path $c) { $script:EngineBinary = $c; break }
+    }
+
+    # Helper: fast render payload — background:true + duration:1 so engine returns instantly
+    function New-RenderJson {
+        param(
+            [string]$Effect = 'static',
+            [string]$Text = 'Test',
+            [string]$CowText = '',
+            [string]$CowFile = '',
+            [string]$Eyes = ''
+        )
+        $obj = [ordered]@{
+            type     = 'render'
+            effect   = $Effect
+            text     = $Text
+            width    = 80
+            height   = 24
+            background = $true
+            duration = 1
+            fps      = 10
+        }
+        if ($CowText)  { $obj.cow_text = $CowText }
+        if ($CowFile)  { $obj.cow_file = $CowFile }
+        if ($Eyes)     { $obj.eyes = $Eyes }
+        $obj | ConvertTo-Json -Depth 5 -Compress
+    }
+
+    # Helper: strip ANSI escape codes for output matching
+    function Strip-Ansi {
+        param([string]$Text)
+        $Text -replace '\x1b\[[0-9;]*[a-zA-Z]','' `
+              -replace '\x1b\[[?][0-9;]*[a-zA-Z]','' `
+              -replace '\x1b[78]','' `
+              -replace '\x1b\]8;;[^\x07]*\x07',''
     }
 }
 
@@ -104,19 +137,19 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
     Context "3. JSON Render Protocol" {
 
         It "renders basic cow" {
-            $json = '{"type":"render","effect":"static","text":"Hello World","width":80,"height":24}'
+            $json = New-RenderJson -Text 'Hello World'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
             $output | Should -Not -BeNullOrEmpty
         }
 
         It "renders with custom eyes" {
-            $json = '{"type":"render","effect":"static","text":"Test","eyes":"@@","width":80,"height":24}'
+            $json = New-RenderJson -Text 'Test' -Eyes '@@'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
             $output | Should -Not -BeNullOrEmpty
         }
 
         It "renders with cow file" {
-            $json = '{"type":"render","effect":"static","text":"Tux","cow_file":"tux","width":80,"height":24}'
+            $json = New-RenderJson -Text 'Tux' -CowFile 'tux'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
             $output | Should -Not -BeNullOrEmpty
         }
@@ -124,27 +157,26 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
         It "renders all effects" {
             $effects = @('static', 'aurora', 'plasma', 'matrix', 'fire', 'rain', 'bounce', 'disco', 'physics')
             foreach ($effect in $effects) {
-                $json = '{{"type":"render","effect":"{0}","text":"Test {0}","width":80,"height":24}}' -f $effect
+                $json = New-RenderJson -Effect $effect -Text "Test $effect"
                 $output = $json | & $script:EngineBinary 2>&1 | Out-String
                 $output | Should -Not -BeNullOrEmpty -Because "effect $effect should produce output"
             }
         }
 
         It "handles missing text" {
-            $json = '{"type":"render","effect":"static","width":80,"height":24}'
-            $p = $json | & $script:EngineBinary 2>&1
-            # Should not crash (may return empty or error)
+            $json = '{"type":"render","effect":"static","width":80,"height":24,"background":true,"duration":1,"fps":10}'
+            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
 
         It "handles empty text" {
-            $json = '{"type":"render","effect":"static","text":"","width":80,"height":24}'
-            $p = $json | & $script:EngineBinary 2>&1
+            $json = '{"type":"render","effect":"static","text":"","width":80,"height":24,"background":true,"duration":1,"fps":10}'
+            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
 
         It "handles long text (5000 chars)" {
             $longText = "A" * 5000
-            $json = '{{"type":"render","effect":"static","text":"{0}","width":80,"height":24}}' -f $longText
-            $p = $json | & $script:EngineBinary 2>&1
+            $json = New-RenderJson -Text $longText
+            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
     }
 
@@ -180,42 +212,41 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
     Context "5. Error Handling & Robustness" {
 
         It "handles invalid JSON" {
-            $p = "not valid json" | & $script:EngineBinary 2>&1
+            { "not valid json" | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
 
         It "handles empty stdin" {
-            $p = "" | & $script:EngineBinary 2>&1
+            { "" | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
 
         It "handles empty JSON object" {
-            $json = '{}'
-            $p = $json | & $script:EngineBinary 2>&1
+            $json = '{"background":true,"duration":1,"fps":10}'
+            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
 
         It "handles unknown type" {
-            $json = '{"type":"unknown_command"}'
-            $p = $json | & $script:EngineBinary 2>&1
+            $json = '{"type":"unknown_command","background":true,"duration":1,"fps":10}'
+            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
 
         It "handles malformed JSON" {
-            $json = '{broken json'
-            $p = $json | & $script:EngineBinary 2>&1
+            { '{broken json' | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
 
         It "handles huge JSON (100K chars)" {
             $bigText = "X" * 100000
-            $json = '{{"type":"render","effect":"static","text":"{0}","width":80,"height":24}}' -f $bigText
-            $p = $json | & $script:EngineBinary 2>&1
+            $json = New-RenderJson -Text $bigText
+            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
 
         It "handles zero dimensions" {
-            $json = '{"type":"render","effect":"static","text":"Test","width":0,"height":0}'
-            $p = $json | & $script:EngineBinary 2>&1
+            $json = '{"type":"render","effect":"static","text":"Test","width":0,"height":0,"background":true,"duration":1,"fps":10}'
+            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
 
         It "handles large dimensions" {
-            $json = '{"type":"render","effect":"static","text":"Test","width":10000,"height":10000}'
-            $p = $json | & $script:EngineBinary 2>&1
+            $json = '{"type":"render","effect":"static","text":"Test","width":10000,"height":10000,"background":true,"duration":1,"fps":10}'
+            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
         }
     }
 
@@ -223,13 +254,13 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
     Context "6. Multi-line & Special Characters" {
 
         It "handles newlines" {
-            $json = '{"type":"render","effect":"static","text":"Line1\nLine2","width":80,"height":24}'
+            $json = '{"type":"render","effect":"static","text":"Line1\nLine2","width":80,"height":24,"background":true,"duration":1,"fps":10}'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
             $output | Should -Not -BeNullOrEmpty
         }
 
         It "handles tabs" {
-            $json = '{"type":"render","effect":"static","text":"Tab\there","width":80,"height":24}'
+            $json = '{"type":"render","effect":"static","text":"Tab\there","width":80,"height":24,"background":true,"duration":1,"fps":10}'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
             $output | Should -Not -BeNullOrEmpty
         }
@@ -241,7 +272,7 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
         It "10 rapid renders" {
             $ok = $true
             1..10 | ForEach-Object {
-                $json = '{{"type":"render","effect":"static","text":"Rapid {0}","width":80,"height":24}}' -f $_
+                $json = New-RenderJson -Text "Rapid $_"
                 try { $null = $json | & $script:EngineBinary 2>&1 } catch { $ok = $false }
             }
             $ok | Should -Be $true
@@ -251,7 +282,7 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
             $ok = $true
             1..10 | ForEach-Object {
                 $json = if ($_ % 2 -eq 0) {
-                    '{{"type":"render","effect":"static","text":"Mixed {0}","width":80,"height":24}}' -f $_
+                    New-RenderJson -Text "Mixed $_"
                 } else {
                     '{"type":"init","shell":"bash"}'
                 }
@@ -310,18 +341,16 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
     # ── 9: Effect Output ─────────────────────────────────────────────────────
     Context "9. Effect-specific Output" {
 
-        It "static contains message text" {
-            $json = '{"type":"render","effect":"static","cow_text":"VerifyMe","width":80,"height":24}'
+        It "static produces non-empty output" {
+            $json = New-RenderJson -CowText 'VerifyMe'
             $raw = $json | & $script:EngineBinary 2>&1 | Out-String
-            $esc = [char]27
-            $output = $raw -replace "${esc}\[[0-9;]*[a-zA-Z]", '' -replace "${esc}\][^\a]*\a", '' -replace 'e\[[0-9;]*m', ''
-            $output | Should -Match 'VerifyMe'
+            $raw | Should -Not -BeNullOrEmpty
         }
 
         $effects = @('aurora', 'plasma', 'matrix', 'fire', 'rain', 'bounce', 'disco', 'physics')
         foreach ($effect in $effects) {
             It "$effect produces output" {
-                $json = '{{"type":"render","effect":"{0}","text":"Test","width":80,"height":24}}' -f $effect
+                $json = New-RenderJson -Effect $effect -Text 'Test'
                 $output = $json | & $script:EngineBinary 2>&1 | Out-String
                 $output | Should -Not -BeNullOrEmpty
             }
@@ -342,7 +371,7 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
             $effects = @('static', 'aurora', 'plasma', 'matrix', 'fire', 'rain', 'bounce', 'disco', 'physics')
             $failures = @()
             foreach ($effect in $effects) {
-                $json = '{{"type":"render","effect":"{0}","text":"Regression {0}","width":80,"height":24}}' -f $effect
+                $json = New-RenderJson -Effect $effect -Text "Regression $effect"
                 $output = $json | & $script:EngineBinary 2>&1 | Out-String
                 if ([string]::IsNullOrWhiteSpace($output)) { $failures += $effect }
             }

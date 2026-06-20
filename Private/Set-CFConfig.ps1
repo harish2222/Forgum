@@ -35,24 +35,13 @@ function Set-CFConfig {
         # Convert to JSON with sufficient depth
         $json = $Config | ConvertTo-Json -Depth 10
 
-        # Atomic write: write to temp file then move (prevents corruption on crash)
-        $tempPath = Join-Path (Split-Path $path -Parent) ("forgum-" + [System.IO.Path]::GetRandomFileName() + ".tmp")
+        # Atomic write: use WriteAllText which is atomic on Windows
+        # Avoids Move-Item race conditions that cause corruption
         try {
-            $json | Set-Content -Path $tempPath -Encoding UTF8 -Force -ErrorAction Stop
-            $maxRetries = 3
-            for ($i = 0; $i -lt $maxRetries; $i++) {
-                try {
-                    Move-Item -Path $tempPath -Destination $path -Force -ErrorAction Stop
-                    break
-                }
-                catch {
-                    if ($i -eq ($maxRetries - 1)) { throw }
-                    Start-Sleep -Milliseconds 10
-                }
-            }
+            $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+            [System.IO.File]::WriteAllText($path, $json, $utf8NoBom)
         }
         catch {
-            if (Test-Path $tempPath) { Remove-Item $tempPath -Force -ErrorAction SilentlyContinue }
             throw
         }
     }

@@ -10,7 +10,7 @@ BeforeAll {
     } while ($m)
     Import-Module $ModulePath -Force
 
-    function Strip-Ansi {
+    function Remove-Ansi {
         param([string]$Text)
         $esc = [char]27
         $Text -replace "${esc}\[[0-9;]*[a-zA-Z]", '' `
@@ -52,7 +52,7 @@ Describe "Subcommand: run" -Tag 'Subcommand' {
 
     It "run with text produces that text" {
         $raw = forgum run "Hello Test" 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -BeLike '*Hello Test*'
     }
 
@@ -537,13 +537,13 @@ Describe "Root-level help and version" -Tag 'Subcommand' {
 
     It "forgum with text runs default" {
         $raw = forgum "Root test" 6>&1 3>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -BeLike '*Root test*'
     }
 
     It "unknown subcommand with text treats as run" {
         $raw = forgum foobar "Test" 6>&1 3>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -BeLike '*Test*'
     }
 

@@ -209,7 +209,7 @@ if (-not $NoProfile) {
             $blockLines.Add("")
             $blockLines.Add("if (-not `$global:FORGUM_STARTUP_DONE) {")
             $blockLines.Add("    `$global:FORGUM_STARTUP_DONE = `$true")
-            $blockLines.Add("    if (Get-Command Invoke-Forgum -ErrorAction Ignore) { Invoke-Forgum }")
+            $blockLines.Add("    if (Get-Command forgum -ErrorAction Ignore) { forgum run 'startup' | Out-Host }")
             $blockLines.Add("}")
         }
         
@@ -259,6 +259,6 @@ Write-Host "    Shell aliases:      $addAliases" -ForegroundColor Cyan
 Write-Host "    Tab completion:     $addCompletion" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Restart your terminal to see changes." -ForegroundColor Yellow
-Write-Host "  Run 'Invoke-Forgum' to test!" -ForegroundColor Green
+Write-Host "  Run 'forgum run' to test!" -ForegroundColor Green
 Write-Host ""
 

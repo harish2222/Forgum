@@ -129,7 +129,7 @@ if ($env:FORGUM_NOAUTOSTART -ne '1' -and
             $script:ConfigCache = $config
             $script:ConfigCacheTime = [datetime]::UtcNow
             try {
-                $cowText = Invoke-Forgum -Lolcat
+                $cowText = forgum run "startup" 2>&1 | Out-String
                 if ($cowText) { Write-Host $cowText }
             } finally {
                 $script:ConfigCache = $savedCache

@@ -1,7 +1,7 @@
 #Requires -Modules Pester
 #
 # Comprehensive permutation tests for the forgum unified CLI.
-# Covers: every subcommand × every arg/flag permutation, every help path,
+# Covers: every subcommand x every arg/flag permutation, every help path,
 # edge cases, alignment/rendering validation, and integration flows.
 #
 
@@ -15,9 +15,9 @@ BeforeAll {
     } while ($m)
     Import-Module $ModulePath -Force
 
-    function Strip-Ansi {
+    function Remove-Ansi {
         param([string]$Text)
-        $Text -replace '\x1b\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\][^\x07]*\x07', ''
+        $Text -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace 'e\][^\a]*\a', '' -replace '[\x1b]\[[0-9;]*[a-zA-Z]', '' -replace '[\x1b]\][^\x07]*\x07', ''
     }
 
     # All 18 subcommands
@@ -39,10 +39,10 @@ BeforeAll {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 1. SUBCOMMAND × HELP PERMUTATIONS
+# 1. SUBCOMMAND x HELP PERMUTATIONS
 #    Every subcommand must respond to: --help, -h, help <sub>
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "Help permutations — every subcommand × help method" -Tag 'Permutation' {
+Describe "Help permutations - every subcommand x help method" -Tag 'Permutation' {
 
     foreach ($cmd in $AllSubCommands) {
         It "$cmd --help returns non-empty help text" {
@@ -79,7 +79,7 @@ Describe "Root routing permutations" -Tag 'Permutation' {
 
     It "forgum 'text' produces that text" {
         $raw = forgum "PermTest1" 6>&1 3>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*PermTest1*'
+        Remove-Ansi $raw | Should -BeLike '*PermTest1*'
     }
 
     It "forgum --help shows root help" {
@@ -134,16 +134,16 @@ Describe "Root routing permutations" -Tag 'Permutation' {
 
     It "unknown subcommand text is treated as run input" {
         $raw = forgum unknowncmd "PermX" 6>&1 3>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*PermX*'
+        Remove-Ansi $raw | Should -BeLike '*PermX*'
     }
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. RUN SUBCOMMAND — ARG/FLAG PERMUTATIONS
+# 3. RUN SUBCOMMAND - ARG/FLAG PERMUTATIONS
 #    run, run text, run --cow X, run --mode X, run --lolcat,
 #    run --no-lolcat, run --fortune, combined flags, text after flags
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "run — arg permutations" -Tag 'Permutation' {
+Describe "run - arg permutations" -Tag 'Permutation' {
 
     It "run with no args" {
         $output = forgum run 6>&1 2>&1 | Out-String
@@ -152,12 +152,12 @@ Describe "run — arg permutations" -Tag 'Permutation' {
 
     It "run with text" {
         $raw = forgum run "PermRunText" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*PermRunText*'
+        Remove-Ansi $raw | Should -BeLike '*PermRunText*'
     }
 
     It "run with multi-word text" {
         $raw = forgum run "Perm Run Multi" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*Perm Run Multi*'
+        Remove-Ansi $raw | Should -BeLike '*Perm Run Multi*'
     }
 
     foreach ($cow in $KnownCows) {
@@ -199,7 +199,7 @@ Describe "run — arg permutations" -Tag 'Permutation' {
 
     It "run text --cow tux (text before flag)" {
         $raw = forgum run "PermBeforeFlag" --cow tux 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*PermBeforeFlag*'
+        Remove-Ansi $raw | Should -BeLike '*PermBeforeFlag*'
     }
 
     It "run --cow tux 'Hello World' --mode static --lolcat" {
@@ -209,10 +209,10 @@ Describe "run — arg permutations" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. GALLERY — ARG/FLAG PERMUTATIONS
+# 4. GALLERY - ARG/FLAG PERMUTATIONS
 #    gallery, gallery --count N (various values)
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "gallery — arg permutations" -Tag 'Permutation' {
+Describe "gallery - arg permutations" -Tag 'Permutation' {
 
     It "gallery with no args" {
         $output = forgum gallery 6>&1 2>&1 | Out-String
@@ -236,10 +236,10 @@ Describe "gallery — arg permutations" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5. PREVIEW — ARG/FLAG PERMUTATIONS
+# 5. PREVIEW - ARG/FLAG PERMUTATIONS
 #    preview, preview cow, preview cow text, preview default
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "preview — arg permutations" -Tag 'Permutation' {
+Describe "preview - arg permutations" -Tag 'Permutation' {
 
     It "preview with no args" {
         $output = forgum preview 6>&1 2>&1 | Out-String
@@ -258,35 +258,35 @@ Describe "preview — arg permutations" -Tag 'Permutation' {
 
     It "preview tux 'Custom'" {
         $raw = forgum preview tux "Custom" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*Custom*'
+        Remove-Ansi $raw | Should -BeLike '*Custom*'
     }
 
     It "preview dragon 'Roar'" {
         $raw = forgum preview dragon "Roar" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*Roar*'
+        Remove-Ansi $raw | Should -BeLike '*Roar*'
     }
 
     It "preview kitty 'Meow'" {
         $raw = forgum preview kitty "Meow" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*Meow*'
+        Remove-Ansi $raw | Should -BeLike '*Meow*'
     }
 
     It "preview whale 'Big ideas'" {
         $raw = forgum preview whale "Big ideas" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*Big ideas*'
+        Remove-Ansi $raw | Should -BeLike '*Big ideas*'
     }
 
     It "preview ghost 'Boo'" {
         $raw = forgum preview ghost "Boo" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*Boo*'
+        Remove-Ansi $raw | Should -BeLike '*Boo*'
     }
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 6. ANIMATE — MODE PERMUTATIONS
+# 6. ANIMATE - MODE PERMUTATIONS
 #    animate with each valid mode
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "animate — mode permutations" -Tag 'Permutation' {
+Describe "animate - mode permutations" -Tag 'Permutation' {
 
     foreach ($mode in $AllModes) {
         It "animate $mode sets mode" {
@@ -297,10 +297,10 @@ Describe "animate — mode permutations" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 7. EYES — PRESET/CUSTOM PERMUTATIONS
+# 7. EYES - PRESET/CUSTOM PERMUTATIONS
 #    eyes with each preset, eyes with custom 2-char, eyes with no args
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "eyes — preset/custom permutations" -Tag 'Permutation' {
+Describe "eyes - preset/custom permutations" -Tag 'Permutation' {
 
     foreach ($preset in $EyePresets) {
         It "eyes $preset sets preset" {
@@ -336,10 +336,10 @@ Describe "eyes — preset/custom permutations" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 8. INIT — SHELL PERMUTATIONS
+# 8. INIT - SHELL PERMUTATIONS
 #    init, init bash, init zsh, init fish, init pwsh
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "init — shell permutations" -Tag 'Permutation' {
+Describe "init - shell permutations" -Tag 'Permutation' {
 
     It "init with no args (auto-detect)" {
         $output = forgum init 6>&1 2>&1 | Out-String
@@ -355,10 +355,10 @@ Describe "init — shell permutations" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 9. DAEMON — ACTION PERMUTATIONS
+# 9. DAEMON - ACTION PERMUTATIONS
 #    daemon start, daemon stop
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "daemon — action permutations" -Tag 'Permutation' {
+Describe "daemon - action permutations" -Tag 'Permutation' {
 
     It "daemon with no args defaults to start" {
         $enginePath = InModuleScope Forgum { Get-EngineBinary -ErrorAction SilentlyContinue }
@@ -387,10 +387,10 @@ Describe "daemon — action permutations" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 10. UPDATE — FLAG PERMUTATIONS
+# 10. UPDATE - FLAG PERMUTATIONS
 #     update, update --check, update --force, update --force --check
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "update — flag permutations" -Tag 'Permutation' {
+Describe "update - flag permutations" -Tag 'Permutation' {
 
     It "update with no args" {
         $output = forgum update 6>&1 2>&1 | Out-String
@@ -414,9 +414,9 @@ Describe "update — flag permutations" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 11. TOGGLE — BEHAVIOR
+# 11. TOGGLE - BEHAVIOR
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "toggle — behavior" -Tag 'Permutation' {
+Describe "toggle - behavior" -Tag 'Permutation' {
 
     It "toggle flips lolcat state" {
         $output = forgum toggle 6>&1 2>&1 | Out-String
@@ -431,9 +431,9 @@ Describe "toggle — behavior" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 12. LIVE — HELP ONLY (too slow to run)
+# 12. LIVE - HELP ONLY (too slow to run)
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "live — help permutations" -Tag 'Permutation' {
+Describe "live - help permutations" -Tag 'Permutation' {
 
     It "live --help shows duration option" {
         $output = forgum live --help 2>&1 | Out-String
@@ -443,11 +443,11 @@ Describe "live — help permutations" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 13. HELP SUBCOMMAND — DEEP PERMUTATIONS
+# 13. HELP SUBCOMMAND - DEEP PERMUTATIONS
 #     help, help <each sub>, help --help, help -h, help <alias>,
 #     help <unknown>, help h, help v, help help
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "help — deep permutations" -Tag 'Permutation' {
+Describe "help - deep permutations" -Tag 'Permutation' {
 
     It "help with no args" {
         $output = forgum help 2>&1 | Out-String
@@ -538,10 +538,10 @@ Describe "help — deep permutations" -Tag 'Permutation' {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 14. EDGE CASES — TEXT INPUT
+# 14. EDGE CASES - TEXT INPUT
 #     Empty text, very long text, special chars, unicode, multiple spaces
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "Edge cases — text input" -Tag 'EdgeCase' {
+Describe "Edge cases - text input" -Tag 'EdgeCase' {
 
     It "empty string text runs" {
         $output = forgum run "" 6>&1 2>&1 | Out-String
@@ -550,10 +550,10 @@ Describe "Edge cases — text input" -Tag 'EdgeCase' {
 
     It "single character text" {
         $raw = forgum run "X" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*X*'
+        Remove-Ansi $raw | Should -BeLike '*X*'
     }
 
-    It "very long text (500 chars)" {
+    It 'very long text (500 chars)' {
         $longText = "A" * 500
         $output = forgum run $longText 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
@@ -561,64 +561,64 @@ Describe "Edge cases — text input" -Tag 'EdgeCase' {
 
     It "text with spaces and punctuation" {
         $raw = forgum run "Hello, World! How are you?" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*Hello, World! How are you?*'
+        Remove-Ansi $raw | Should -BeLike '*Hello, World! How are you?*'
     }
 
     It "text with numbers" {
         $raw = forgum run "12345 test 67890" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*12345 test 67890*'
+        Remove-Ansi $raw | Should -BeLike '*12345 test 67890*'
     }
 
     It "text with parentheses" {
         $raw = forgum run "test (parens)" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*test (parens)*'
+        Remove-Ansi $raw | Should -BeLike '*test (parens)*'
     }
 
     It "text with angle brackets" {
-        $raw = forgum run "test <brackets>" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*test <brackets>*'
+        $raw = forgum run 'test <brackets>' 6>&1 2>&1 | Out-String
+        Remove-Ansi $raw | Should -BeLike '*test <brackets>*'
     }
 
     It "text with quotes" {
         $raw = forgum run "it is a test" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike "*it is a test*"
+        Remove-Ansi $raw | Should -BeLike "*it is a test*"
     }
 
     It "text with dollar sign" {
         $raw = forgum run 'test $var' 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*test $var*'
+        Remove-Ansi $raw | Should -BeLike '*test $var*'
     }
 
     It "text with backslash" {
         $raw = forgum run 'test \path' 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*test \path*'
+        Remove-Ansi $raw | Should -BeLike '*test \path*'
     }
 
     It "text with pipe character" {
         $raw = forgum run 'test | pipe' 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*test | pipe*'
+        Remove-Ansi $raw | Should -BeLike '*test | pipe*'
     }
 
     It "text with semicolon" {
         $raw = forgum run 'test; semicolon' 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*test; semicolon*'
+        Remove-Ansi $raw | Should -BeLike '*test; semicolon*'
     }
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 15. EDGE CASES — ARGUMENT STRUCTURE
+# 15. EDGE CASES - ARGUMENT STRUCTURE
 #     Flags after text, text after flags, mixed order, extra whitespace
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "Edge cases — argument structure" -Tag 'EdgeCase' {
+Describe "Edge cases - argument structure" -Tag 'EdgeCase' {
 
     It "run 'text' --cow tux (text before flag)" {
         $raw = forgum run "EdgeBefore" --cow tux 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*EdgeBefore*'
+        Remove-Ansi $raw | Should -BeLike '*EdgeBefore*'
     }
 
     It "run --cow tux 'text' (flag before text)" {
         $raw = forgum run --cow tux "EdgeAfter" 6>&1 2>&1 | Out-String
-        Strip-Ansi $raw | Should -BeLike '*EdgeAfter*'
+        Remove-Ansi $raw | Should -BeLike '*EdgeAfter*'
     }
 
     It "run --mode static --cow tux --lolcat 'text'" {
@@ -646,7 +646,7 @@ Describe "Edge cases — argument structure" -Tag 'EdgeCase' {
         $output | Should -Match 'Cow eyes:'
     }
 
-    It "eyes --custom @@ (option form)" {
+    It 'eyes --custom @@ (option form)' {
         $output = forgum eyes --custom '@@' 6>&1 2>&1 | Out-String
         $output | Should -Match 'Cow eyes:'
     }
@@ -671,31 +671,31 @@ Describe "Alignment and rendering validation" -Tag 'Rendering' {
 
     It "cow output contains balloon top border (##)" {
         $raw = forgum run "RenderTest" 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -Match '#'
     }
 
     It "cow output contains balloon side border (||)" {
         $raw = forgum run "RenderTest" 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -Match '\|\|'
     }
 
     It "cow output contains cow body markers" {
         $raw = forgum run "RenderTest" 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -Match '\^__^|\(oo\)|\\____|\\   \\'
     }
 
     It "cow output contains the message text" {
         $raw = forgum run "UniqueMessage99" 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -BeLike '*UniqueMessage99*'
     }
 
     It "preview tux has proper cow structure" {
         $raw = forgum preview tux "AlignTest" 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -Match '#'
         $output | Should -Match '\|\|'
         $output | Should -BeLike '*AlignTest*'
@@ -703,13 +703,13 @@ Describe "Alignment and rendering validation" -Tag 'Rendering' {
 
     It "gallery output contains multiple cow sections" {
         $raw = forgum gallery --count 3 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -Match '==='
     }
 
     It "run --cow tux uses tux cow" {
         $raw = forgum run --cow tux --mode static "TuxTest" 6>&1 2>&1 | Out-String
-        $output = Strip-Ansi $raw
+        $output = Remove-Ansi $raw
         $output | Should -BeLike '*TuxTest*'
     }
 
@@ -789,7 +789,7 @@ Describe "Integration flows" -Tag 'Integration' {
 # 18. MODULE STRUCTURE VALIDATION
 #     Verify all functions exist, module loads, version correct
 # ─────────────────────────────────────────────────────────────────────────────
-Describe "Module structure — comprehensive" -Tag 'Structure' {
+Describe "Module structure - comprehensive" -Tag 'Structure' {
 
     It "module loads without errors" {
         $m = Get-Module Forgum
@@ -853,12 +853,7 @@ Describe "Module structure — comprehensive" -Tag 'Structure' {
 
     It "all animation functions exist" {
         InModuleScope Forgum {
-            @('Invoke-TalkingAnimation','Invoke-TypewriterAnimation',
-              'Invoke-DynamicAnimation','Invoke-PhysicsCow','Invoke-ProceduralAnimation',
-              'Invoke-BlinkAnimation','Invoke-BounceAnimation','Invoke-WaveAnimation',
-              'Invoke-WiggleAnimation','Invoke-DissolveAnimation','Invoke-FadeInAnimation',
-              'Invoke-SlideInAnimation','Invoke-DiscoAnimation',
-              'Show-CFAnimation','Invoke-Engine') |
+            @('Show-CFAnimation','Invoke-Engine') |
               ForEach-Object {
                 Get-Command $_ -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty -Because "$_ should exist"
             }
@@ -924,8 +919,8 @@ Describe "Module structure — comprehensive" -Tag 'Structure' {
             }
             foreach ($alias in $aliases.Keys) {
                 $msg = Get-HelpMessage -Command $alias
-                $msg | Should -Not -BeNullOrEmpty -Because "alias $alias should resolve"
-                $msg | Should -Match 'Usage:' -Because "alias $alias should return help"
+                $msg | Should -Not -BeNullOrEmpty -Because ('alias {0} should resolve' -f $alias)
+                $msg | Should -Match 'Usage:' -Because ('alias {0} should return help' -f $alias)
             }
         }
     }

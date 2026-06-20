@@ -33,10 +33,22 @@ fn is_terminal_stdin() -> bool {
     unsafe { libc::isatty(libc::STDIN_FILENO) != 0 }
 }
 
-#[cfg(not(unix))]
+#[cfg(windows)]
 fn is_terminal_stdin() -> bool {
-    // On Windows, assume piped input when running non-interactively
-    // This is a heuristic — the engine will default to 150 frames for piped input
+    use std::os::windows::io::AsRawHandle;
+    use winapi::um::consoleapi::GetConsoleMode;
+    use winapi::um::handleapi::INVALID_HANDLE_VALUE;
+
+    let handle = io::stdin().as_raw_handle();
+    if handle == INVALID_HANDLE_VALUE as *mut _ {
+        return false;
+    }
+    let mut mode = 0u32;
+    unsafe { GetConsoleMode(handle as *mut _, &mut mode) != 0 }
+}
+
+#[cfg(not(any(unix, windows)))]
+fn is_terminal_stdin() -> bool {
     false
 }
 
@@ -424,4 +436,116 @@ fn main() -> io::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_config(effect: &str, cow_file: Option<&str>, style: Option<&str>) -> SceneConfig {
+        SceneConfig {
+            r#type: None,
+            effect: effect.to_string(),
+            cow_text: "test".to_string(),
+            fps: None,
+            duration: None,
+            background: None,
+            overlay_height: None,
+            style: style.map(|s| s.to_string()),
+            cow_file: cow_file.map(|s| s.to_string()),
+            particles: None,
+            speed: 1.0,
+            amplitude: None,
+            cycle_interval: None,
+            max_width: None,
+            lolcat: None,
+        }
+    }
+
+    #[test]
+    fn test_resolve_effect_explicit() {
+        let config = make_config("aurora", None, None);
+        assert_eq!(resolve_effect_name(&config), "aurora");
+    }
+
+    #[test]
+    fn test_resolve_effect_explicit_liquid_chrome() {
+        let config = make_config("liquid-chrome", None, None);
+        assert_eq!(resolve_effect_name(&config), "liquid-chrome");
+    }
+
+    #[test]
+    fn test_resolve_effect_auto_with_style() {
+        let config = make_config("auto", None, Some("fly"));
+        assert_eq!(resolve_effect_name(&config), "fly");
+    }
+
+    #[test]
+    fn test_resolve_effect_auto_with_cow_file() {
+        let config = make_config("auto", Some("tux.cow"), None);
+        assert_eq!(resolve_effect_name(&config), "sway");
+    }
+
+    #[test]
+    fn test_resolve_effect_empty_with_cow_file() {
+        let config = make_config("", Some("dragon.cow"), None);
+        assert_eq!(resolve_effect_name(&config), "fire");
+    }
+
+    #[test]
+    fn test_resolve_effect_auto_nothing_defaults_to_aurora() {
+        let config = make_config("auto", None, None);
+        assert_eq!(resolve_effect_name(&config), "aurora");
+    }
+
+    #[test]
+    fn test_resolve_effect_auto_unknown_cow_file_returns_talk() {
+        let config = make_config("auto", Some("nonexistent.cow"), None);
+        assert_eq!(resolve_effect_name(&config), "talk");
+    }
+
+    #[test]
+    fn test_resolve_effect_style_takes_precedence_over_cow_file() {
+        let config = make_config("auto", Some("tux.cow"), Some("matrix"));
+        assert_eq!(resolve_effect_name(&config), "matrix");
+    }
+
+    #[test]
+    fn test_resolve_effect_random_returns_random() {
+        let config = make_config("random", None, None);
+        assert_eq!(resolve_effect_name(&config), "random");
+    }
+
+    #[test]
+    fn test_create_effect_random_does_not_panic() {
+        let mut effect = create_effect("random", "test".to_string());
+        let mut fb = FrameBuffer::new(80, 24);
+        effect.update(0.016);
+        let clip = Rect::new(0, 0, 80, 24);
+        effect.render(&mut fb, clip);
+    }
+
+    #[test]
+    fn test_create_effect_returns_something() {
+        let mut effect = create_effect("aurora", "test".to_string());
+        let mut fb = FrameBuffer::new(80, 24);
+        effect.update(0.016);
+        let clip = Rect::new(0, 0, 80, 24);
+        effect.render(&mut fb, clip);
+    }
+
+    #[test]
+    fn test_create_effect_all_base_styles() {
+        let styles = ["aurora", "ember", "shatter", "plasma", "liquid-chrome",
+                      "portal", "glitch", "neon-pulse", "physics",
+                      "static", "breathe", "liquid", "sway", "bounce",
+                      "fly", "fire", "matrix", "pulse", "dissolve"];
+        for style in styles {
+            let mut effect = create_effect(style, "test".to_string());
+            let mut fb = FrameBuffer::new(80, 24);
+            effect.update(0.016);
+            let clip = Rect::new(0, 0, 80, 24);
+            effect.render(&mut fb, clip);
+        }
+    }
 }

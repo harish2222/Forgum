@@ -1,3 +1,6 @@
+# Engine binaries (built by CI, not tracked)
+bin/
+
 # PowerShell
 *.ps1xml
 *.psm1.backup
