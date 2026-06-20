@@ -6,15 +6,6 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main]
-  schedule:
-    - cron: '0 0 * * 0'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
-permissions:
-  contents: read
 
 env:
   MODULE_NAME: Forgum
