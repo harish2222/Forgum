@@ -113,8 +113,16 @@ fn resolve_effect_name(config: &SceneConfig) -> String {
 }
 
 fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
-    let mut term = Terminal::detect();
     let mut stdout = io::stdout();
+    let has_terminal = is_terminal_stdin();
+
+    if !has_terminal {
+        print!("{}", config.cow_text);
+        stdout.flush()?;
+        return Ok(());
+    }
+
+    let mut term = Terminal::detect();
 
     execute!(stdout, cursor::Hide)?;
 
@@ -127,8 +135,6 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
     let mut region_alloc = RegionAllocator::new(Rect::new(0, 0, cols, rows));
     let ob = term.overlay_bounds();
     let overlay_id = region_alloc.allocate(Rect::new(ob.0, ob.1, ob.2, ob.3), 100);
-
-    let has_terminal = is_terminal_stdin();
     let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
     // If duration is 0 (infinite), check if stdin is a pipe — if so, default to 150 frames
     let max_frames = if config.duration.unwrap_or(0) == 0 && !has_terminal {
@@ -199,8 +205,10 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
 }
 
 fn render_loop_background(config: SceneConfig) -> io::Result<()> {
-    let _term = Terminal::detect();
     let mut stdout = io::stdout();
+    let has_terminal = is_terminal_stdin();
+
+    let _term = Terminal::detect();
 
     // Background mode: DO NOT hide cursor, DO NOT enter raw mode
     // Shell prompt remains fully usable
@@ -218,7 +226,6 @@ fn render_loop_background(config: SceneConfig) -> io::Result<()> {
     let ob_y1 = overlay_height.min(rows.saturating_sub(3));
     let overlay_id = region_alloc.allocate(Rect::new(0, 0, cols, ob_y1), 100);
 
-    let has_terminal = is_terminal_stdin();
     let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
     // If duration is 0 (infinite), check if stdin is a pipe — if so, default to 150 frames
     let max_frames = if config.duration.unwrap_or(0) == 0 && !has_terminal {

@@ -114,7 +114,7 @@ jobs:
             engine/target
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ runner.os }}-${{ hashFiles('engine/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-${{ hashFiles('engine/src/**/*.rs', 'engine/Cargo.toml', 'engine/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
 
       - name: Run Rust Tests
@@ -184,7 +184,7 @@ jobs:
             engine/target
             ~/.cargo/registry
             ~/.cargo/git
-          key: cargo-${{ runner.os }}-${{ hashFiles('engine/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-${{ hashFiles('engine/src/**/*.rs', 'engine/Cargo.toml', 'engine/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-
 
       - name: Build Rust Binary (Release)
