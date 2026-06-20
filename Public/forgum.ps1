@@ -1,185 +1,100 @@
 function forgum {
     <#
     .SYNOPSIS
-        The ultimate Forgum CLI wrapper. All features in one keyword!
+        Forgum - fortune + cow + rainbow in your terminal.
 
     .DESCRIPTION
-        Acts as the central router for all Forgum functionality. You can use it as a 
-        standard command to render cows, or use subcommands (like 'update', 'config', 'gallery')
-        to trigger specific workflows. All parameters are seamlessly exposed via Get-Help!
+        Single entry point for all Forgum functionality.
+        Use 'forgum help' to see all available commands.
+        Use 'forgum <command> --help' for command-specific help.
 
-    .PARAMETER Action
-        The main subcommand (e.g. 'update', 'config', 'gallery', 'toggle') OR the text you want the cow to say.
+    .PARAMETER SubCommand
+        The subcommand to run. Run 'forgum help' for all options.
 
-    .PARAMETER Lolcat
-        [Default Set] Forces the rainbow color mode on.
-
-    .PARAMETER Cow
-        [Default Set] Overrides the cow file for the default rendering.
-
-    .PARAMETER Animation
-        [Default Set] Overrides the animation mode for the default rendering.
-
-    .PARAMETER Count
-        [Gallery Set] How many cows to show in the gallery. (Default: 5)
-
-    .PARAMETER PreviewCow
-        [Preview Set] The name of the cow to preview.
-
-    .PARAMETER PreviewText
-        [Preview Set] The text to show in the preview.
-
-    .PARAMETER Mode
-        [Animate Set] The animation mode to set globally.
-
-    .PARAMETER Preset
-        [Eyes Set] The named eye preset to use (e.g. 'borg', 'dead').
-
-    .PARAMETER CustomEyes
-        [Eyes Set] Exactly two characters for custom eyes (e.g. '@@').
-
-    .PARAMETER Force
-        [Update Set] Forces the standalone updater to bypass package manager warnings.
-
-    .PARAMETER CheckOnly
-        [Update Set] Only checks if an update is available without installing.
+    .PARAMETER Arguments
+        Arguments passed to the subcommand.
 
     .EXAMPLE
         forgum
-        Shows the default Forgum greeting.
-
-    .EXAMPLE
-        forgum "My custom message" -Lolcat -Cow tux
-        Standard Invoke-Forgum behavior passing text and switches.
-
-    .EXAMPLE
+        forgum "Hello World"
+        forgum run --cow tux --mode aurora
         forgum config
-        Opens the interactive Forgum Configuration TUI.
-
-    .EXAMPLE
-        forgum update -Force
-        Checks for and forces installation of the latest version of Forgum.
-
-    .EXAMPLE
-        forgum gallery -Count 3
-        Shows 3 random cows.
-
-    .EXAMPLE
-        forgum preview tux "Linux rules!"
-        Previews the 'tux' cow.
-
-    .EXAMPLE
-        forgum animate aurora
-        Changes your global animation mode to 'aurora'.
+        forgum gallery --count 5
+        forgum help
+        forgum run --help
     #>
-    [CmdletBinding(DefaultParameterSetName='Default')]
+    [CmdletBinding()]
     param(
-        [Parameter(ParameterSetName='Default', Position=0)]
-        [Parameter(ParameterSetName='Update', Position=0)]
-        [Parameter(ParameterSetName='Config', Position=0)]
-        [Parameter(ParameterSetName='Gallery', Position=0)]
-        [Parameter(ParameterSetName='Preview', Position=0)]
-        [Parameter(ParameterSetName='Toggle', Position=0)]
-        [Parameter(ParameterSetName='Animate', Position=0)]
-        [Parameter(ParameterSetName='Eyes', Position=0)]
-        [Parameter(ParameterSetName='Help', Position=0)]
-        [ArgumentCompleter({
-            param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-            $commands = 'update','upgrade','config','tui','setup','gallery','preview','toggle','animate','eyes','help'
-            $commands | Where-Object { $_ -like "$wordToComplete*" }
-        })]
-        [string]$Action = '',
+        [Parameter(Position = 0)]
+        [string]$SubCommand,
 
-        # --- Default Parameter Set (Invoke-Forgum) ---
-        [Parameter(ParameterSetName='Default')]
-        [switch]$Lolcat,
-        [Parameter(ParameterSetName='Default')]
-        [string]$Animation,
-        [Parameter(ParameterSetName='Default')]
-        [string]$Cow,
-
-        # --- Update Parameter Set ---
-        [Parameter(ParameterSetName='Update')]
-        [switch]$Force,
-        [Parameter(ParameterSetName='Update')]
-        [switch]$CheckOnly,
-
-        # --- Gallery Parameter Set ---
-        [Parameter(ParameterSetName='Gallery')]
-        [int]$Count = 5,
-
-        # --- Preview Parameter Set ---
-        [Parameter(ParameterSetName='Preview')]
-        [string]$PreviewCow,
-        [Parameter(ParameterSetName='Preview')]
-        [string]$PreviewText,
-
-        # --- Animate Parameter Set ---
-        [Parameter(ParameterSetName='Animate')]
-        [string]$Mode,
-
-        # --- Eyes Parameter Set ---
-        [Parameter(ParameterSetName='Eyes')]
-        [string]$Preset,
-        [Parameter(ParameterSetName='Eyes')]
-        [string]$CustomEyes,
-
-        # Catch remaining positional arguments so standard CLI syntax like "forgum preview tux" works naturally
-        [Parameter(ValueFromRemainingArguments=$true)]
-        [string[]]$ArgumentList
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$Arguments
     )
 
-    switch -Regex ($Action) {
-        '^(update|upgrade)$' {
-            if ($PSBoundParameters.ContainsKey('CheckOnly')) { Update-Forgum -CheckOnly }
-            elseif ($PSBoundParameters.ContainsKey('Force')) { Update-Forgum -Force }
-            else { Update-Forgum }
-            break
+    # Handle --help / -h / --version that PowerShell binds to $Arguments
+    # via ValueFromRemainingArguments when there's no named subcommand.
+    # Only intercept when SubCommand is null (no subcommand was given).
+    if ([string]::IsNullOrEmpty($SubCommand) -and $Arguments -and $Arguments.Count -gt 0) {
+        $first = $Arguments[0]
+        if ($first -in '--help', '-h') {
+            Get-HelpMessage -Command 'root'
+            return
         }
-        '^(config|tui|setup)$' {
-            Invoke-ForgumTUI
-            break
+        if ($first -in '--version') {
+            "forgum v$($script:ModuleVersion)"
+            return
         }
-        '^gallery$' {
-            Show-CFCowGallery -Count $Count
-            break
+    }
+
+    # PowerShell with [CmdletBinding()] silently drops unknown single-dash
+    # params like -v. Use $args as a last-resort fallback for these.
+    if ([string]::IsNullOrEmpty($SubCommand) -and $args.Count -gt 0) {
+        if ($args[0] -in '-v') {
+            "forgum v$($script:ModuleVersion)"
+            return
         }
-        '^preview$' {
-            $pCow = if ($PreviewCow) { $PreviewCow } elseif ($ArgumentList.Count -gt 0) { $ArgumentList[0] } else { 'default' }
-            $pText = if ($PreviewText) { $PreviewText } elseif ($ArgumentList.Count -gt 1) { $ArgumentList[1] } else { 'Hello World' }
-            Show-CFCowPreview -CowFile $pCow -Text $pText
-            break
+        if ($args[0] -in '-h') {
+            Get-HelpMessage -Command 'root'
+            return
         }
-        '^toggle$' {
-            Toggle-CFLolcat
-            break
+    }
+
+    if ([string]::IsNullOrEmpty($SubCommand)) {
+        Invoke-ForgumRun -Arguments $Arguments
+        return
+    }
+
+    $SubCommand = $SubCommand.ToLower()
+
+    switch ($SubCommand) {
+        'run'       { Invoke-ForgumRun -Arguments $Arguments }
+        'config'    { Invoke-ForgumConfig -Arguments $Arguments }
+        'gallery'   { Invoke-ForgumGallery -Arguments $Arguments }
+        'preview'   { Invoke-ForgumPreview -Arguments $Arguments }
+        'update'    { Invoke-ForgumUpdate -Arguments $Arguments }
+        'toggle'    { Invoke-ForgumToggle -Arguments $Arguments }
+        'animate'   { Invoke-ForgumAnimate -Arguments $Arguments }
+        'eyes'      { Invoke-ForgumEyes -Arguments $Arguments }
+        'init'      { Invoke-ForgumInit -Arguments $Arguments }
+        'live'      { Invoke-ForgumLiveHandler -Arguments $Arguments }
+        'daemon'    { Invoke-ForgumDaemon -Arguments $Arguments }
+        'help'      {
+            if ($Arguments.Count -gt 0) {
+                Get-HelpMessage -Command $Arguments[0]
+            } else {
+                Get-HelpMessage -Command 'root'
+            }
         }
-        '^animate$' {
-            $m = if ($Mode) { $Mode } elseif ($ArgumentList.Count -gt 0) { $ArgumentList[0] } else { '' }
-            if ($m) { Set-CFCowAnimate -Mode $m } else { Set-CFCowAnimate }
-            break
-        }
-        '^eyes$' {
-            if ($Preset) { Set-CFCowEyes -Preset $Preset }
-            elseif ($CustomEyes) { Set-CFCowEyes -Custom $CustomEyes }
-            elseif ($ArgumentList.Count -gt 0) { 
-                if ($ArgumentList[0].Length -eq 2) { Set-CFCowEyes -Custom $ArgumentList[0] }
-                else { Set-CFCowEyes -Preset $ArgumentList[0] }
-            } else { Set-CFCowEyes }
-            break
-        }
-        '^(help|--help|-h|-\?)$' {
-            Get-Help forgum -Detailed
-            break
-        }
+        { $_ -in '--help', '-h', 'help', 'h' }  { Get-HelpMessage -Command 'root' }
+        { $_ -in '--version', '-v', 'version', 'v' } { "forgum v$($script:ModuleVersion)" }
         default {
-            $invokeParams = @{}
-            if ($Action) { $invokeParams.Text = $Action }
-            if ($Lolcat) { $invokeParams.Lolcat = $true }
-            if ($Animation) { $invokeParams.Animation = $Animation }
-            if ($Cow) { $invokeParams.Cow = $Cow }
-            Invoke-Forgum @invokeParams
-            break
+            if ($SubCommand -match '^-') {
+                Write-Warning "Unknown option: $SubCommand. Run 'forgum help' for usage."
+                return
+            }
+            $fullText = "$SubCommand $($Arguments -join ' ')"
+            Invoke-ForgumRun -Arguments @($fullText)
         }
     }
 }

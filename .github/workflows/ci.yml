@@ -3,7 +3,7 @@ name: Forgum CI
 on:
   push:
     branches: [main, animation]
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
     branches: [main, animation]
 
@@ -34,12 +34,11 @@ jobs:
       - name: Install cargo-mutants
         run: cargo install --version 24.11.0 cargo-mutants
       - name: Mutation Testing
-        continue-on-error: true
         run: |
           cd src-rust
-          timeout 300 cargo mutants --no-times --file src/main.rs || echo "Mutation testing timed out or failed (non-blocking)"
+          timeout 300 cargo mutants --no-times --file src/main.rs
           cd ../engine
-          timeout 300 cargo mutants --no-times || echo "Mutation testing timed out or failed (non-blocking)"
+          timeout 300 cargo mutants --no-times
       - name: PowerShell Static Analysis
         shell: pwsh
         run: |
@@ -53,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Lint
     env:
-      PSSA_VERSION: '1.24.0'
+      PSSA_VERSION: "1.24.0"
     steps:
       - uses: actions/checkout@v4
 
@@ -101,17 +100,43 @@ jobs:
         shell: pwsh
         run: |
           $manifest = Test-ModuleManifest -Path ./${{ env.MODULE_NAME }}.psd1 -ErrorAction Stop
+
           Write-Host "Module: $($manifest.Name) v$($manifest.Version)"
           Write-Host "Author: $($manifest.Author)"
-          Write-Host "Exports: $($manifest.ExportedFunctions.Keys -join ', ')"
-          $expected = @('Invoke-Cowsay', 'Invoke-Forgum', 'Get-Fortune', 'Get-CFCow', 'Get-CFConfig', 'Set-CFConfig', 'Show-CFAnimation', 'Invoke-ForgumSetup', 'Update-Forgum')
-          $actual = $manifest.ExportedFunctions.Keys
-          $missing = $expected | Where-Object { $_ -notin $actual }
-          if ($missing) {
-            Write-Host "Missing exports: $($missing -join ', ')" -ForegroundColor Red
+
+          $exportKeys = @($manifest.ExportedFunctions.Keys)
+          $aliasKeys  = @($manifest.ExportedAliases.Keys)
+
+          Write-Host "Exports ($($exportKeys.Count)): $($exportKeys -join ', ')"
+          Write-Host "Aliases ($($aliasKeys.Count)): $($aliasKeys -join ', ')"
+
+          # Post-refactor: old public functionality now lives under the `forgum` keyword.
+          $expectedExports = @('forgum')
+          $missingExports = $expectedExports | Where-Object { $_ -notin $exportKeys }
+          if ($missingExports) {
+            Write-Host "Missing exports: $($missingExports -join ', ')" -ForegroundColor Red
             exit 1
           }
-          Write-Host "All 7 expected functions exported." -ForegroundColor Green
+
+          # Validate aliases are present too.
+          $expectedAliases = @(
+            'forgum-setup'
+            'forgum-show'
+            'forgum-tui'
+            'cowgallery'
+            'cowpreview'
+            'cowconfig'
+            'lolcat-toggle'
+            'cow-animate'
+            'cow-eyes'
+          )
+          $missingAliases = $expectedAliases | Where-Object { $_ -notin $aliasKeys }
+          if ($missingAliases) {
+            Write-Host "Missing aliases: $($missingAliases -join ', ')" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "All expected exports ($($expectedExports.Count)) and aliases ($($expectedAliases.Count)) exported." -ForegroundColor Green
 
       - name: Verify data files
         shell: pwsh
@@ -122,6 +147,7 @@ jobs:
             Write-Host "Expected at least 50 cow files" -ForegroundColor Red
             exit 1
           }
+
           $fortuneRaw = Get-Content ./Data/Fortunes/fortunes.txt -Raw
           $fortuneCount = ($fortuneRaw -split '%').Count
           Write-Host "Fortune entries: $fortuneCount"
@@ -129,6 +155,7 @@ jobs:
             Write-Host "Expected at least 1000 fortune entries" -ForegroundColor Red
             exit 1
           }
+
           Write-Host "Data files verified." -ForegroundColor Green
 
       - name: Verify animation files
@@ -158,13 +185,13 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            pwsh: '7.4'
+            pwsh: "7.4"
           - os: macos-latest
-            pwsh: '7.4'
+            pwsh: "7.4"
           - os: windows-latest
-            pwsh: '7.4'
+            pwsh: "7.4"
           - os: windows-latest
-            pwsh: '5.1'
+            pwsh: "5.1"
     runs-on: ${{ matrix.os }}
     name: Test (${{ matrix.os }} pwsh ${{ matrix.pwsh }})
     timeout-minutes: 15
@@ -298,8 +325,6 @@ jobs:
           path: src-rust/target/aarch64-apple-darwin/release/forgum-core
           if-no-files-found: error
 
-
-
       - name: Verify ARM64 Binary (native on Apple Silicon)
         if: matrix.os == 'macos-latest'
         run: |
@@ -337,7 +362,7 @@ jobs:
         if: matrix.pwsh != '5.1'
         shell: pwsh
         env:
-          FORGUM_NOAUTOSTART: '1'
+          FORGUM_NOAUTOSTART: "1"
         run: |
           $results = Invoke-Pester -Path './Tests' -PassThru -Output Detailed
 
@@ -359,7 +384,7 @@ jobs:
         if: matrix.pwsh == '5.1'
         shell: powershell
         env:
-          FORGUM_NOAUTOSTART: '1'
+          FORGUM_NOAUTOSTART: "1"
         run: |
           $results = Invoke-Pester -Path './Tests' -PassThru -Output Detailed
 
@@ -383,19 +408,19 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y zsh fish bash
-          
+
           echo "Testing Bash..."
           OUTPUT_BASH=$(bash -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; Invoke-Forgum"')
           echo "$OUTPUT_BASH" | grep -E "(__|\(oo\))" > /dev/null || (echo "Bash test failed: $OUTPUT_BASH" && exit 1)
-          
+
           echo "Testing Zsh..."
           OUTPUT_ZSH=$(zsh -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; Invoke-Forgum"')
           echo "$OUTPUT_ZSH" | grep -E "(__|\(oo\))" > /dev/null || (echo "Zsh test failed: $OUTPUT_ZSH" && exit 1)
-          
+
           echo "Testing Fish..."
           OUTPUT_FISH=$(fish -c 'pwsh -NoProfile -Command "Import-Module ./Forgum.psd1; Invoke-Forgum"')
           echo "$OUTPUT_FISH" | grep -E "(__|\(oo\))" > /dev/null || (echo "Fish test failed: $OUTPUT_FISH" && exit 1)
-          
+
           echo "All shell integration tests passed!"
 
   # ────────────────────────────────────────────
@@ -471,7 +496,7 @@ jobs:
           $version = "${{ steps.version.outputs.tag }}"
           $stagingDir = Join-Path $env:RUNNER_TEMP "Forgum-v$version"
           New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
-          
+
           # Copy module files
           Copy-Item -Path "./${{ env.MODULE_NAME }}.psd1" -Destination $stagingDir
           Copy-Item -Path "./${{ env.MODULE_NAME }}.psm1" -Destination $stagingDir
@@ -483,11 +508,11 @@ jobs:
           Copy-Item -Path "./install.ps1" -Destination $stagingDir
           Copy-Item -Path "./install.sh" -Destination $stagingDir
           Copy-Item -Path "./uninstall.ps1" -Destination $stagingDir
-          
+
           # Setup bin directory with compiled artifacts
           $binDir = Join-Path $stagingDir "bin"
           New-Item -ItemType Directory -Path $binDir -Force | Out-Null
-          
+
           # Copy artifacts
           Copy-Item -Path "bin_artifacts/forgum-core-x86_64-pc-windows-msvc/forgum-core.exe" -Destination "$binDir/forgum-core.exe" -ErrorAction Stop
           Copy-Item -Path "bin_artifacts/forgum-core-aarch64-pc-windows-msvc/forgum-core.exe" -Destination "$binDir/forgum-core-arm64.exe" -ErrorAction Stop
@@ -495,7 +520,7 @@ jobs:
           Copy-Item -Path "bin_artifacts/forgum-core-aarch64-unknown-linux-gnu/forgum-core" -Destination "$binDir/forgum-core-arm64" -ErrorAction Stop
           Copy-Item -Path "bin_artifacts/forgum-core-mac" -Destination "$binDir/forgum-core-mac" -ErrorAction Stop
           # Assume engine artifacts are built and copied appropriately.
-          
+
           if (-not ($IsWindows -or ($env:OS -eq 'Windows_NT'))) {
               & chmod +x "$binDir/forgum-core"
               & chmod +x "$binDir/forgum-core-arm64"

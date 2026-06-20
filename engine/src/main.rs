@@ -4,111 +4,197 @@ mod particles;
 mod color;
 mod protocol;
 mod effects;
+mod terminal;
+mod region;
+mod scheduler;
 
 use protocol::SceneConfig;
 use std::io::{self, Read, Write};
 use framebuffer::FrameBuffer;
+use region::{RegionAllocator, Rect};
 use effects::{Effect, AuroraEffect, EmberEffect, ShatterEffect, PlasmaEffect, LiquidChromeEffect, PortalEffect, GlitchEffect, NeonPulseEffect};
+use terminal::Terminal;
+use scheduler::Scheduler;
 use crossterm::{
-    terminal::{enable_raw_mode, disable_raw_mode, size},
-    execute, cursor, style, event::{self, Event, KeyCode},
+    cursor,
+    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    execute, queue, style,
 };
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use std::path::PathBuf;
 
-fn render_loop(config: SceneConfig) -> io::Result<()> {
-    let is_bg = config.background.unwrap_or(false);
-
-    if !is_bg {
-        enable_raw_mode()?;
-        execute!(io::stdout(), crossterm::terminal::EnterAlternateScreen, cursor::Hide)?;
-    } else {
-        execute!(io::stdout(), cursor::Hide)?;
-    }
-    let mut stdout = io::stdout();
-
-    let (cols, rows) = size()?;
-    let mut fb = FrameBuffer::new(cols as usize, rows as usize);
-
-    let mut effect: Box<dyn Effect> = match config.effect.as_str() {
-        "ember" => Box::new(EmberEffect::new(config.cow_text)),
-        "shatter" => Box::new(ShatterEffect::new(config.cow_text)),
-        "plasma" => Box::new(PlasmaEffect::new(config.cow_text)),
-        "liquid-chrome" => Box::new(LiquidChromeEffect::new(config.cow_text)),
-        "portal" => Box::new(PortalEffect::new(config.cow_text)),
-        "glitch" => Box::new(GlitchEffect::new(config.cow_text)),
-        "neon-pulse" => Box::new(NeonPulseEffect::new(config.cow_text)),
+fn create_effect(name: &str, cow_text: String) -> Box<dyn Effect> {
+    match name {
+        "ember" => Box::new(EmberEffect::new(cow_text)),
+        "shatter" => Box::new(ShatterEffect::new(cow_text)),
+        "plasma" => Box::new(PlasmaEffect::new(cow_text)),
+        "liquid-chrome" => Box::new(LiquidChromeEffect::new(cow_text)),
+        "portal" => Box::new(PortalEffect::new(cow_text)),
+        "glitch" => Box::new(GlitchEffect::new(cow_text)),
+        "neon-pulse" => Box::new(NeonPulseEffect::new(cow_text)),
         "random" => {
             use rand::seq::SliceRandom;
-            let effects = vec!["ember", "shatter", "plasma", "liquid-chrome", "portal", "glitch", "neon-pulse", "aurora"];
+            let effects = [
+                "ember", "shatter", "plasma", "liquid-chrome",
+                "portal", "glitch", "neon-pulse", "aurora",
+            ];
             let mut rng = rand::thread_rng();
-            match *effects.choose(&mut rng).unwrap_or(&"aurora") {
-                "ember" => Box::new(EmberEffect::new(config.cow_text)),
-                "shatter" => Box::new(ShatterEffect::new(config.cow_text)),
-                "plasma" => Box::new(PlasmaEffect::new(config.cow_text)),
-                "liquid-chrome" => Box::new(LiquidChromeEffect::new(config.cow_text)),
-                "portal" => Box::new(PortalEffect::new(config.cow_text)),
-                "glitch" => Box::new(GlitchEffect::new(config.cow_text)),
-                "neon-pulse" => Box::new(NeonPulseEffect::new(config.cow_text)),
-                _ => Box::new(AuroraEffect::new(config.cow_text)),
-            }
-        },
-        "aurora" | _ => Box::new(AuroraEffect::new(config.cow_text)),
-    };
+            let chosen = *effects.choose(&mut rng).unwrap_or(&"aurora");
+            create_effect(chosen, cow_text)
+        }
+        _ => Box::new(AuroraEffect::new(cow_text)),
+    }
+}
 
-    let target_fps = config.fps.unwrap_or(30);
-    let frame_duration = Duration::from_secs_f32(1.0 / target_fps as f32);
-    let max_frames = config.duration.unwrap_or(0); // 0 means infinite
-    
-    let mut last_frame = Instant::now();
-    let mut running = true;
-    let mut frame_count = 0;
+fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
+    let mut term = Terminal::detect();
+    let mut stdout = io::stdout();
 
-    while running {
-        let now = Instant::now();
-        let dt = now.duration_since(last_frame).as_secs_f32();
-        last_frame = now;
+    execute!(stdout, cursor::Hide)?;
 
-        if !is_bg {
-            if event::poll(Duration::from_millis(0))? {
-                if let Event::Key(k) = event::read()? {
-                    if k.code == KeyCode::Char('q') || k.code == KeyCode::Esc || k.code == KeyCode::Enter {
-                        running = false;
+    let (cols, rows) = crossterm::terminal::size()?;
+    let mut fb = FrameBuffer::new(cols as usize, rows as usize);
+    let mut effect = create_effect(&config.effect, config.cow_text);
+
+    let mut region_alloc = RegionAllocator::new(Rect::new(0, 0, cols, rows));
+    let ob = term.overlay_bounds();
+    let overlay_id = region_alloc.allocate(Rect::new(ob.0, ob.1, ob.2, ob.3), 100);
+
+    let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
+    let max_frames = config.duration.unwrap_or(0);
+    let mut frame_count: u32 = 0;
+
+    loop {
+        let dt = 0.016;
+
+        if event::poll(Duration::from_millis(0))? {
+            match event::read()? {
+                Event::Key(KeyEvent { code, modifiers, .. }) => {
+                    match code {
+                        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Enter => break,
+                        KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => break,
+                        _ => {}
                     }
+                }
+                Event::Resize(new_cols, new_rows) => {
+                    term.refresh_size();
+                    fb.resize(new_cols as usize, new_rows as usize);
+                    region_alloc.resize_canvas(Rect::new(0, 0, new_cols, new_rows));
+                    let nob = term.overlay_bounds();
+                    region_alloc.resize_region(overlay_id, Rect::new(nob.0, nob.1, nob.2, nob.3));
+                    effect.on_resize(new_cols as usize, new_rows as usize);
+                }
+                _ => {}
+            }
+        }
+
+        effect.update(dt);
+        fb.clear();
+
+        let clip = region_alloc.get(overlay_id)
+            .map(|r| r.bounds)
+            .unwrap_or(Rect::new(0, 0, cols, rows));
+        effect.render(&mut fb, clip);
+
+        fb.compute_damage();
+
+        if scheduler.should_render(fb.damage_count()) {
+            queue!(stdout, cursor::SavePosition)?;
+            let written = fb.render_region(&mut stdout, clip)?;
+            queue!(stdout, cursor::RestorePosition)?;
+            stdout.flush()?;
+            scheduler.adapt(written);
+        } else {
+            scheduler.adapt(0);
+        }
+
+        frame_count = frame_count.saturating_add(1);
+        if max_frames > 0 && frame_count >= max_frames {
+            break;
+        }
+
+        scheduler.wait_if_needed();
+    }
+
+    execute!(stdout, style::ResetColor, cursor::Show)?;
+    Ok(())
+}
+
+fn render_loop_background(config: SceneConfig) -> io::Result<()> {
+    let mut term = Terminal::detect();
+    let mut stdout = io::stdout();
+
+    // Background mode: DO NOT hide cursor, DO NOT enter raw mode
+    // Shell prompt remains fully usable
+
+    let (cols, rows) = crossterm::terminal::size()?;
+    let mut fb = FrameBuffer::new(cols as usize, rows as usize);
+    let mut effect = create_effect(&config.effect, config.cow_text);
+
+    let mut region_alloc = RegionAllocator::new(Rect::new(0, 0, cols, rows));
+
+    // Calculate overlay region: top N rows, staying above prompt
+    let overlay_height = config.overlay_height.unwrap_or(10) as u16;
+    let ob_y1 = overlay_height.min(rows.saturating_sub(3));
+    let overlay_id = region_alloc.allocate(Rect::new(0, 0, cols, ob_y1), 100);
+
+    let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
+    let max_frames = config.duration.unwrap_or(0);
+    let mut frame_count: u32 = 0;
+
+    loop {
+        let dt = 0.016;
+
+        // Non-blocking: just check for quit keys
+        if event::poll(Duration::from_millis(0))? {
+            if let Event::Key(k) = event::read()? {
+                match k.code {
+                    KeyCode::Char('q') | KeyCode::Esc | KeyCode::Enter => break,
+                    KeyCode::Char('c') if k.modifiers.contains(KeyModifiers::CONTROL) => break,
+                    _ => {}
                 }
             }
         }
 
         effect.update(dt);
         fb.clear();
-        effect.render(&mut fb);
-        
-        if is_bg {
-            crossterm::queue!(stdout, crossterm::cursor::SavePosition)?;
-        }
-        fb.render(&mut stdout)?;
-        if is_bg {
-            crossterm::queue!(stdout, crossterm::cursor::RestorePosition)?;
+
+        let clip = region_alloc.get(overlay_id)
+            .map(|r| r.bounds)
+            .unwrap_or(Rect::new(0, 0, cols, ob_y1));
+        effect.render(&mut fb, clip);
+
+        fb.compute_damage();
+
+        if scheduler.should_render(fb.damage_count()) {
+            // Save cursor -> render overlay -> restore cursor
+            // This keeps the prompt/typing intact
+            queue!(stdout, cursor::SavePosition)?;
+            let written = fb.render_region(&mut stdout, clip)?;
+            queue!(stdout, cursor::RestorePosition)?;
             stdout.flush()?;
+            scheduler.adapt(written);
+        } else {
+            scheduler.adapt(0);
         }
 
-        frame_count += 1;
+        frame_count = frame_count.saturating_add(1);
         if max_frames > 0 && frame_count >= max_frames {
-            running = false;
+            break;
         }
 
-        let elapsed = now.elapsed();
-        if elapsed < frame_duration {
-            std::thread::sleep(frame_duration - elapsed);
-        }
+        scheduler.wait_if_needed();
     }
 
-    if !is_bg {
-        execute!(stdout, style::ResetColor, cursor::Show, crossterm::terminal::LeaveAlternateScreen)?;
-        disable_raw_mode()?;
-    } else {
-        execute!(stdout, style::ResetColor, cursor::Show)?;
+    // Clean up: clear the overlay region so prompt is clean
+    queue!(stdout, cursor::SavePosition)?;
+    for y in 0..ob_y1 {
+        queue!(stdout, cursor::MoveTo(0, y))?;
+        queue!(stdout, style::Print(" ".repeat(cols as usize)))?;
     }
+    queue!(stdout, cursor::RestorePosition)?;
+    execute!(stdout, style::ResetColor)?;
+
     Ok(())
 }
 
@@ -135,7 +221,7 @@ fn get_config_path() -> PathBuf {
 fn handle_init(shell: &str) {
     let config_path = get_config_path();
     let config_path_str = config_path.to_string_lossy().replace("\\", "\\\\");
-    
+
     let hook = match shell {
         "bash" | "zsh" => format!(r#"
 forgum() {{
@@ -147,8 +233,6 @@ forgum() {{
             effect="$parsed"
         fi
     fi
-    # Need to escape newlines for JSON properly in shell if needed, but cowsay output is multiline
-    # A simple wrapper that replaces newlines with \n for JSON
     local cow="$(cowsay "$@")"
     local json_cow="${{cow//$'\n'/\\n}}"
     json_cow="${{json_cow//\"/\\\"}}"
@@ -166,7 +250,6 @@ function forgum
         end
     end
     set cow (cowsay $argv | string collect)
-    # Basic JSON string escaping for fish
     set json_cow (string replace -a '\n' '\\n' "$cow")
     set json_cow (string replace -a '"' '\"' "$json_cow")
     echo "{{\"effect\":\"$effect\",\"cow_text\":\"$json_cow\",\"background\":true,\"duration\":150}}" | forgum-engine
@@ -192,24 +275,37 @@ function Invoke-ForgumEngine {{
     }}
 }}
 "#, config_path_str),
-        _ => "echo 'Unsupported shell'".to_string(),
+        _ => "echo 'Unsupported shell. Use bash, zsh, fish, or pwsh.'".to_string(),
     };
     println!("{}", hook);
 }
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
+
+    // Handle init subcommand
     if args.len() > 1 && args[1] == "init" {
         let shell = if args.len() > 2 { &args[2] } else { "bash" };
         handle_init(shell);
         return Ok(());
     }
 
+    // Handle help
+    if args.len() > 1 && (args[1] == "--help" || args[1] == "-h") {
+        println!("forgum-engine v{}", env!("CARGO_PKG_VERSION"));
+        println!("Usage: forgum-engine [--daemon] [--help]");
+        println!("  Reads JSON config from stdin and renders animation.");
+        println!("  --daemon    Run as background daemon");
+        println!("  init <shell>  Generate shell hooks for <shell>");
+        return Ok(());
+    }
+
+    // Read JSON config from stdin
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer)?;
-    
+
     if buffer.trim().is_empty() {
-        eprintln!("No input provided");
+        eprintln!("No input provided. Pipe JSON config to stdin.");
         return Ok(());
     }
 
@@ -224,6 +320,7 @@ fn main() -> io::Result<()> {
     let is_bg = config.background.unwrap_or(false);
     let is_daemon = args.iter().any(|a| a == "--daemon");
 
+    // Daemon mode: spawn detached process
     if is_bg && !is_daemon {
         use std::process::{Command, Stdio};
         let current_exe = std::env::current_exe()?;
@@ -240,7 +337,12 @@ fn main() -> io::Result<()> {
         return Ok(());
     }
 
-    render_loop(config)?;
+    // Render: background uses overlay, foreground uses full screen
+    if is_bg {
+        render_loop_background(config)?;
+    } else {
+        render_loop_foreground(config)?;
+    }
 
     Ok(())
 }

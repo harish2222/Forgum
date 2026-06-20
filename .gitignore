@@ -59,8 +59,19 @@ installer/dist/
 tmp/
 installer/dist/
 
-# Agent debug scripts
+# Agent debug / state (do not commit)
 .agent/
+
+# Agent planning/result artifacts (do not commit)
+plaan.md
+TODO.md
+AGENT_PLAN*
+AGENT_RESULT*
+agent-plan*
+agent-result*
+memory_store*
+memory_search*
+memory_search_unified*
 
 # Superpowers docs
 docs/superpowers/
@@ -68,7 +79,18 @@ docs/superpowers/
 # Test report (generated, not source)
 TEST_REPORT.md
 o b s i d i a n - v a u l t /  
- 
+.claude
+.gemini
+Claude.md
+Agent.md
+.agent
+.agents
+.swarms
+.plans
+.claude-flow
+.swarm 
+
+
 obsidian-vault/
 src-rust/target/
 engine/target/

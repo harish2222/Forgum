@@ -55,41 +55,53 @@ Import-Module ./Forgum/Forgum.psd1 -Force
 
 # Run tests
 Import-Module Pester
-Invoke-Pester -Path ./Tests/Forgum.Tests.ps1
+Invoke-Pester -Path ./Tests/CLI.Tests.ps1
 ```
 
 ### Project Structure
 
 ```
 Forgum/
-├── Forgum.psd1          # Module manifest
-├── Forgum.psm1          # Module entry point
-├── Public/                      # Exported functions
-│   ├── forgum.ps1
-│   ├── forgum.ps1
-│   ├── Get-Fortune.ps1
-│   ├── Get-CFCow.ps1
+├── Forgum.psd1              # Module manifest
+├── Forgum.psm1              # Module entry point
+├── Public/                  # Exported functions
+│   └── forgum.ps1           # Unified CLI router
+├── Private/                 # Internal functions
+│   ├── Get-HelpMessage.ps1
+│   ├── Parse-ForgumArguments.ps1
+│   ├── CrossPlatform.ps1
+│   ├── Get-ConfigPath.ps1
 │   ├── Get-CFConfig.ps1
 │   ├── Set-CFConfig.ps1
-│   └── Show-CFAnimation.ps1
-├── Private/                     # Internal functions
-│   ├── Get-ConfigPath.ps1
-│   ├── Read-CowFile.ps1
-│   ├── Read-FortuneFile.ps1
+│   ├── Get-CFCow.ps1
+│   ├── Get-Fortune.ps1
+│   ├── Invoke-Cowsay.ps1
+│   ├── Show-CFAnimation.ps1
+│   ├── Set-Forgum.ps1
 │   ├── Format-CowMessage.ps1
 │   ├── Format-Lolcat.ps1
+│   ├── Get-EngineBinary.ps1
+│   ├── Get-ForgumShellHook.ps1
+│   ├── Subcommands/
+│   │   ├── Invoke-ForgumRun.ps1
+│   │   └── Invoke-ForgumConfig.ps1
 │   └── Animation/
 │       ├── Static.ps1
 │       ├── Talking.ps1
-│       └── Typewriter.ps1
+│       ├── Typewriter.ps1
+│       ├── Dynamic.ps1
+│       ├── PhysicsCow.ps1
+│       └── Invoke-Engine.ps1
+├── engine/                  # Rust binary source (forgum-engine)
+├── bin/                     # Compiled engine binaries
 ├── Data/
-│   ├── Cows/                    # 107 .cow files
-│   ├── Fortunes/                # Fortune database
-│   └── Templates/               # Default config
-├── Tests/                       # Pester tests
-├── install.ps1                  # PowerShell installer
-├── install.sh                   # Bash installer
-└── uninstall.ps1                # Uninstaller
+│   ├── Cows/                # 107 .cow files
+│   ├── Fortunes/            # Fortune database
+│   └── Templates/           # Default config
+├── Tests/                   # Pester tests
+├── install.ps1              # PowerShell installer
+├── install.sh               # Bash installer
+└── uninstall.ps1            # Uninstaller
 ```
 
 ## How to Contribute
@@ -152,7 +164,6 @@ function Get-Fortune {
 - Use `StringBuilder` for string concatenation in loops
 - Cache expensive operations (file reads, config loads)
 - Use `List[T]` instead of array `+=` in loops
-- Avoid `Write-Host` in functions (use `return` instead)
 
 ### Security Guidelines
 
@@ -167,14 +178,30 @@ function Get-Fortune {
 
 ```powershell
 # Run all tests
-Invoke-Pester -Path ./Tests/Forgum.Tests.ps1
+Invoke-Pester -Path ./Tests/
+
+# Run CLI tests (unified CLI routing)
+Invoke-Pester -Path ./Tests/CLI.Tests.ps1              # 31 tests
+
+# Run engine tests (Rust engine integration)
+Invoke-Pester -Path ./Tests/Engine.Tests.ps1            # 14 tests
+
+# Run cross-platform tests
+Invoke-Pester -Path ./Tests/CrossPlatform.Tests.ps1     # 14 tests
+
+# Run core feature tests
+Invoke-Pester -Path ./Tests/Forgum.Tests.ps1            # 40 tests
 
 # Run with detailed output
-Invoke-Pester -Path ./Tests/Forgum.Tests.ps1 -Verbose
+Invoke-Pester -Path ./Tests/CLI.Tests.ps1 -Verbose
 
 # Run specific test
-Invoke-Pester -Path ./Tests/Forgum.Tests.ps1 -TestName "renders cow with message"
+Invoke-Pester -Path ./Tests/CLI.Tests.ps1 -TestName "renders cow with message"
 ```
+
+**Notes:**
+- All private function tests must use `InModuleScope Forgum { }` wrapper to access internal functions.
+- Cow output goes to the Information stream (stream 6). Capture it with `6>&1`.
 
 ### Writing Tests
 
@@ -437,3 +464,15 @@ By contributing, you agree that your contributions will be licensed under the MI
 ## Questions?
 
 Open an issue or start a discussion on GitHub.
+
+---
+
+## Agentic Model Coding Guidelines (for automated agents)
+
+This repository also contains agent-facing instruction files (e.g., `CLAUDE.md`). If you are an automated coding agent:
+
+- Read the relevant source/doc files before editing (no blind changes).
+- Prefer editing existing files over creating new ones.
+- Do not add secrets/credentials or environment-specific `.env` files.
+- Keep changes focused; run the test suite after code edits.
+- Avoid writing generated artifacts into repo roots; place new scripts/docs under appropriate directories (e.g., `/scripts`, `/docs`).

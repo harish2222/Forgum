@@ -5,7 +5,6 @@ function Invoke-Cowsay {
     .DESCRIPTION
         Renders an ASCII cow with a speech balloon containing the message.
         Supports custom cow files, eyes, tongue, and thinking mode.
-        Optionally applies rainbow lolcat colorization.
     .PARAMETER Text
         The message for the cow to say.
     .PARAMETER CowFile
@@ -16,12 +15,12 @@ function Invoke-Cowsay {
         Two-character tongue string (default: '  ').
     .PARAMETER Thoughts
         Character for the thought bubble connector (default: '\').
-    .PARAMETER Lolcat
-        Enable rainbow lolcat colorization for this invocation.
     .EXAMPLE
         Invoke-Cowsay -Text "Hello World"
     .EXAMPLE
-        Invoke-Cowsay -Text "Hello World" -Lolcat
+        Invoke-Cowsay -Text "Thinking..." -Thoughts 'o'
+    .EXAMPLE
+        Invoke-Cowsay -Text "Tux says hi" -CowFile 'tux'
     #>
     [CmdletBinding()]
     [OutputType([string])]
@@ -33,20 +32,19 @@ function Invoke-Cowsay {
         [ValidateNotNullOrEmpty()]
         [string]$CowFile = 'default',
 
-        [ValidateNotNullOrEmpty()]
-        [ValidateLength(2,2)]
         [string]$Eyes = 'oo',
 
-        [ValidateLength(2,2)]
         [string]$Tongue = '  ',
 
-        [string]$Thoughts = '\',
-
-        [switch]$Lolcat
+        [string]$Thoughts = '\'
     )
 
     process {
         $config = Get-CFConfig
+
+        # Validate eyes/tongue: enforce 2-char requirement manually
+        if ($Eyes.Length -ne 2) { $Eyes = 'oo' }
+        if ($Tongue.Length -ne 2) { $Tongue = '  ' }
 
         # Resolve random cow if configured
         if ($config.cow.random) {
@@ -72,9 +70,15 @@ function Invoke-Cowsay {
                 if (-not $PSBoundParameters.ContainsKey('Eyes'))   { $Eyes   = $modes[$config.cow.mode].eyes }
                 if (-not $PSBoundParameters.ContainsKey('Tongue')) { $Tongue = $modes[$config.cow.mode].tongue }
             }
-        } else {
-            if (-not $PSBoundParameters.ContainsKey('Eyes'))   { $Eyes   = if ($config.cow.eyes)   { $config.cow.eyes }   else { 'oo' } }
-            if (-not $PSBoundParameters.ContainsKey('Tongue')) { $Tongue = if ($config.cow.tongue) { $config.cow.tongue } else { '  ' } }
+        }
+        else {
+        # Only use config eyes/tongue if not explicitly provided via parameter
+        if (-not $PSBoundParameters.ContainsKey('Eyes')) {
+            $Eyes = if ($config.cow.eyes -and $config.cow.eyes.Length -eq 2) { $config.cow.eyes } else { 'oo' }
+        }
+        if (-not $PSBoundParameters.ContainsKey('Tongue')) {
+            $Tongue = if ($config.cow.tongue -and $config.cow.tongue.Length -eq 2) { $config.cow.tongue } else { '  ' }
+        }
         }
 
         # Build the cow template with variable substitutions
@@ -102,31 +106,14 @@ function Invoke-Cowsay {
                     $replaced = $replaced -replace '\$eye', $Eyes[1]
                     $newLines.Add($replaced)
                     $eyeReplaced = $true
-                } else {
+                }
+                else {
                     $newLines.Add($line)
                 }
             }
             $result = $newLines -join "`n"
         }
 
-        $output = "$message`n$result"
-
-        # Apply lolcat if explicitly requested via -Lolcat switch
-        if ($Lolcat) {
-            $lolcatParams = @{
-                Text      = $output
-                Frequency = $config.lolcat.frequency
-                Spread    = if ($config.lolcat.spread) { $config.lolcat.spread } else { 3.0 }
-                Seed      = if ($config.lolcat.seed) { $config.lolcat.seed } else { 0 }
-                Truecolor = $config.lolcat.truecolor
-                Invert    = $config.lolcat.invert
-                Animate   = $config.lolcat.animate
-                Duration  = if ($config.lolcat.duration) { $config.lolcat.duration } else { 12 }
-                Speed     = if ($config.lolcat.speed) { $config.lolcat.speed } else { 20.0 }
-            }
-            $output = Format-Lolcat @lolcatParams
-        }
-
-        return $output
+        return "$message`n$result"
     }
 }

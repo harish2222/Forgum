@@ -381,6 +381,60 @@ set -g status-right "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorActi
 set -g status-interval 300
 ```
 
+## Tab Completion (Bash & Zsh)
+
+This completion is for the **`forgum` PowerShell wrapper** as described in this document. If you use a different wrapper function name in your shell config, adjust accordingly.
+
+This repo includes completion scripts under `scripts/completions/`.
+
+### Bash
+1. Ensure you have bash-completion installed (commonly):
+   
+```bash
+   sudo apt-get install bash-completion
+   
+```
+2. Copy the file:
+   
+```bash
+   mkdir -p ~/.local/share/bash-completion/completions
+   cp scripts/completions/forgum.bash ~/.local/share/bash-completion/completions/forgum
+   
+```
+3. Reload your shell:
+   
+```bash
+   source ~/.bashrc
+   ```
+
+Optional: Forgum typo / command-not-found hint (conservative)
+```bash
+source scripts/completions/forgum-command-not-found-bash.sh
+```
+
+### Zsh
+1. Copy the completion function:
+   
+```bash
+   mkdir -p ~/.zsh/completions
+   cp scripts/completions/_forgum ~/.zsh/completions/_forgum
+   
+```
+2. Ensure `compinit` is enabled in your `.zshrc`, then reload:
+   
+```zsh
+   autoload -Uz compinit && compinit
+   ```
+
+Optional: Forgum typo / command-not-found hint
+```zsh
+source scripts/completions/forgum-command-not-found-zsh.sh
+```
+
+Completion covers:
+- Subcommands: `update upgrade config tui setup gallery preview toggle animate eyes help`
+- Common args: `-Lolcat -Cow -CowFile -Count -PreviewCow -PreviewText -Mode -Preset -CustomEyes -Force -CheckOnly -Background`
+
 ## What Each Command Does
 
 | Command | What It Does |

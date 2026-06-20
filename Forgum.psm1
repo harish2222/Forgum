@@ -11,7 +11,11 @@ $_ForgumOnRemove = {
     $ErrorActionPreference = $script:_ForgumPreviousErrorActionPreference
     $ProgressPreference   = $script:_ForgumPreviousProgressPreference
 }
-$ExecutionContext.SessionState.Module.OnRemove += $_ForgumOnRemove
+# Guard against duplicate module import bookkeeping (prevents accumulating OnRemove handlers)
+if (-not $script:__ForgumOnRemoveRegistered) {
+    $script:__ForgumOnRemoveRegistered = $true
+    $ExecutionContext.SessionState.Module.OnRemove += $_ForgumOnRemove
+}
 
 # Enable Virtual Terminal Processing for truecolor ANSI support on Windows.
 # Lazy: only set VT mode when both stdout and stderr go to a real console. Skipping
@@ -70,13 +74,12 @@ Get-ChildItem -Path $publicPath -Filter '*.ps1' -Recurse -ErrorAction SilentlyCo
         catch { Write-Warning "Forgum: Failed to load $($_.FullName): $_" }
     }
 
-# Define command aliases
-Set-Alias -Name cowgallery    -Value Show-CFCowGallery   -Scope Script -ErrorAction SilentlyContinue
-Set-Alias -Name cowpreview    -Value Show-CFCowPreview   -Scope Script -ErrorAction SilentlyContinue
-Set-Alias -Name cowconfig     -Value Show-CFConfig       -Scope Script -ErrorAction SilentlyContinue
-Set-Alias -Name lolcat-toggle -Value Toggle-CFLolcat     -Scope Script -ErrorAction SilentlyContinue
-Set-Alias -Name cow-animate   -Value Set-CFCowAnimate    -Scope Script -ErrorAction SilentlyContinue
-Set-Alias -Name cow-eyes      -Value Set-CFCowEyes       -Scope Script -ErrorAction SilentlyContinue
+# Module version
+$script:ModuleVersion = '2.0.0'
+
+# Define command aliases (legacy compat — aliased to forgum subcommands)
+Set-Alias -Name forgum-show   -Value forgum -Scope Script -ErrorAction SilentlyContinue
+Set-Alias -Name forgum-setup  -Value forgum -Scope Script -ErrorAction SilentlyContinue
 
 # Module-scoped cache for performance
 $script:CowFileCache = @{}
@@ -119,7 +122,7 @@ if ($env:FORGUM_NOAUTOSTART -ne '1' -and
         try {
             # Update check
             $realConfig = Get-CFConfig
-            $configDir = Split-Path (Get-CFConfigPath) -Parent
+            $configDir = Split-Path (Get-ConfigPath) -Parent
             $flagPath = Join-Path $configDir ".update_available"
 
             if (Test-Path $flagPath) {
@@ -166,12 +169,108 @@ if ($env:FORGUM_NOAUTOSTART -ne '1' -and
     }
 }
 
-# Register tab completion for Invoke-Cowsay
-if (Get-Command Register-ArgumentCompleter -ErrorAction SilentlyContinue) {
+# Register tab completion (PowerShell 5.1+)
+# Note: Register-ArgumentCompleter is available in PS 5.0+ but arg completion behavior
+# differs between PSReadLine versions. This guard keeps module import safe in PS where
+# the cmdlet is missing.
+if (-not $script:__ForgumCompletionRegistered -and (Get-Command Register-ArgumentCompleter -ErrorAction SilentlyContinue)) {
+    $script:__ForgumCompletionRegistered = $true
+
+    $subCommands = @(
+        'update','upgrade','config','tui','setup',
+        'gallery','preview','toggle','animate','eyes',
+        'help'
+    )
+
+    # --- Invoke-Cowsay completion (existing) ---
     Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -ScriptBlock {
         param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
         Get-CFCow | Where-Object { $_ -like "*$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
     }
+
+    # --- forgum Action completion (subcommands + help) ---
+    Register-ArgumentCompleter -CommandName forgum -ParameterName Action -ScriptBlock {
+        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+        $candidates = @($subCommands)
+        if ('help' -like "*$wordToComplete*") { $candidates += 'help' }
+
+        $candidates |
+            Where-Object { $_ -like "*$wordToComplete*" } |
+            ForEach-Object {
+                [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+            }
+    }
+
+    # --- forgum cow argument completion (Cow/CowFile/PreviewCow) ---
+    $cowNameCompleter = {
+        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+        Get-CFCow |
+            Where-Object { $_ -like "*$wordToComplete*" } |
+            ForEach-Object {
+                [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+            }
+    }
+
+    Register-ArgumentCompleter -CommandName forgum -ParameterName Cow -ScriptBlock $cowNameCompleter
+    Register-ArgumentCompleter -CommandName forgum -ParameterName CowFile -ScriptBlock $cowNameCompleter
+    Register-ArgumentCompleter -CommandName forgum -ParameterName PreviewCow -ScriptBlock $cowNameCompleter
+
+    # --- forgum eyes preset completion (best-effort) ---
+    Register-ArgumentCompleter -CommandName forgum -ParameterName Preset -ScriptBlock {
+        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+        try {
+            $config = Get-CFConfig
+            # If config defines a cow.eyes map, complete its keys; otherwise fall back to common presets.
+            $eyePresets =
+                if ($config -and $config.cow -and $config.cow.eyes -and ($config.cow.eyes -is [hashtable] -or $config.cow.eyes -is [System.Collections.IDictionary])) {
+                    @($config.cow.eyes.Keys)
+                } else {
+                    @('oo','borg','dead','xx')
+                }
+
+            $eyePresets |
+                Where-Object { $_ -like "*$wordToComplete*" } |
+                ForEach-Object {
+                    [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+                }
+        } catch {
+            # Fallback
+            @('oo','borg','dead','xx') |
+                Where-Object { $_ -like "*$wordToComplete*" } |
+                ForEach-Object {
+                    [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+                }
+        }
+    }
+
+    # --- forgum animate mode completion (best-effort from config) ---
+    Register-ArgumentCompleter -CommandName forgum -ParameterName Mode -ScriptBlock {
+        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+        try {
+            $config = Get-CFConfig
+            $modes = @()
+            if ($config -and $config.animation -and $config.animation.modes) {
+                $modes = @($config.animation.modes)
+            }
+            if (-not $modes -or $modes.Count -eq 0) {
+                $modes = @('static','talking','physics','typewriter','slide-in','bounce','dissolve','fade-in','blink','wiggle','wave','disco')
+            }
+            $modes |
+                Where-Object { $_ -like "*$wordToComplete*" } |
+                ForEach-Object {
+                    [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+                }
+        } catch {
+            @('static','talking','physics','typewriter','slide-in','bounce','dissolve','fade-in','blink','wiggle','wave','disco') |
+                Where-Object { $_ -like "*$wordToComplete*" } |
+                ForEach-Object {
+                    [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+                }
+        }
+    }
 }
+
+Export-ModuleMember -Function forgum -Alias forgum-show, forgum-setup

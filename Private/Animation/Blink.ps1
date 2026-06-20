@@ -1,4 +1,4 @@
-function Invoke-BlinkAnimation {
+function Forgum-Blink-Animation {
     <#
     .SYNOPSIS
         Cow eyes blink periodically while displaying.

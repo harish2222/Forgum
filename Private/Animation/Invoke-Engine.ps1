@@ -4,12 +4,12 @@ function Invoke-Engine {
         [Parameter(Mandatory=$true)]
         [AllowEmptyString()]
         [string]$Message,
-        
+
         [Parameter(Mandatory=$false)]
         $CowTemplate = @(),
-        
+
         [string]$Effect = 'plasma',
-        
+
         [int]$Fps = 30,
 
         [int]$Duration = 0,
@@ -17,13 +17,10 @@ function Invoke-Engine {
         [switch]$Background
     )
 
-    # 1. Resolve binary path
-    $enginePath = Join-Path $PSScriptRoot "..\..\bin\forgum-engine.exe"
-    if ($IsLinux -or $IsMacOS) {
-        $enginePath = Join-Path $PSScriptRoot "../../bin/forgum-engine"
-    }
+    # 1. Resolve binary path using cross-platform helper
+    $enginePath = Get-EngineBinary
 
-    if (-not (Test-Path $enginePath)) {
+    if (-not $enginePath) {
         Write-Verbose "forgum-engine not found. Falling back to PowerShell native physics."
         return $false
     }
@@ -32,12 +29,11 @@ function Invoke-Engine {
     $lines = $Message -split "`r?`n"
     $bubble = @()
     $sprite = @()
-    
+
     $inBubble = $true
     foreach ($line in $lines) {
         if ($inBubble) {
             $bubble += $line
-            # End of bubble logic... usually bottom of the bubble string
             if ($line -match "---" -or $line -match "===") {
                 $inBubble = $false
             }
@@ -47,7 +43,7 @@ function Invoke-Engine {
             }
         }
     }
-    
+
     if ($sprite.Count -eq 0) {
         $sprite = $CowTemplate
     }
@@ -60,10 +56,10 @@ function Invoke-Engine {
     $fullText += ($CowTemplate -join "`n")
 
     $scene = @{
-        effect = $Effect
-        cow_text = $fullText
-        fps = $Fps
-        duration = $Duration
+        effect     = $Effect
+        cow_text   = $fullText
+        fps        = $Fps
+        duration   = $Duration
         background = $Background.IsPresent
     }
 
@@ -72,9 +68,15 @@ function Invoke-Engine {
     # 4. Pipe to engine
     try {
         if ($Background) {
-            $tmp = New-TemporaryFile
-            $json | Out-File -FilePath $tmp.FullName -Encoding utf8
-            Start-Process -FilePath $enginePath -RedirectStandardInput $tmp.FullName -NoNewWindow
+            $proc = [System.Diagnostics.Process]::new()
+            $proc.StartInfo.FileName = $enginePath
+            $proc.StartInfo.Arguments = '--daemon'
+            $proc.StartInfo.RedirectStandardInput = $true
+            $proc.StartInfo.UseShellExecute = $false
+            $proc.StartInfo.CreateNoWindow = $true
+            $proc.Start()
+            $proc.StandardInput.Write($json)
+            $proc.StandardInput.Close()
             return $true
         } else {
             $json | & $enginePath

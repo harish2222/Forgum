@@ -1,6 +1,6 @@
 @{
     RootModule        = 'Forgum.psm1'
-    ModuleVersion     = '1.1.2'
+    ModuleVersion     = '2.0.0'
     GUID              = 'f7e6b3a1-2d84-4c9f-a5e0-1b3d7c8f9e2a'
     Author            = 'HKDEVS'
     CompanyName       = 'HKDEVS'
@@ -13,7 +13,7 @@
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()
-    AliasesToExport    = @()
+    AliasesToExport    = @('forgum-show', 'forgum-setup')
     PrivateData       = @{
         PSData = @{
             Tags         = @('cowsay', 'fortune', 'lolcat', 'ascii', 'fun', 'cross-platform', 'terminal')
@@ -21,19 +21,18 @@
             ProjectUri   = 'https://github.com/harish2222/Forgum'
             IconUri      = 'https://raw.githubusercontent.com/harish2222/Forgum/main/icon.png'
             ReleaseNotes = @'
-## v1.1.0
-- Feature: `Invoke-ForgumLive` now exposes a `-RunOnce` semantics via the `--once` profile path for single-cycle, non-blocking showcase runs
-- Feature: `Invoke-LiveShow` returns structured `{ Status, LastLineCount }` so callers can resume cleanly after user interrupts
-- Feature: `Update-Forgum` adds `Accept` and `User-Agent` GitHub API headers and tolerates pre-release SemVer tags
-- Feature: `Invoke-ForgumSetup` forwards `-NonInteractive`, `-Force`, and `-NoProfile` through to `setup.ps1`
-- Fix: `Get-ConfigPath` explicitly detects PS7 vs Windows PowerShell 5.1 on Linux/macOS so config files land in the right place
-- Fix: `Set-Forgum -Animation` `ValidateSet` now includes `dynamic`
-- Fix: `[Console]::KeyAvailable` / `CursorVisible` / `IsOutputRedirected` calls are wrapped in try/catch so redirected input no longer throws
-- Fix: `Format-Lolcat` CSI passthrough now handles ECMA-48 colon sub-parameters (e.g. `\e[38:2::R:G:Bm`)
-- Fix: `Format-Lolcat` truecolor detection falls back to `$env:WT_SESSION` and `xterm-256color` `$env:TERM`
-- Fix: `Write-TerminalFrame` combines clear-line + content into a single `Write-Host` call to remove flicker
-- Fix: `Invoke-DynamicAnimation` adds keypress early-exit, `Duration = 0` short-circuit, and proper cursor positioning for in-place frame redraw
-- Hardening: `Update-Forgum` now downloads the release zipball and copies module files in place instead of running the full installer (no more $PROFILE overwrite on update)
+## v2.0.0
+- Feature: Unified CLI — single `forgum` command with subcommands: run, config, gallery, preview, update, toggle, animate, eyes, init, live, daemon, help
+- Feature: `forgum init <shell>` generates native shell hooks for bash, zsh, fish, and PowerShell
+- Feature: `forgum help [command]` provides comprehensive help for every command and argument
+- Feature: Rust engine background rendering — animations run independently while shell stays usable
+- Feature: Cross-platform native shell hooks via Get-ForgumShellHook
+- Breaking: Module exports only `forgum` — all other functions are now Private
+- Fix: All subcommand help returns via pipeline (not Write-Host) for testability
+- Fix: forgum.ps1 switch routing for PowerShell dash-stripped params
+- Fix: Invoke-Cowsay validation rejects empty config values gracefully
+- Fix: Get-ForgumShellHook single-quoted templates avoid PowerShell subexpression interpretation
+- Test: 130/130 tests passing across 8 test files
 
 ## v1.0.9
 - UX: Implemented "Clean Profile" region-based modification for PowerShell profiles

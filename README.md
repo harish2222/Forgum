@@ -7,10 +7,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-1.1.2-blue?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/harish2222/Forgum/releases"><img src="https://img.shields.io/badge/version-2.0.0-blue?style=for-the-badge" alt="Version"></a>
   <a href="https://github.com/harish2222/Forgum"><img src="https://img.shields.io/badge/powershell-5.1+-blueviolet?style=for-the-badge&logo=powershell&logoColor=white" alt="PowerShell"></a>
   <a href="https://github.com/harish2222/Forgum/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License"></a>
-  <a href="https://github.com/harish2222/Forgum/actions"><img src="https://img.shields.io/badge/tests-102%20passing-brightgreen?style=for-the-badge" alt="Tests"></a>
+  <a href="https://github.com/harish2222/Forgum/actions"><img src="https://img.shields.io/badge/tests-130%20passing-brightgreen?style=for-the-badge" alt="Tests"></a>
   <a href="#-meet-the-cows"><img src="https://img.shields.io/badge/cows-106-orange?style=for-the-badge" alt="Cows"></a>
   <a href="#-rainbow"><img src="https://img.shields.io/badge/rainbow-lolcat-pink?style=for-the-badge" alt="Lolcat"></a>
 </p>
@@ -109,8 +109,11 @@ Forgum comes packed with **106 unique characters**. Whether you want a friendly 
 
 - **106 ASCII Cows**: A massive library of characters.
 - **Truecolor Rainbow**: 24-bit color support for stunning visuals.
-- **19 Animation Modes**: From legacy "bounce" to flagship Rust-powered "aurora", "plasma", and "neon-pulse" with React-inspired mathematical blending.
+- **17 Animation Modes**: From legacy "bounce" to flagship Rust-powered "aurora", "plasma", and "neon-pulse" with React-inspired mathematical blending.
 - **Lightning Fast Engine**: A differential ANSI framebuffer renderer built in Rust, integrated seamlessly via PowerShell.
+- **Rust Engine Background Rendering**: Animations run independently while shell stays usable.
+- **Unified CLI**: Single `forgum` command with subcommands: run, config, gallery, preview, update, toggle, animate, eyes, init, live, daemon, help.
+- **Native Shell Hooks**: bash/zsh/fish shell integration via `forgum init <shell>`.
 - **Cross-Shell Support**: Works in PowerShell, Bash, Zsh, Fish, and tmux.
 - **Highly Configurable**: Control everything from word-wrap to eye style.
 
@@ -178,9 +181,21 @@ forgum animate <mode>
 
 # Change eyes globally
 forgum eyes <preset|custom>
+
+# Generate shell integration hooks
+forgum init <shell>
+
+# Live show mode
+forgum live
+
+# Background engine daemon
+forgum daemon
+
+# Show help for any command
+forgum help [command]
 ```
 
-> **Note:** For script authors, low-level cmdlets like `forgum`, `Get-Fortune`, and `Show-CFAnimation` remain fully available and supported. Run `Get-Help forgum -Detailed` for the complete API breakdown.
+> **Note:** Run `forgum help` for the complete command reference.
 
 **Available Flagship Modes:** `aurora`, `plasma`, `ember`, `liquid-chrome`, `shatter`, `portal`, `glitch`, `neon-pulse`
 **Available Legacy Modes:** `static`, `talking`, `typewriter`, `dynamic`, `procedural`, `physics` (and variants)
@@ -224,19 +239,21 @@ You can customize Forgum by editing its configuration file. Run `Get-CFConfig` t
 | `static` | Instant display (default, recommended for startup) |
 | `talking` | Simulates mouth movement |
 | `typewriter` | Types character by character |
-| `slide-in` | Cow slides in from the left, column by column |
-| `bounce` | Cow drops in with realistic bounce physics |
-| `dissolve` | Cow materializes character by character randomly |
-| `fade-in` | Cow fades in line by line with brightness |
-| `blink` | Cow eyes blink periodically |
-| `wiggle` | Cow wiggles left and right playfully |
-| `wave` | Fortune text appears word by word with rainbow |
-| `disco` | Cow cycles through rainbow colors (party mode) |
+| `dynamic` | Dynamic procedural animation |
+| `procedural` | Algorithmic animation patterns |
 | `physics` | Procedural personality-driven animations (Breathe, Float, Glitch, etc.) based on the Cow Animation Manifesto |
+| `aurora` | Flagship Rust-powered aurora animation |
+| `ember` | Flagship Rust-powered ember animation |
+| `shatter` | Flagship Rust-powered shatter animation |
+| `plasma` | Flagship Rust-powered plasma animation |
+| `liquid-chrome` | Flagship Rust-powered liquid chrome animation |
+| `portal` | Flagship Rust-powered portal animation |
+| `glitch` | Flagship Rust-powered glitch animation |
+| `neon-pulse` | Flagship Rust-powered neon pulse animation |
 
 > **Note:** Non-`static` animation modes are for interactive use only. The module automatically forces `static` mode during startup to prevent terminal hangs.
 >
-> **Dispatch:** `dynamic`, `talking`, and `typewriter` are rendered by PowerShell animation functions in `Private/Animation/`. The Rust binary (`forgum-core.exe`) handles `static`, `slide`, `bounce`, `wave`, `wiggle`, `fade-in`, `dissolve`, and `disco`.
+> **Dispatch:** `dynamic`, `talking`, and `typewriter` are rendered by PowerShell animation functions in `Private/Animation/`. The Rust binary (`forgum-core.exe`) handles `static`, `aurora`, `ember`, `shatter`, `plasma`, `liquid-chrome`, `portal`, `glitch`, `neon-pulse`, and the remaining modes.
 
 ---
 
@@ -245,18 +262,15 @@ You can customize Forgum by editing its configuration file. Run `Get-CFConfig` t
 ### Bash / Zsh / Fish
 
 ```bash
-# Add to ~/.bashrc or ~/.zshrc
-fortune | cowsay -f $( cowsay -l | shuf -n1 )
-
-# Or use PowerShell module from bash
-pwsh -Command "Import-Module Forgum; forgum"
+# Generate and source shell hooks
+eval "$(pwsh -Command 'Import-Module Forgum; forgum init bash')"
 ```
 
 ### tmux Status Bar
 
 ```bash
 # Add to ~/.tmux.conf
-set -g status-right "#(pwsh -Command 'Import-Module Forgum; Get-Fortune' 2>/dev/null)"
+set -g status-right "#(pwsh -Command 'Import-Module Forgum; forgum' 2>/dev/null)"
 set -g status-interval 300
 ```
 

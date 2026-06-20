@@ -5,6 +5,35 @@ All notable changes to Forgum will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-06-20
+
+### Added
+- **Unified CLI** — Single `forgum` command with subcommands: `run`, `config`, `gallery`, `preview`, `update`, `toggle`, `animate`, `eyes`, `init`, `live`, `daemon`, `help`
+- **`forgum init <shell>`** — Generate native shell hooks for bash, zsh, fish, and PowerShell
+- **`forgum help [command]`** — Comprehensive help for every command, subcommand, and argument
+- **Rust engine background rendering** — `forgum-engine` runs as a background daemon; animations render in an overlay while the shell prompt remains usable
+- **Cross-platform native shell hooks** — `Get-ForgumShellHook` generates platform-native code (no PowerShell dependency on Unix)
+- **`Get-EngineBinary`** — Cross-platform engine binary locator (forgum-engine.exe on Windows, forgum-engine on Unix)
+- **7 missing Private functions restored** — `Get-CFConfig`, `Set-CFConfig`, `Get-CFCow`, `Get-Fortune`, `Invoke-Cowsay`, `Show-CFAnimation`, `Set-Forgum` (were deleted in v1.x cleanup but still referenced by module internals)
+
+### Changed
+- **Module exports only `forgum`** — All other functions are now Private. `FunctionsToExport = @('forgum')`, `AliasesToExport = @('forgum-show', 'forgum-setup')`
+- **All subcommand help returns via pipeline** — Changed from `Write-Host` (stream 6) to pipeline return for testability and composability
+- **`Invoke-ForgumRun`** — Explicitly passes `Frequency` and `Spread` to `Format-Lolcat` to guard against zero-value config entries
+- **`Get-ForgumShellHook`** — Rewritten to use single-quoted templates with `.Replace()` to avoid PowerShell subexpression interpretation of bash code
+- **Rust engine** — Renamed binary to `forgum-engine`, added `init <shell>` subcommand, `--daemon` flag for background mode
+- **Test suite** — 130/130 tests passing across 8 test files (CLI, Engine, CrossPlatform, Forgum, Comprehensive, LiveShow, Visual, Ghost)
+
+### Fixed
+- **forgum.ps1 switch routing** — Added bare forms (`'v'`, `'h'`) for PowerShell dash-stripped parameter values
+- **forgum.ps1 `-v`/`-h` interception** — Added `$Arguments`-based fallback when PowerShell silently drops unknown single-dash params
+- **Invoke-Cowsay validation** — Removed `[ValidateLength(2,2)]` attribute that rejected empty config values before function body defaults could apply
+- **Forgum.psm1:125** — Fixed `Get-CFConfigPath` → `Get-ConfigPath` (function was never defined)
+- **All test files** — Added `InModuleScope Forgum { }` wrapping for private function calls; added `6>&1` stream capture for cow output
+
+### Removed
+- **21 old Public/ functions** — Deleted `Get-Fortune.ps1`, `Get-CFCow.ps1`, `Get-CFConfig.ps1`, `Set-CFConfig.ps1`, `Show-CFAnimation.ps1`, `Set-Forgum.ps1`, `Invoke-CFConfig.ps1`, `Show-CFCowGallery.ps1`, `Show-CFCowPreview.ps1`, `Toggle-CFLolcat.ps1`, `Update-Forgum.ps1`, `Show-FortuneCow.ps1`, `Invoke-ForgumLive.ps1`, `Invoke-ForgumAnimate.ps1`, `Invoke-ForgumEyes.ps1`, `Invoke-ForgumToggle.ps1`, `Show-ForgumHelp.ps1`, `Show-ForgumVersion.ps1`, `Get-ForgumProfilePath.ps1`, `Get-ForgumModulePath.ps1`, `Show-CFHelp.ps1` (functionality consolidated into unified CLI)
+
 ## [1.1.2] - 2026-06-19
 
 ### Added

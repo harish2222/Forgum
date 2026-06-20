@@ -4,8 +4,7 @@ function Invoke-LiveShow {
         Internal helper for the Forgum Live Showcase.
     .DESCRIPTION
         Manages the show loop: selects cows/fortunes, applies animations,
-        and renders frames using Write-TerminalFrame. Shared by Invoke-ForgumLive
-        and startup modes.
+        and renders via Rust animation engine.
     .PARAMETER RunOnce
         If set, performs exactly one cow/fortune animation and exits.
     .PARAMETER Duration
@@ -29,121 +28,82 @@ function Invoke-LiveShow {
 
     $allCows = Get-CFCow
     $animationModes = @('wave', 'bounce', 'dissolve', 'fade-in', 'wiggle', 'disco')
-
-    $startTime = [DateTime]::UtcNow
     $lastLineCount = 0
 
-    while ($true) {
-        # Check overall duration
-        if ($Duration -gt 0 -and ([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Duration) {
-            break
-        }
-
-        # 1. Selection
+    # When Animation is enabled we call the Rust engine with Duration=0 (loop forever)
+    # and therefore we DO NOT run an additional PowerShell loop.
+    if ($Toggles.Animation) {
         $cowName = $allCows | Get-Random
         $fortune = Get-Fortune -Database $Config.fortune.database
         $mode = $animationModes | Get-Random
 
-        # 2. Preparation
-        $cowParams = @{
-            Text = $fortune
-            CowFile = $cowName
-        }
-        $baseCow = Invoke-Cowsay @cowParams
+        $baseCow = Invoke-Cowsay -Text $fortune -CowFile $cowName
 
-        # 3. Animation / Render Loop
-        $frames = 40
-        $delay = 50 # ms for smoother feel
-
-        for ($f = 0; $f -lt $frames; $f++) {
-            # Check for keys for real-time interaction
-            # [Console]::KeyAvailable throws on redirected stdin / non-interactive hosts.
-            # Wrap in try/catch and treat exceptions as "no key pressed".
-            $keyPressed = $false
-            try {
-                $keyPressed = [Console]::KeyAvailable
-            } catch {
-                $keyPressed = $false
-            }
-            if ($keyPressed) {
-                return @{ Status = 'Interrupt'; LastLineCount = $lastLineCount }
-            }
-
-            # Apply effective state
-            $useAnimation = $Toggles.Animation
-            $useLolcat = $Toggles.Lolcat
-
-            $currentFrame = $baseCow
-
-            if ($useAnimation) {
-                # Animation Mode Logic
-                switch ($mode) {
-                    'wiggle' {
-                        $offset = [int]([Math]::Sin($f * 0.5) * 3) + 3
-                        $indent = ' ' * $offset
-                        $currentFrame = ($currentFrame -split "`n" | ForEach-Object { "$indent$_" }) -join "`n"
-                    }
-                    'bounce' {
-                        $offset = [int]([Math]::Abs([Math]::Sin($f * 0.2) * 5))
-                        $newlines = "`n" * $offset
-                        $currentFrame = "$newlines$currentFrame"
-                    }
-                    'wave' {
-                        # Wave simulation: slight vertical shift per line
-                        $lines = $currentFrame -split "`n"
-                        $newLines = for ($i = 0; $i -lt $lines.Count; $i++) {
-                            $offset = [int]([Math]::Sin(($f + $i) * 0.3) * 2) + 2
-                            (' ' * $offset) + $lines[$i]
-                        }
-                        $currentFrame = $newLines -join "`n"
-                    }
-                    'dissolve' {
-                        # Dissolve: random character replacement (noisy effect)
-                        if ($f -lt 10) {
-                            $chars = $currentFrame.ToCharArray()
-                            for ($i = 0; $i -lt $chars.Length; $i++) {
-                                if ($chars[$i] -ne ' ' -and $chars[$i] -ne "`n" -and (Get-Random -Maximum 10) -lt (10 - $f)) {
-                                    $chars[$i] = '.'
-                                }
-                            }
-                            $currentFrame = New-Object string($chars, 0, $chars.Length)
-                        }
-                    }
-                    'fade-in' {
-                        # Fade in doesn't really work well with just Write-TerminalFrame without color
-                        # But we can simulate by showing more lines
-                        $lines = $currentFrame -split "`n"
-                        $visibleCount = [Math]::Min($lines.Count, [int]($f * ($lines.Count / 20)))
-                        if ($visibleCount -lt $lines.Count) {
-                            $currentFrame = ($lines[0..$visibleCount] -join "`n")
-                        }
-                    }
-                    'disco' {
-                        # Disco: Just vary the seed for lolcat (handled below)
-                    }
-                }
-            }
-
-            if ($useLolcat) {
-                $lolcatParams = @{
-                    Text = $currentFrame
-                    Seed = if ($mode -eq 'disco') { $f * 10 } else { $f }
-                }
-                $currentFrame = Format-Lolcat @lolcatParams
-            }
-
-            # Render
-            Write-TerminalFrame -Frame $currentFrame -PreviousLineCount $lastLineCount
-            $lastLineCount = ($currentFrame -split "`n").Count
-
-            Start-Sleep -Milliseconds $delay
+        $engineEffect = switch ($mode) {
+            'wiggle'   { 'aurora' }
+            'bounce'   { 'ember' }
+            'wave'     { 'glitch' }
+            'dissolve' { 'shatter' }
+            'fade-in'  { 'neon-pulse' }
+            'disco'    { 'plasma' }
+            default     { 'plasma' }
         }
 
-        if ($RunOnce) {
+        $cowText = $baseCow
+        if ($Toggles.Lolcat) {
+            $lolSeed = Get-Random -Maximum 100000
+            $cowText = Format-Lolcat -Text $cowText -Seed $lolSeed
+        }
+
+        $ok = Invoke-Engine -Message $fortune -CowTemplate @($cowText) -Effect $engineEffect -Fps 30 -Duration 0
+        if (-not $ok) {
+            Write-Host $fortune
+            Write-Host $cowText
+        }
+
+        $lastLineCount = ($cowText -split "`n").Count
+        return @{ Status = 'Complete'; LastLineCount = $lastLineCount }
+    }
+
+    # Animation disabled: run a short static-ish render repeatedly until RunOnce/Duration ends.
+    $startTime = [DateTime]::UtcNow
+    while ($true) {
+        if ($Duration -gt 0 -and ([DateTime]::UtcNow - $startTime).TotalSeconds -ge $Duration) {
             break
         }
-        
-        # Brief pause between cows
+
+        $cowName = $allCows | Get-Random
+        $fortune = Get-Fortune -Database $Config.fortune.database
+        $mode = $animationModes | Get-Random
+
+        $baseCow = Invoke-Cowsay -Text $fortune -CowFile $cowName
+
+        # For "static" we keep effect stable but non-animated by using a low FPS + short duration.
+        $engineEffect = switch ($mode) {
+            'wiggle'   { 'plasma' }
+            'bounce'   { 'plasma' }
+            'wave'     { 'plasma' }
+            'dissolve' { 'plasma' }
+            'fade-in'  { 'plasma' }
+            'disco'    { 'plasma' }
+            default     { 'plasma' }
+        }
+
+        $cowText = $baseCow
+        if ($Toggles.Lolcat) {
+            $lolSeed = Get-Random -Maximum 100000
+            $cowText = Format-Lolcat -Text $cowText -Seed $lolSeed
+        }
+
+        $ok = Invoke-Engine -Message $fortune -CowTemplate @($cowText) -Effect $engineEffect -Fps 1 -Duration 250
+        if (-not $ok) {
+            Write-Host $fortune
+            Write-Host $cowText
+        }
+
+        $lastLineCount = ($cowText -split "`n").Count
+
+        if ($RunOnce) { break }
         Start-Sleep -Milliseconds 500
     }
 

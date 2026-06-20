@@ -4,13 +4,16 @@ function Show-CFAnimation {
         Displays cow output with the configured animation mode.
     .DESCRIPTION
         Dispatches to the appropriate animation function based on config.
-        Modes handled by Rust binary: static, slide, bounce, wave, wiggle,
-        fade-in, dissolve, disco.
-        Modes handled by PowerShell: talking, typewriter, dynamic.
+        Modes handled by Rust binary: aurora, ember, shatter, plasma, liquid-chrome, portal, glitch, neon-pulse.
+        Modes handled by PowerShell: talking, typewriter, dynamic, procedural, physics.
     .PARAMETER CowOutput
         The rendered cow string to animate.
     .PARAMETER Message
         The original message text (used by some animations).
+    .PARAMETER CowName
+        The name of the cow file (used by physics animation).
+    .PARAMETER Background
+        Run animation in background mode (overlay only, no raw mode).
     .EXAMPLE
         Show-CFAnimation -CowOutput $cow -Message "Hello"
     #>
@@ -24,54 +27,57 @@ function Show-CFAnimation {
 
         [string]$CowName = '',
 
+        [string]$Mode = '',
+
+        [PSCustomObject]$Config = $null,
+
         [switch]$Background
     )
 
-    $config = Get-CFConfig
-    $mode = $config.animation.mode
-    $duration = if ($config.animation.duration) { $config.animation.duration } else { 12 }
+    if (-not $Config) { $Config = Get-CFConfig }
+    if ([string]::IsNullOrEmpty($Mode)) { $Mode = $Config.animation.mode }
+    $duration = if ($Config.animation.duration) { $Config.animation.duration } else { 12 }
 
     # If the mode is literally 'random' or not specified properly, pick a random engine mode
-    if ($mode -eq 'random' -or $null -eq $mode -or $mode -eq '') {
+    if ($Mode -eq 'random' -or $null -eq $Mode -or $Mode -eq '') {
         $availableEffects = @('aurora', 'ember', 'shatter', 'plasma', 'liquid-chrome', 'portal', 'glitch', 'neon-pulse')
-        $mode = $availableEffects | Get-Random
+        $Mode = $availableEffects | Get-Random
     }
 
     # PowerShell-native animation modes — these handle their own rendering
-    # via Write-Host and cursor positioning, so we dispatch directly.
     $psModes = @('talking', 'typewriter', 'dynamic', 'procedural', 'physics')
-    if ($mode -in $psModes) {
-        switch ($mode) {
+    if ($Mode -in $psModes) {
+        switch ($Mode) {
             'talking'    { return (Invoke-TalkingAnimation -CowOutput $CowOutput -Message $Message -Duration $duration) }
             'typewriter' { return (Invoke-TypewriterAnimation -CowOutput $CowOutput -Message $Message) }
-            'dynamic'    { return (Invoke-DynamicAnimation -Duration $duration -CycleInterval $config.animation.cycleInterval) }
+            'dynamic'    { return (Invoke-DynamicAnimation -Duration $duration -CycleInterval $Config.animation.cycleInterval) }
             'procedural' { return (Invoke-ProceduralAnimation -CowOutput $CowOutput -Duration $duration) }
             'physics'    {
-                $effCow = if ($CowName) { $CowName } else { $config.cow.file }
+                $effCow = if ($CowName) { $CowName } else { $Config.cow.file }
                 return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration -CowName $effCow)
             }
         }
     }
 
-    # Rust binary animation modes (the new forgum-engine flagship effects)
+    # Rust binary animation modes (the flagship effects)
     $engineModes = @('aurora', 'plasma', 'ember', 'liquid-chrome', 'shatter', 'portal', 'glitch', 'neon-pulse')
-    if ($mode -in $engineModes) {
+    if ($Mode -in $engineModes) {
         $engineParams = @{
-            Message    = $Message
+            Message     = $Message
             CowTemplate = ($CowOutput -split "`r?`n")
-            Effect     = $mode
-            Fps        = 30
-            Duration   = $duration
-            Background = $Background.IsPresent
+            Effect      = $Mode
+            Fps         = 30
+            Duration    = $duration
+            Background  = $Background.IsPresent
         }
         $success = Invoke-Engine @engineParams
         if ($success) { return "" }
         Write-Warning "forgum-engine failed or not found. Falling back to native physics."
-        $mode = 'physics' # Fallback
+        $Mode = 'physics'
         return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration)
     }
 
-    # Legacy static/rust modes
+    # Legacy static/rust modes — use Rust binary if available, else static
     $isWin = $IsWindows -or ($PSVersionTable.PSVersion.Major -lt 6) -or ($env:OS -eq 'Windows_NT')
     $isMac = $IsMacOS
 
@@ -99,7 +105,7 @@ function Show-CFAnimation {
         $frames = $duration
         if (-not $frames -or $frames -lt 1) { $frames = 30 }
 
-        $binArgs = @('--message', $Message, '--mode', $mode, '--fps', '15')
+        $binArgs = @('--message', $Message, '--mode', $Mode, '--fps', '15')
         if ($isAutoStart) {
             $binArgs += '--once'
         } else {

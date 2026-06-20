@@ -242,6 +242,27 @@ set -g status-right "#(pwsh -NoProfile -Command 'Import-Module Forgum -ErrorActi
 set -g status-interval 300
 ```
 
+## Tab Completion (Fish)
+
+This completion is for the **`forgum` PowerShell wrapper** shown in this document.
+
+### Enable completion
+1. Copy the completion script:
+```fish
+mkdir -p ~/.config/fish/completions
+cp scripts/completions/forgum.fish ~/.config/fish/completions/forgum.fish
+```
+
+2. Reload fish:
+```fish
+exec fish
+```
+
+### Optional: command-not-found hint
+```fish
+source scripts/completions/forgum-command-not-found-fish.fish
+```
+
 ## What Each Command Does
 
 | Command | What It Does |

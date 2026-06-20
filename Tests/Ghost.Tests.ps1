@@ -12,18 +12,9 @@ BeforeAll {
     $ModulePath = Join-Path $ModuleRoot 'Forgum.psd1'
     Get-Module Forgum | Remove-Module Forgum -Force -ErrorAction SilentlyContinue
     Import-Module $ModulePath -Force
-    $script:OriginalConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-    
-    function Get-DeepCopyConfig {
-        $config = Get-CFConfig
-        return ($config | ConvertTo-Json -Depth 10 | ConvertFrom-Json)
-    }
 }
 
 AfterAll {
-    if ($script:OriginalConfig) {
-        Set-CFConfig -Config $script:OriginalConfig -ErrorAction SilentlyContinue
-    }
 }
 
 InModuleScope 'Forgum' {
@@ -46,7 +37,7 @@ Describe "Stress Tests" -Tag 'Stress' {
 
     It "handles 10 rapid cow renders" {
         $results = 1..10 | ForEach-Object {
-            forgum "Test $_"
+            forgum "Test $_" 6>&1 | Out-String
         }
         $results | Where-Object { -not $_ } | Should -BeNullOrEmpty
     }
@@ -54,18 +45,18 @@ Describe "Stress Tests" -Tag 'Stress' {
 
 Describe "Boundary Tests" -Tag 'Boundary' {
     It "handles zero-length text" {
-        $output = forgum ""
+        $output = forgum "" 6>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles single character text" {
-        $output = forgum "A"
+        $output = forgum "A" 6>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles extremely long text (5000 chars)" {
         $longText = "A" * 5000
-        $output = forgum $longText
+        $output = forgum $longText 6>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
         $output.Length | Should -BeGreaterThan 100
     }
@@ -74,13 +65,13 @@ Describe "Boundary Tests" -Tag 'Boundary' {
 Describe "Content Injection Tests" -Tag 'Security' {
     It "handles ANSI escape sequences in text safely" {
         $injected = "Test`e[31mRed`e[0m"
-        $output = forgum $injected
+        $output = forgum $injected 6>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles path traversal in cow file names safely" {
         try {
-            $output = forgum "Test" -CowFile '../../../etc/passwd'
+            $output = forgum "Test" -CowFile '../../../etc/passwd' 6>&1 | Out-String
             $output | Should -Not -Match 'root:'
             $output | Should -Not -Match '/bin/bash'
         }
@@ -91,7 +82,7 @@ Describe "Content Injection Tests" -Tag 'Security' {
 
     It "handles control characters in text" {
         $ctrl = "Test`n`r`t"
-        $output = forgum $ctrl
+        $output = forgum $ctrl 6>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 }
@@ -104,9 +95,11 @@ Describe "Config Corruption Resilience" -Tag 'Resilience' {
             Remove-Item $configPath -Force
             try {
                 InModuleScope Forgum { $script:ConfigCache = $null }
-                $config = Get-CFConfig
-                $config | Should -Not -BeNullOrEmpty
-                $config.animation.mode | Should -Not -BeNullOrEmpty
+                InModuleScope Forgum {
+                    $config = Get-CFConfig
+                    $config | Should -Not -BeNullOrEmpty
+                    $config.animation.mode | Should -Not -BeNullOrEmpty
+                }
             } finally {
                 $backup | Set-Content $configPath
                 InModuleScope Forgum { $script:ConfigCache = $null }
@@ -117,19 +110,23 @@ Describe "Config Corruption Resilience" -Tag 'Resilience' {
 
 Describe "Memory and Resource Tests" -Tag 'Resource' {
     BeforeAll {
-        # Reset to static mode to avoid console issues
-        $cfg = Get-DeepCopyConfig
-        $cfg.animation.mode = 'static'
-        Set-CFConfig -Config $cfg
+        InModuleScope Forgum {
+            $cfg = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+            $cfg.animation.mode = 'static'
+            Set-CFConfig -Config $cfg
+        }
     }
 
     AfterAll {
-        if ($script:OriginalConfig) { Set-CFConfig -Config $script:OriginalConfig -ErrorAction SilentlyContinue }
+        InModuleScope Forgum {
+            $orig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+            Set-CFConfig -Config $orig -ErrorAction SilentlyContinue
+        }
     }
 
     It "does not leak memory on repeated calls" {
         $memStart = [System.GC]::GetTotalMemory($true)
-        1..20 | ForEach-Object { forgum | Out-Null }
+        1..20 | ForEach-Object { forgum 6>&1 | Out-Null }
         $memEnd = [System.GC]::GetTotalMemory($true)
         $growth = $memEnd - $memStart
         $growth | Should -BeLessThan (50MB)
