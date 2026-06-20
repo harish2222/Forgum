@@ -1,5 +1,6 @@
 function Invoke-ForgumEyes {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     param([string[]]$Arguments = @())
 
     $parsed = Parse-ForgumArguments -Arguments $Arguments

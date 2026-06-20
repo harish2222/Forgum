@@ -7,6 +7,7 @@ function Invoke-ProceduralAnimation {
         like Snow, Matrix, Breathe, or ColorWave.
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter(Mandatory)]
         [string]$CowOutput,
@@ -63,7 +64,9 @@ function Invoke-ProceduralAnimation {
 
     # Hide cursor
     if (-not [Console]::IsOutputRedirected) {
-        try { Write-Host -NoNewline "$esc[?25l" } catch {}
+        try { Write-Host -NoNewline "$esc[?25l" } catch {
+            Write-Verbose "Non-critical error ignored"
+        }
     }
 
     try {
@@ -177,7 +180,9 @@ function Invoke-ProceduralAnimation {
     } finally {
         # Show cursor
         if (-not [Console]::IsOutputRedirected) {
-            try { Write-Host -NoNewline "$esc[?25h" } catch {}
+            try { Write-Host -NoNewline "$esc[?25h" } catch {
+                Write-Verbose "Non-critical error ignored"
+            }
         }
     }
 

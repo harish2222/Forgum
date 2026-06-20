@@ -6,6 +6,8 @@ function Toggle-CFLolcat {
         Reads the current config, flips lolcat.enabled, saves, and reports.
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param()
 
     $config = Get-CFConfig

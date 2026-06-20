@@ -1,4 +1,4 @@
-function Show-CFAnimation {
+﻿function Show-CFAnimation {
     <#
     .SYNOPSIS
         Displays cow output with the configured animation mode.
@@ -44,7 +44,7 @@ function Show-CFAnimation {
         $Mode = $availableEffects | Get-Random
     }
 
-    # PowerShell-native animation modes — these handle their own rendering
+    # PowerShell-native animation modes â€” these handle their own rendering
     $psModes = @('talking', 'typewriter', 'dynamic', 'procedural', 'physics', 'blink')
     if ($Mode -in $psModes) {
         switch ($Mode) {
@@ -81,7 +81,7 @@ function Show-CFAnimation {
         return (Invoke-PhysicsCow -CowOutput $CowOutput -Duration $duration)
     }
 
-    # Legacy static/rust modes — use Rust engine binary if available, else static
+    # Legacy static/rust modes â€” use Rust engine binary if available, else static
     $binPath = Get-EngineBinary
 
     if ($binPath) {

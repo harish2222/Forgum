@@ -28,7 +28,9 @@ function Get-ForgumShell {
         if ($proc -match 'zsh')  { return 'zsh' }
         if ($proc -match 'fish') { return 'fish' }
         if ($proc -match 'bash') { return 'bash' }
-    } catch {}
+    } catch {
+        Write-Verbose "Non-critical error ignored"
+    }
 
     $shellEnv = $env:SHELL
     if ($shellEnv -match 'zsh')  { return 'zsh' }

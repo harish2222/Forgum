@@ -7,6 +7,7 @@ function Get-LolcatParams {
     #>
     [CmdletBinding()]
     [OutputType([hashtable])]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     param()
 
     $config = Get-CFConfig

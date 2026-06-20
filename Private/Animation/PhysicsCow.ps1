@@ -4,6 +4,7 @@ function Invoke-PhysicsCow {
         Applies physics-based animations based on cow manifesto.
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter(Mandatory)]
         [string]$CowOutput,
@@ -104,7 +105,9 @@ function Invoke-PhysicsCow {
 
     # Hide cursor
     if (-not [Console]::IsOutputRedirected) {
-        try { Write-Host -NoNewline "$esc[?25l" } catch {}
+        try { Write-Host -NoNewline "$esc[?25l" } catch {
+            Write-Verbose "Non-critical error ignored"
+        }
     }
 
     # State for particles
@@ -388,7 +391,9 @@ function Invoke-PhysicsCow {
         # Removed clear logic so the final animation frame stays on screen
     } finally {
         if (-not [Console]::IsOutputRedirected) {
-            try { Write-Host -NoNewline "$esc[?25h" } catch {}
+            try { Write-Host -NoNewline "$esc[?25h" } catch {
+                Write-Verbose "Non-critical error ignored"
+            }
         }
     }
 

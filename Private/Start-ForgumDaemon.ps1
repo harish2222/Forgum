@@ -6,6 +6,8 @@ function Start-ForgumDaemon {
         Launches the Rust engine in daemon mode for background rendering.
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
     param()
 
     $binary = Get-EngineBinary

@@ -6,6 +6,8 @@ function Stop-ForgumDaemon {
         Finds and stops the forgum-engine daemon process.
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
     param()
 
     $procs = Get-Process -Name 'forgum-engine*' -ErrorAction SilentlyContinue

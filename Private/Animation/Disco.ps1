@@ -1,4 +1,4 @@
-function Invoke-DiscoAnimation {
+﻿function Invoke-DiscoAnimation {
     <#
     .SYNOPSIS
         Cow displayed with rapidly cycling rainbow colors (disco effect).
@@ -11,6 +11,7 @@ function Invoke-DiscoAnimation {
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Message')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
     param(
         [Parameter(Mandatory)]
         [string]$CowOutput,
@@ -64,9 +65,9 @@ function Invoke-DiscoAnimation {
                     continue
                 }
 
-                # Calculate hue based on position and frame — O(1) lookup
-                $hue = (($c * 15) + $hueShift + ($i * 40)) % 360
-                [void]$sb.Append("${esc}[38;2;${rgbTable[$hue]}m${char}${esc}[39m")
+                # Calculate hue based on position and frame â€” O(1) lookup
+                $hueIndex = (($c * 15) + $hueShift + ($i * 40)) % 360
+                [void]$sb.Append("${esc}[38;2;${rgbTable[$hueIndex]}m${char}${esc}[39m")
             }
         }
 

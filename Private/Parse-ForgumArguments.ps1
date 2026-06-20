@@ -12,6 +12,8 @@ function Parse-ForgumArguments {
     .PARAMETER KnownOptions
         Array of known key-value options.
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
     param(
         [string[]]$Arguments = @(),
         [string[]]$KnownFlags = @('help','json','force','check','lolcat','no-lolcat','fortune','no-color','clear'),

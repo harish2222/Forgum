@@ -18,7 +18,6 @@ function Invoke-ForgumHistory {
     }
     $clear = $parsed.Flags.ContainsKey('clear')
 
-    $config = Get-CFConfig
     $historyPath = Join-Path (Split-Path (Get-ConfigPath) -Parent) 'history.json'
 
     if ($clear) {

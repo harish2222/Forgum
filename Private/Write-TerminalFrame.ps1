@@ -7,6 +7,7 @@ function Write-TerminalFrame {
         line before writing the new frame. Falls back to standard output if not a TTY.
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter(Mandatory, ValueFromPipeline)]
         [string]$Frame,

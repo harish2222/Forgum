@@ -8,6 +8,8 @@ function Update-Forgum {
         Only check if update is available.
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
     param(
         [switch]$Force,
         [switch]$CheckOnly

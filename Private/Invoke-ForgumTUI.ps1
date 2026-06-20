@@ -1,4 +1,4 @@
-function Invoke-ForgumTUI {
+﻿function Invoke-ForgumTUI {
     <#
     .SYNOPSIS
         Launches the interactive configuration TUI.
@@ -7,16 +7,14 @@ function Invoke-ForgumTUI {
         Navigate with arrow keys or number input, press Enter to select.
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param()
 
     $config = Get-CFConfig
-    $running = $true
 
-    while ($running) {
+    while ($true) {
         Clear-Host
-        Write-Host "╔══════════════════════════════════════╗" -ForegroundColor Cyan
-        Write-Host "║       Forgum Configuration TUI       ║" -ForegroundColor Cyan
-        Write-Host "╚══════════════════════════════════════╝" -ForegroundColor Cyan
+        Write-Host "=== Forgum Configuration TUI ===" -ForegroundColor Cyan
         Write-Host ""
 
         Write-Host "  Current Settings:" -ForegroundColor Yellow
@@ -100,7 +98,7 @@ function Invoke-ForgumTUI {
                 Write-Host "  Presets:" -ForegroundColor Yellow
                 Write-Host "    borg       ==" -ForegroundColor White
                 Write-Host "    dead       xx" -ForegroundColor White
-                Write-Host "    greedy     $" + "$" -ForegroundColor White
+                Write-Host "    greedy     $$" -ForegroundColor White
                 Write-Host "    paranoia   @@" -ForegroundColor White
                 Write-Host "    stoned     **" -ForegroundColor White
                 Write-Host "    tired      --" -ForegroundColor White
@@ -176,7 +174,7 @@ function Invoke-ForgumTUI {
                 Start-Sleep -Milliseconds 500
             }
             '0' {
-                $running = $false
+                break
             }
             default {
                 Write-Host "  Invalid option" -ForegroundColor Red

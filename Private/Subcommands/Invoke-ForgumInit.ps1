@@ -1,5 +1,6 @@
 function Invoke-ForgumInit {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param([string[]]$Arguments = @())
 
     $parsed = Parse-ForgumArguments -Arguments $Arguments

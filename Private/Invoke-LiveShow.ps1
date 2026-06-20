@@ -15,6 +15,7 @@ function Invoke-LiveShow {
         Hashtable containing real-time toggles (Lolcat, Animation).
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [switch]$RunOnce,
         [double]$Duration = 0,

@@ -19,7 +19,9 @@ function Get-ForgumShellHook {
         try {
             $conf = Get-Content $configPath -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
             if ($conf.effect) { $effect = $conf.effect }
-        } catch {}
+        } catch {
+            Write-Verbose "Non-critical error ignored"
+        }
     }
 
     switch ($Shell) {

@@ -57,7 +57,9 @@ function Invoke-DynamicAnimation {
                     $keyPressed = $false
                 }
                 if ($keyPressed) {
-                    try { $null = [Console]::ReadKey($true) } catch {}
+                    try { $null = [Console]::ReadKey($true) } catch {
+                        Write-Verbose "Non-critical error ignored"
+                    }
                     return $output
                 }
             }
@@ -100,7 +102,9 @@ function Invoke-DynamicAnimation {
     }
     finally {
         if ($hasConsole) {
-            try { Write-Host "" } catch {}
+            try { Write-Host "" } catch {
+                Write-Verbose "Non-critical error ignored"
+            }
         }
     }
 

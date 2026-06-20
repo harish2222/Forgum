@@ -6,6 +6,8 @@ function Set-CFCowAnimate {
         Animation mode to set (e.g. static, aurora, plasma).
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
     param(
         [string]$Mode = ''
     )
