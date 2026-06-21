@@ -155,12 +155,14 @@ Describe "forgum export" -Tag 'NewSubcommand' {
     It "exported file contains message" {
         forgum export "ContentCheck" --output "$script:TestConfigDir\test3.txt" 2>&1 | Out-Null
         $content = Get-Content "$script:TestConfigDir\test3.txt" -Raw
+        $content = $content -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
         $content | Should -Match 'ContentCheck'
     }
 
     It "export --cow tux uses tux" {
         forgum export "TuxExport" --cow tux --output "$script:TestConfigDir\test4.txt" 2>&1 | Out-Null
         $content = Get-Content "$script:TestConfigDir\test4.txt" -Raw
+        $content = $content -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
         $content | Should -Match 'TuxExport'
     }
 

@@ -417,7 +417,7 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
 
         $effects = @('aurora', 'plasma', 'fire', 'matrix', 'bounce', 'disco', 'physics', 'ember', 'shatter', 'portal', 'glitch', 'neon-pulse', 'liquid-chrome')
         foreach ($effect in $effects) {
-            It "renders $effect animation in visible console for 2 seconds" {
+            It "renders $effect animation in visible console for 2 seconds" -Skip:(-not $env:TERM -or $env:CI -eq 'true') {
                 $json = "{{""type"":""render"",""effect"":""$effect"",""cow_text"":""$effect Test"",""width"":80,""height"":24,""background"":false,""duration"":2,""fps"":15}}"
                 $tmpFile = Join-Path $env:TEMP "forgum_test_$effect.json"
                 [System.IO.File]::WriteAllText($tmpFile, $json)

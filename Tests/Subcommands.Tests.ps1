@@ -809,10 +809,10 @@ Describe "Module exports and structure" -Tag 'Structure' {
         }
     }
 
-    It "module version is 1.1.2" {
+    It "module version is 1.1.2.1" {
         InModuleScope Forgum {
             $manifest = Test-ModuleManifest -Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'Forgum.psd1') -ErrorAction Stop
-            $manifest.Version.ToString() | Should -Be '1.1.2'
+            $manifest.Version.ToString() | Should -Be '1.1.2.1'
         }
     }
 
