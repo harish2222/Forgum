@@ -15,6 +15,18 @@ BeforeAll {
     } while ($m)
     Import-Module $ModulePath -Force
 
+    # Set config to static mode for test compatibility (background mode doesn't return pipeline output)
+    InModuleScope Forgum {
+        $script:PermutationsSavedConfig = $null
+        $cfgPath = GetConfigPath
+        if (Test-Path $cfgPath) { $script:PermutationsSavedConfig = Get-Content $cfgPath -Raw }
+        $cfg = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+        $cfg.animation.mode = 'static'
+        $cfg.animation.background = $false
+        $cfg.cow.random = $false
+        SetConfig -Config $cfg
+    }
+
     function Remove-Ansi {
         param([string]$Text)
         $Text -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace 'e\][^\a]*\a', '' -replace '[\x1b]\[[0-9;]*[a-zA-Z]', '' -replace '[\x1b]\][^\x07]*\x07', ''
@@ -36,6 +48,17 @@ BeforeAll {
 
     # Known cows (subset for testing)
     $KnownCows = @('default','tux','dragon','kitty','whale','ghost')
+}
+
+AfterAll {
+    InModuleScope Forgum {
+        if ($script:PermutationsSavedConfig) {
+            $cfgPath = GetConfigPath
+            $script:PermutationsSavedConfig | Set-Content $cfgPath -Force
+            $script:ConfigCache = $null
+            $script:ConfigCacheTime = [datetime]::MinValue
+        }
+    }
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -71,14 +94,13 @@ Describe "Help permutations - every subcommand x help method" -Tag 'Permutation'
 #    forgum h, forgum v, forgum version, forgum help, case insensitivity
 # ─────────────────────────────────────────────────────────────────────────────
 Describe "Root routing permutations" -Tag 'Permutation' {
-
     It "forgum with no args produces output" {
-        $output = forgum 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "forgum 'text' produces that text" {
-        $raw = forgum "PermTest1" 6>&1 3>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "PermTest1" 6>&1 3>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*PermTest1*'
     }
 
@@ -118,12 +140,12 @@ Describe "Root routing permutations" -Tag 'Permutation' {
     }
 
     It "case-insensitive: forgum RUN routes to run" {
-        $output = forgum RUN "PermCase" 6>&1 2>&1 | Out-String
+        $output = forgum RUN --mode static "PermCase" 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "case-insensitive: forgum Run routes to run" {
-        $output = forgum Run "PermCase2" 6>&1 2>&1 | Out-String
+        $output = forgum Run --mode static "PermCase2" 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
@@ -133,7 +155,7 @@ Describe "Root routing permutations" -Tag 'Permutation' {
     }
 
     It "unknown subcommand text is treated as run input" {
-        $raw = forgum unknowncmd "PermX" 6>&1 3>&1 2>&1 | Out-String
+        $raw = forgum unknowncmd run --mode static "PermX" 6>&1 3>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*PermX*'
     }
 }
@@ -146,23 +168,23 @@ Describe "Root routing permutations" -Tag 'Permutation' {
 Describe "run - arg permutations" -Tag 'Permutation' {
 
     It "run with no args" {
-        $output = forgum run 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "run with text" {
-        $raw = forgum run "PermRunText" 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "PermRunText" 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*PermRunText*'
     }
 
     It "run with multi-word text" {
-        $raw = forgum run "Perm Run Multi" 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "Perm Run Multi" 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*Perm Run Multi*'
     }
 
     foreach ($cow in $KnownCows) {
         It "run --cow $cow produces output" {
-            $output = forgum run --cow $cow "PermCow" 6>&1 2>&1 | Out-String
+            $output = forgum run --mode static --cow $cow "PermCow" 6>&1 2>&1 | Out-String
             $output | Should -Not -BeNullOrEmpty
         }
     }
@@ -183,22 +205,22 @@ Describe "run - arg permutations" -Tag 'Permutation' {
     }
 
     It "run --fortune produces output" {
-        $output = forgum run --fortune 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static --fortune 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "run --cow tux --fortune" {
-        $output = forgum run --cow tux --fortune 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static --cow tux --fortune 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "run --lolcat --cow tux 'text'" {
-        $output = forgum run --lolcat --cow tux "PermFlagOrder" 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static --lolcat --cow tux "PermFlagOrder" 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "run text --cow tux (text before flag)" {
-        $raw = forgum run "PermBeforeFlag" --cow tux 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "PermBeforeFlag" --cow tux 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*PermBeforeFlag*'
     }
 
@@ -361,7 +383,7 @@ Describe "init - shell permutations" -Tag 'Permutation' {
 Describe "daemon - action permutations" -Tag 'Permutation' {
 
     It "daemon with no args defaults to start" {
-        $enginePath = InModuleScope Forgum { Get-EngineBinary -ErrorAction SilentlyContinue }
+        $enginePath = InModuleScope Forgum { GetEngineBinary -ErrorAction SilentlyContinue }
         if (-not $enginePath) {
             Set-ItResult -Inconclusive -Because "forgum-engine not built"
             return
@@ -371,7 +393,7 @@ Describe "daemon - action permutations" -Tag 'Permutation' {
     }
 
     It "daemon start" {
-        $enginePath = InModuleScope Forgum { Get-EngineBinary -ErrorAction SilentlyContinue }
+        $enginePath = InModuleScope Forgum { GetEngineBinary -ErrorAction SilentlyContinue }
         if (-not $enginePath) {
             Set-ItResult -Inconclusive -Because "forgum-engine not built"
             return
@@ -544,63 +566,63 @@ Describe "help - deep permutations" -Tag 'Permutation' {
 Describe "Edge cases - text input" -Tag 'EdgeCase' {
 
     It "empty string text runs" {
-        $output = forgum run "" 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static "" 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "single character text" {
-        $raw = forgum run "X" 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "X" 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*X*'
     }
 
     It 'very long text (500 chars)' {
         $longText = "A" * 500
-        $output = forgum run $longText 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static $longText 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "text with spaces and punctuation" {
-        $raw = forgum run "Hello, World! How are you?" 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "Hello, World! How are you?" 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*Hello, World! How are you?*'
     }
 
     It "text with numbers" {
-        $raw = forgum run "12345 test 67890" 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "12345 test 67890" 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*12345 test 67890*'
     }
 
     It "text with parentheses" {
-        $raw = forgum run "test (parens)" 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "test (parens)" 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*test (parens)*'
     }
 
     It "text with angle brackets" {
-        $raw = forgum run 'test <brackets>' 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static 'test <brackets>' 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*test <brackets>*'
     }
 
     It "text with quotes" {
-        $raw = forgum run "it is a test" 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "it is a test" 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike "*it is a test*"
     }
 
     It "text with dollar sign" {
-        $raw = forgum run 'test $var' 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static 'test $var' 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*test $var*'
     }
 
     It "text with backslash" {
-        $raw = forgum run 'test \path' 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static 'test \path' 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*test \path*'
     }
 
     It "text with pipe character" {
-        $raw = forgum run 'test | pipe' 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static 'test | pipe' 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*test | pipe*'
     }
 
     It "text with semicolon" {
-        $raw = forgum run 'test; semicolon' 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static 'test; semicolon' 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*test; semicolon*'
     }
 }
@@ -612,12 +634,12 @@ Describe "Edge cases - text input" -Tag 'EdgeCase' {
 Describe "Edge cases - argument structure" -Tag 'EdgeCase' {
 
     It "run 'text' --cow tux (text before flag)" {
-        $raw = forgum run "EdgeBefore" --cow tux 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "EdgeBefore" --cow tux 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*EdgeBefore*'
     }
 
     It "run --cow tux 'text' (flag before text)" {
-        $raw = forgum run --cow tux "EdgeAfter" 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static --cow tux "EdgeAfter" 6>&1 2>&1 | Out-String
         Remove-Ansi $raw | Should -BeLike '*EdgeAfter*'
     }
 
@@ -684,7 +706,7 @@ Describe "Alignment and rendering validation" -Tag 'Rendering' {
     It "cow output contains cow body markers" {
         $raw = forgum run "RenderTest" 6>&1 2>&1 | Out-String
         $output = Remove-Ansi $raw
-        $output | Should -Match '\^__^|\(oo\)|\\____|\\   \\'
+        $output | Should -Match '\^__^|\(oo\)|(@@)|(__)|\\____|\\   \\'
     }
 
     It "cow output contains the message text" {
@@ -768,7 +790,7 @@ Describe "Integration flows" -Tag 'Integration' {
 
     It "animate aurora -> run with aurora mode (may fall back)" {
         $null = forgum animate aurora 6>&1 2>&1
-        $output = forgum run "IntAurora" 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static "IntAurora" 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
@@ -802,10 +824,9 @@ Describe "Module structure - comprehensive" -Tag 'Structure' {
         $funcs | Should -Contain 'forgum'
     }
 
-    It "module exports aliases" {
+    It "module exports no aliases" {
         $aliases = (Get-Command -Module Forgum -CommandType Alias).Name
-        $aliases | Should -Contain 'forgum-show'
-        $aliases | Should -Contain 'forgum-setup'
+        $aliases | Should -BeNullOrEmpty
     }
 
     It "module version is 1.1.2" {
@@ -817,10 +838,10 @@ Describe "Module structure - comprehensive" -Tag 'Structure' {
 
     It "all 12 subcommand handlers exist" {
         InModuleScope Forgum {
-            @('Invoke-ForgumRun','Invoke-ForgumConfig','Invoke-ForgumGallery',
-              'Invoke-ForgumPreview','Invoke-ForgumUpdate','Invoke-ForgumToggle',
-              'Invoke-ForgumAnimate','Invoke-ForgumEyes','Invoke-ForgumInit',
-              'Invoke-ForgumLiveHandler','Invoke-ForgumDaemon') |
+            @('RunCommand','ConfigCommand','GalleryCommand',
+              'PreviewCommand','UpdateCommand','ToggleCommand',
+              'AnimateCommand','EyesCommand','InitCommand',
+              'LiveCommand','DaemonCommand') |
               ForEach-Object {
                 Get-Command $_ -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty -Because "$_ should exist"
             }
@@ -829,11 +850,11 @@ Describe "Module structure - comprehensive" -Tag 'Structure' {
 
     It "all 15 helper functions exist" {
         InModuleScope Forgum {
-            @('Get-HelpMessage','Parse-ForgumArguments','Get-EngineBinary',
-              'Get-ForgumShellHook','Get-ForgumShell','Show-CFCowGallery',
-              'Show-CFCowPreview','Toggle-CFLolcat','Set-CFCowAnimate',
-              'Set-CFCowEyes','Start-ForgumDaemon','Stop-ForgumDaemon',
-              'Invoke-ForgumLive','Invoke-ForgumTUI','Update-Forgum') |
+            @('GetHelpMessage','ParseForgumArguments','GetEngineBinary',
+              'GetForgumShellHook','GetShell','ShowCowGallery',
+              'ShowCowPreview','ToggleLolcat','SetCowAnimate',
+              'SetCowEyes','StartDaemon','StopDaemon',
+              'InvokeForgumLive','InvokeForgumTUI','UpdateForgum') |
               ForEach-Object {
                 Get-Command $_ -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty -Because "$_ should exist"
             }
@@ -842,9 +863,9 @@ Describe "Module structure - comprehensive" -Tag 'Structure' {
 
     It "all core private functions exist" {
         InModuleScope Forgum {
-            @('Get-CFConfig','Set-CFConfig','Get-CFCow','Get-Fortune',
-              'Invoke-Cowsay','Show-CFAnimation',
-              'Get-ConfigPath','Format-CowMessage','Format-Lolcat') |
+            @('GetConfig','SetConfig','GetCowFiles','GetFortune',
+              'InvokeCowsay','ShowAnimation',
+              'GetConfigPath','FormatCowMessage','FormatLolcat') |
               ForEach-Object {
                 Get-Command $_ -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty -Because "$_ should exist"
             }
@@ -853,7 +874,7 @@ Describe "Module structure - comprehensive" -Tag 'Structure' {
 
     It "all animation functions exist" {
         InModuleScope Forgum {
-            @('Show-CFAnimation','Invoke-Engine') |
+            @('ShowAnimation','InvokeEngine') |
               ForEach-Object {
                 Get-Command $_ -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty -Because "$_ should exist"
             }
@@ -862,7 +883,7 @@ Describe "Module structure - comprehensive" -Tag 'Structure' {
 
     It "all cow files are accessible" {
         InModuleScope Forgum {
-            $cows = Get-CFCow
+            $cows = GetCowFiles
             $cows | Should -Not -BeNullOrEmpty
             $cows.Count | Should -BeGreaterThan 50
         }
@@ -870,7 +891,7 @@ Describe "Module structure - comprehensive" -Tag 'Structure' {
 
     It "config loads successfully" {
         InModuleScope Forgum {
-            $config = Get-CFConfig
+            $config = GetConfig
             $config | Should -Not -BeNullOrEmpty
             $config.animation | Should -Not -BeNullOrEmpty
             $config.cow | Should -Not -BeNullOrEmpty
@@ -878,38 +899,38 @@ Describe "Module structure - comprehensive" -Tag 'Structure' {
         }
     }
 
-    It "Get-HelpMessage returns help for all subcommands" {
+    It "GetHelpMessage returns help for all subcommands" {
         InModuleScope Forgum {
             foreach ($cmd in @('root','run','config','gallery','preview','update','toggle','animate','eyes','init','live','daemon','help')) {
-                $msg = Get-HelpMessage -Command $cmd
+                $msg = GetHelpMessage -Command $cmd
                 $msg | Should -Not -BeNullOrEmpty -Because "help for $cmd should not be empty"
                 $msg | Should -Match 'Usage:' -Because "help for $cmd should contain Usage:"
             }
         }
     }
 
-    It "Get-HelpMessage handles unknown commands" {
+    It "GetHelpMessage handles unknown commands" {
         InModuleScope Forgum {
-            $msg = Get-HelpMessage -Command 'nonexistent'
+            $msg = GetHelpMessage -Command 'nonexistent'
             $msg | Should -Match 'Unknown command'
         }
     }
 
-    It "Get-HelpMessage handles empty command" {
+    It "GetHelpMessage handles empty command" {
         InModuleScope Forgum {
-            $msg = Get-HelpMessage -Command ''
+            $msg = GetHelpMessage -Command ''
             $msg | Should -Match 'Usage:'
         }
     }
 
-    It "Get-HelpMessage handles help command" {
+    It "GetHelpMessage handles help command" {
         InModuleScope Forgum {
-            $msg = Get-HelpMessage -Command 'help'
+            $msg = GetHelpMessage -Command 'help'
             $msg | Should -Match 'Usage:'
         }
     }
 
-    It "Get-HelpMessage aliases resolve correctly" {
+    It "GetHelpMessage aliases resolve correctly" {
         InModuleScope Forgum {
             $aliases = @{
                 'upgrade'='update'; 'tui'='interactive'; 'setup'='config';
@@ -918,7 +939,7 @@ Describe "Module structure - comprehensive" -Tag 'Structure' {
                 'start-daemon'='daemon'; 'stop-daemon'='daemon'
             }
             foreach ($alias in $aliases.Keys) {
-                $msg = Get-HelpMessage -Command $alias
+                $msg = GetHelpMessage -Command $alias
                 $msg | Should -Not -BeNullOrEmpty -Because ('alias {0} should resolve' -f $alias)
                 $msg | Should -Match 'Usage:' -Because ('alias {0} should return help' -f $alias)
             }

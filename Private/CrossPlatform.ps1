@@ -1,4 +1,4 @@
-function Get-ForgumPlatform {
+function GetPlatform {
     <#
     .SYNOPSIS
         Detects the current operating system platform.
@@ -11,7 +11,7 @@ function Get-ForgumPlatform {
     return 'unknown'
 }
 
-function Get-ForgumShell {
+function GetShell {
     <#
     .SYNOPSIS
         Detects the current shell.
@@ -40,12 +40,12 @@ function Get-ForgumShell {
     return 'bash'
 }
 
-function Get-ForgumConfigPath {
+function GetForgumConfigPath {
     <#
     .SYNOPSIS
         Returns the config file path for the current platform.
     #>
-    $platform = Get-ForgumPlatform
+    $platform = GetPlatform
     switch ($platform) {
         'windows' {
             $docPath = [Environment]::GetFolderPath('MyDocuments')

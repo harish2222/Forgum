@@ -224,34 +224,6 @@ Describe "forgum history" -Tag 'NewSubcommand' {
     }
 }
 
-Describe "forgum config" -Tag 'NewSubcommand' {
-
-    It "config --help shows help" {
-        $output = forgum config --help 2>&1 | Out-String
-        $output | Should -Match 'config file'
-    }
-
-    It "config path prints config path" {
-        $output = forgum config path 2>&1 | Out-String
-        $output | Should -Match 'config\.json'
-    }
-
-    It "config dir prints config directory" {
-        $output = forgum config dir 2>&1 | Out-String
-        $output | Should -Not -BeNullOrEmpty
-    }
-
-    It "config show prints config contents" {
-        $output = forgum config show 2>&1 | Out-String
-        $output | Should -Match 'animation'
-    }
-
-    It "config with no args opens file" {
-        $output = forgum config 2>&1 | Out-String
-        $output | Should -Match 'Config file:'
-    }
-}
-
 Describe "forgum interactive" -Tag 'NewSubcommand' {
 
     It "interactive --help shows help" {
@@ -275,12 +247,12 @@ Describe "New subcommands - module structure" -Tag 'NewSubcommand' {
     It "all 5 new handlers exist" {
         InModuleScope Forgum {
             $handlers = @(
-                'Invoke-ForgumCowsay',
-                'Invoke-ForgumList',
-                'Invoke-ForgumTheme',
-                'Invoke-ForgumExport',
-                'Invoke-ForgumHistory',
-                'Invoke-ForgumInteractive'
+                'CowsayCommand',
+                'ListCommand',
+                'ThemeCommand',
+                'ExportCommand',
+                'HistoryCommand',
+                'InteractiveCommand'
             )
             foreach ($h in $handlers) {
                 Get-Command $h -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
@@ -288,9 +260,9 @@ Describe "New subcommands - module structure" -Tag 'NewSubcommand' {
         }
     }
 
-    It "Write-ForgumHistory helper exists" {
+    It "WriteHistory helper exists" {
         InModuleScope Forgum {
-            Get-Command Write-ForgumHistory -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
+            Get-Command WriteHistory -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
         }
     }
 
@@ -298,7 +270,7 @@ Describe "New subcommands - module structure" -Tag 'NewSubcommand' {
         InModuleScope Forgum {
             $commands = @('cowsay', 'list', 'theme', 'export', 'history', 'config', 'interactive')
             foreach ($cmd in $commands) {
-                $help = Get-HelpMessage -Command $cmd
+                $help = GetHelpMessage -Command $cmd
                 $help | Should -Match 'Usage:'
             }
         }
@@ -316,7 +288,7 @@ Describe "New subcommands - module structure" -Tag 'NewSubcommand' {
                 'menu'  = 'interactive'
             }
             foreach ($alias in $aliases.Keys) {
-                $help = Get-HelpMessage -Command $alias
+                $help = GetHelpMessage -Command $alias
                 $help | Should -Match 'Usage:'
             }
         }

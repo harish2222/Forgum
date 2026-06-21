@@ -101,4 +101,4 @@ foreach ($cow in $cows) {
     }
 }
 
-$mapping | ConvertTo-Json -Depth 3 | Out-File "D:\Projects\Forgum\Data\Cows\animations.json" -Encoding utf8
+$mapping | ConvertTo-Json -Depth 20 | Out-File "D:\Projects\Forgum\Data\Cows\animations.json" -Encoding utf8

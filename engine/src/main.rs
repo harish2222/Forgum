@@ -25,36 +25,54 @@ use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     execute, queue, style,
 };
+use crossterm::terminal::{self as crossterm_terminal, LeaveAlternateScreen};
 use std::time::Duration;
 use std::path::PathBuf;
 
-#[cfg(unix)]
-fn is_terminal_stdin() -> bool {
-    unsafe { libc::isatty(libc::STDIN_FILENO) != 0 }
+fn is_terminal_stdout() -> bool {
+    use std::io::IsTerminal;
+    io::stdout().is_terminal()
 }
 
+/// Try to open CONOUT$ for direct console output when stdout is piped.
 #[cfg(windows)]
-fn is_terminal_stdin() -> bool {
-    use std::os::windows::io::AsRawHandle;
-    use winapi::um::consoleapi::GetConsoleMode;
-    use winapi::um::handleapi::INVALID_HANDLE_VALUE;
+fn open_console_out() -> Option<std::io::BufWriter<std::fs::File>> {
+    use std::ffi::CString;
+    use std::os::windows::io::FromRawHandle;
+    use winapi::um::fileapi::{CreateFileA, OPEN_EXISTING};
+    use winapi::um::winnt::{GENERIC_READ, GENERIC_WRITE, FILE_SHARE_READ, FILE_SHARE_WRITE};
 
-    let handle = io::stdin().as_raw_handle();
-    if handle == INVALID_HANDLE_VALUE as *mut _ {
-        return false;
+    let name = CString::new("CONOUT$").unwrap();
+    unsafe {
+        let handle = CreateFileA(
+            name.as_ptr(),
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            std::ptr::null_mut(),
+            OPEN_EXISTING,
+            0,
+            std::ptr::null_mut(),
+        );
+        if handle == winapi::um::handleapi::INVALID_HANDLE_VALUE {
+            None
+        } else {
+            let file = std::fs::File::from_raw_handle(handle as *mut _);
+            Some(std::io::BufWriter::new(file))
+        }
     }
-    let mut mode = 0u32;
-    unsafe { GetConsoleMode(handle as *mut _, &mut mode) != 0 }
 }
 
-#[cfg(not(any(unix, windows)))]
-fn is_terminal_stdin() -> bool {
-    false
+#[cfg(not(windows))]
+fn open_console_out() -> Option<std::io::BufWriter<std::fs::File>> {
+    None
+}
+
+fn get_terminal_size() -> (u16, u16) {
+    crossterm::terminal::size().unwrap_or((80, 24))
 }
 
 fn create_effect(name: &str, cow_text: String) -> Box<dyn Effect> {
     match name {
-        // Flagship visual effects
         "ember" => Box::new(EmberEffect::new(cow_text)),
         "shatter" => Box::new(ShatterEffect::new(cow_text)),
         "plasma" => Box::new(PlasmaEffect::new(cow_text)),
@@ -63,7 +81,6 @@ fn create_effect(name: &str, cow_text: String) -> Box<dyn Effect> {
         "glitch" => Box::new(GlitchEffect::new(cow_text)),
         "neon-pulse" => Box::new(NeonPulseEffect::new(cow_text)),
         "physics" => Box::new(PhysicsEffect::new(cow_text)),
-        // Base animation styles (mapped from animations.json)
         "static" | "talk" => Box::new(StaticEffect::new(cow_text)),
         "breathe" | "breathing" => Box::new(BreathingEffect::new(cow_text)),
         "liquid" | "squish" => Box::new(LiquidEffect::new(cow_text)),
@@ -74,9 +91,7 @@ fn create_effect(name: &str, cow_text: String) -> Box<dyn Effect> {
         "matrix" => Box::new(MatrixEffect::new(cow_text)),
         "pulse" => Box::new(PulseEffect::new(cow_text)),
         "dissolve" => Box::new(DissolveEffect::new(cow_text)),
-        // Aliases from style_matcher
         "abduction" => Box::new(SwayEffect::new(cow_text)),
-        // Random selection from all effects
         "random" => {
             use rand::seq::SliceRandom;
             let effects = [
@@ -89,65 +104,77 @@ fn create_effect(name: &str, cow_text: String) -> Box<dyn Effect> {
             let chosen = *effects.choose(&mut rng).unwrap_or(&"aurora");
             create_effect(chosen, cow_text)
         }
-        // Default fallback
         _ => Box::new(AuroraEffect::new(cow_text)),
     }
 }
 
 fn resolve_effect_name(config: &SceneConfig) -> String {
-    // If effect is explicitly set and not "auto", use it
     if config.effect != "auto" && !config.effect.is_empty() {
         return config.effect.clone();
     }
-    // If style is set, use it directly
     if let Some(ref style) = config.style {
         return style.clone();
     }
-    // If cow_file is provided, use style_matcher to auto-detect
     if let Some(ref cow_file) = config.cow_file {
         let cow_style = style_matcher::get_cow_style(cow_file);
         return cow_style.base.to_lowercase();
     }
-    // Default to aurora
     "aurora".to_string()
 }
 
+// ── Foreground: full-screen animation with alternate screen + raw mode ──────
 fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
-    let mut stdout = io::stdout();
-    let has_terminal = is_terminal_stdin();
+    let has_terminal = is_terminal_stdout();
+    let effect_name = resolve_effect_name(&config);
 
-    if !has_terminal {
+    // Static effects with piped stdout: just print cow_text (no animation needed)
+    if !has_terminal && effect_name == "static" {
+        let mut stdout = io::stdout();
         print!("{}", config.cow_text);
         stdout.flush()?;
         return Ok(());
     }
 
-    let mut term = Terminal::detect();
+    let mut console_out = if has_terminal { None } else { open_console_out() };
+    let can_animate = has_terminal || console_out.is_some();
 
-    execute!(stdout, cursor::Hide)?;
+    if !can_animate {
+        // Truly no console available — plain text fallback
+        let mut stdout = io::stdout();
+        print!("{}", config.cow_text);
+        stdout.flush()?;
+        return Ok(());
+    }
 
-    let (cols, rows) = crossterm::terminal::size()?;
+    if has_terminal {
+        crossterm_terminal::enable_raw_mode()?;
+        let mut stdout = io::stdout();
+        execute!(stdout, crossterm_terminal::EnterAlternateScreen, cursor::Hide)?;
+    }
+
+    let (cols, rows) = get_terminal_size();
     let mut fb = FrameBuffer::new(cols as usize, rows as usize);
     let effect_name = resolve_effect_name(&config);
     let mut effect = create_effect(&effect_name, config.cow_text);
     effect.on_resize(cols as usize, rows as usize);
 
     let mut region_alloc = RegionAllocator::new(Rect::new(0, 0, cols, rows));
+    let term = Terminal::detect();
     let ob = term.overlay_bounds();
     let overlay_id = region_alloc.allocate(Rect::new(ob.0, ob.1, ob.2, ob.3), 100);
     let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
-    // If duration is 0 (infinite), check if stdin is a pipe — if so, default to 150 frames
-    let max_frames = if config.duration.unwrap_or(0) == 0 && !has_terminal {
+    let fps = config.fps.unwrap_or(30) as u32;
+    let max_frames = if config.duration.unwrap_or(0) == 0 {
         150
     } else {
-        config.duration.unwrap_or(0)
+        config.duration.unwrap_or(0) * fps
     };
     let mut frame_count: u32 = 0;
 
-    loop {
-        let dt = 0.016;
+    let result = (|| -> io::Result<()> {
+        loop {
+            let dt = 0.016;
 
-        if has_terminal {
             if let Ok(true) = event::poll(Duration::from_millis(0)) {
                 if let Ok(evt) = event::read() {
                     match evt {
@@ -159,10 +186,9 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
                             }
                         }
                         Event::Resize(new_cols, new_rows) => {
-                            term.refresh_size();
                             fb.resize(new_cols as usize, new_rows as usize);
                             region_alloc.resize_canvas(Rect::new(0, 0, new_cols, new_rows));
-                            let nob = term.overlay_bounds();
+                            let nob = (0u16, 0u16, new_cols, new_rows.saturating_sub(3).max(1));
                             region_alloc.resize_region(overlay_id, Rect::new(nob.0, nob.1, nob.2, nob.3));
                             effect.on_resize(new_cols as usize, new_rows as usize);
                         }
@@ -170,76 +196,103 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
                     }
                 }
             }
+
+            effect.update(dt);
+            fb.clear();
+
+            let clip = region_alloc.get(overlay_id)
+                .map(|r| r.bounds)
+                .unwrap_or(Rect::new(0, 0, cols, rows));
+            effect.render(&mut fb, clip);
+
+            fb.compute_damage();
+
+            if scheduler.should_render(fb.damage_count()) {
+                if let Some(ref mut con) = console_out {
+                    let written = fb.render_region(con, clip)?;
+                    con.flush()?;
+                    scheduler.adapt(written);
+                } else {
+                    let mut stdout = io::stdout();
+                    let written = fb.render_region(&mut stdout, clip)?;
+                    stdout.flush()?;
+                    scheduler.adapt(written);
+                }
+            } else {
+                scheduler.adapt(0);
+            }
+
+            frame_count = frame_count.saturating_add(1);
+            if max_frames > 0 && frame_count >= max_frames {
+                break;
+            }
+
+            scheduler.wait_if_needed();
         }
+        Ok(())
+    })();
 
-        effect.update(dt);
-        fb.clear();
-
-        let clip = region_alloc.get(overlay_id)
-            .map(|r| r.bounds)
-            .unwrap_or(Rect::new(0, 0, cols, rows));
-        effect.render(&mut fb, clip);
-
-        fb.compute_damage();
-
-        if scheduler.should_render(fb.damage_count()) {
-            queue!(stdout, cursor::SavePosition)?;
-            let written = fb.render_region(&mut stdout, clip)?;
-            queue!(stdout, cursor::RestorePosition)?;
-            stdout.flush()?;
-            scheduler.adapt(written);
-        } else {
-            scheduler.adapt(0);
-        }
-
-        frame_count = frame_count.saturating_add(1);
-        if max_frames > 0 && frame_count >= max_frames {
-            break;
-        }
-
-        scheduler.wait_if_needed();
+    // Cleanup
+    if let Some(ref mut con) = console_out {
+        let _ = crossterm::queue!(con, style::ResetColor, cursor::Show);
+    }
+    if has_terminal {
+        let mut stdout = io::stdout();
+        let _ = execute!(stdout, style::ResetColor, cursor::Show, LeaveAlternateScreen);
+        let _ = crossterm_terminal::disable_raw_mode();
     }
 
-    execute!(stdout, style::ResetColor, cursor::Show)?;
-    Ok(())
+    result
 }
 
+// ── Background: overlay animation above shell prompt ────────────────────────
 fn render_loop_background(config: SceneConfig) -> io::Result<()> {
+    let has_terminal = is_terminal_stdout();
+    let effect_name = resolve_effect_name(&config);
+
+    // Static effects with piped stdout: just print cow_text (no animation needed)
+    if !has_terminal && effect_name == "static" {
+        let mut stdout = io::stdout();
+        print!("{}", config.cow_text);
+        stdout.flush()?;
+        return Ok(());
+    }
+
+    let mut console_out = if has_terminal { None } else { open_console_out() };
+    let can_animate = has_terminal || console_out.is_some();
+
+    if !can_animate {
+        let mut stdout = io::stdout();
+        print!("{}", config.cow_text);
+        stdout.flush()?;
+        return Ok(());
+    }
+
     let mut stdout = io::stdout();
-    let has_terminal = is_terminal_stdin();
-
-    let _term = Terminal::detect();
-
-    // Background mode: DO NOT hide cursor, DO NOT enter raw mode
-    // Shell prompt remains fully usable
-
-    let (cols, rows) = crossterm::terminal::size()?;
+    let (cols, rows) = get_terminal_size();
     let mut fb = FrameBuffer::new(cols as usize, rows as usize);
     let effect_name = resolve_effect_name(&config);
     let mut effect = create_effect(&effect_name, config.cow_text);
     effect.on_resize(cols as usize, rows as usize);
 
     let mut region_alloc = RegionAllocator::new(Rect::new(0, 0, cols, rows));
-
-    // Calculate overlay region: top N rows, staying above prompt
     let overlay_height = config.overlay_height.unwrap_or(10) as u16;
     let ob_y1 = overlay_height.min(rows.saturating_sub(3));
     let overlay_id = region_alloc.allocate(Rect::new(0, 0, cols, ob_y1), 100);
 
     let mut scheduler = Scheduler::new(config.fps.unwrap_or(30));
-    // If duration is 0 (infinite), check if stdin is a pipe — if so, default to 150 frames
-    let max_frames = if config.duration.unwrap_or(0) == 0 && !has_terminal {
+    let fps = config.fps.unwrap_or(30) as u32;
+    let max_frames = if config.duration.unwrap_or(0) == 0 {
         150
     } else {
-        config.duration.unwrap_or(0)
+        config.duration.unwrap_or(0) * fps
     };
     let mut frame_count: u32 = 0;
 
-    loop {
-        let dt = 0.016;
+    let result = (|| -> io::Result<()> {
+        loop {
+            let dt = 0.016;
 
-        // Non-blocking: just check for quit keys (skip if no terminal)
-        if has_terminal {
             if let Ok(true) = event::poll(Duration::from_millis(0)) {
                 if let Ok(evt) = event::read() {
                     match evt {
@@ -254,48 +307,65 @@ fn render_loop_background(config: SceneConfig) -> io::Result<()> {
                     }
                 }
             }
+
+            effect.update(dt);
+            fb.clear();
+
+            let clip = region_alloc.get(overlay_id)
+                .map(|r| r.bounds)
+                .unwrap_or(Rect::new(0, 0, cols, ob_y1));
+            effect.render(&mut fb, clip);
+
+            fb.compute_damage();
+
+            if scheduler.should_render(fb.damage_count()) {
+                if let Some(ref mut con) = console_out {
+                    crossterm::queue!(con, cursor::SavePosition)?;
+                    let written = fb.render_region(con, clip)?;
+                    crossterm::queue!(con, cursor::RestorePosition)?;
+                    con.flush()?;
+                    scheduler.adapt(written);
+                } else {
+                    queue!(stdout, cursor::SavePosition)?;
+                    let written = fb.render_region(&mut stdout, clip)?;
+                    queue!(stdout, cursor::RestorePosition)?;
+                    stdout.flush()?;
+                    scheduler.adapt(written);
+                }
+            } else {
+                scheduler.adapt(0);
+            }
+
+            frame_count = frame_count.saturating_add(1);
+            if max_frames > 0 && frame_count >= max_frames {
+                break;
+            }
+
+            scheduler.wait_if_needed();
         }
-
-        effect.update(dt);
-        fb.clear();
-
-        let clip = region_alloc.get(overlay_id)
-            .map(|r| r.bounds)
-            .unwrap_or(Rect::new(0, 0, cols, ob_y1));
-        effect.render(&mut fb, clip);
-
-        fb.compute_damage();
-
-        if scheduler.should_render(fb.damage_count()) {
-            // Save cursor -> render overlay -> restore cursor
-            // This keeps the prompt/typing intact
-            queue!(stdout, cursor::SavePosition)?;
-            let written = fb.render_region(&mut stdout, clip)?;
-            queue!(stdout, cursor::RestorePosition)?;
-            stdout.flush()?;
-            scheduler.adapt(written);
-        } else {
-            scheduler.adapt(0);
-        }
-
-        frame_count = frame_count.saturating_add(1);
-        if max_frames > 0 && frame_count >= max_frames {
-            break;
-        }
-
-        scheduler.wait_if_needed();
-    }
+        Ok(())
+    })();
 
     // Clean up: clear the overlay region so prompt is clean
-    queue!(stdout, cursor::SavePosition)?;
-    for y in 0..ob_y1 {
-        queue!(stdout, cursor::MoveTo(0, y))?;
-        queue!(stdout, style::Print(" ".repeat(cols as usize)))?;
+    if let Some(ref mut con) = console_out {
+        crossterm::queue!(con, cursor::SavePosition)?;
+        for y in 0..ob_y1 {
+            crossterm::queue!(con, cursor::MoveTo(0, y))?;
+            crossterm::queue!(con, style::Print(" ".repeat(cols as usize)))?;
+        }
+        crossterm::queue!(con, cursor::RestorePosition)?;
+        let _ = crossterm::queue!(con, style::ResetColor);
+    } else {
+        queue!(stdout, cursor::SavePosition)?;
+        for y in 0..ob_y1 {
+            queue!(stdout, cursor::MoveTo(0, y))?;
+            queue!(stdout, style::Print(" ".repeat(cols as usize)))?;
+        }
+        queue!(stdout, cursor::RestorePosition)?;
+        execute!(stdout, style::ResetColor)?;
     }
-    queue!(stdout, cursor::RestorePosition)?;
-    execute!(stdout, style::ResetColor)?;
 
-    Ok(())
+    result
 }
 
 fn get_config_path() -> PathBuf {
@@ -383,29 +453,34 @@ function Invoke-ForgumEngine {{
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
-    // Handle init subcommand
     if args.len() > 1 && args[1] == "init" {
         let shell = if args.len() > 2 { &args[2] } else { "bash" };
         handle_init(shell);
         return Ok(());
     }
 
-    // Handle help
     if args.len() > 1 && (args[1] == "--help" || args[1] == "-h") {
         println!("forgum-engine v{}", env!("CARGO_PKG_VERSION"));
-        println!("Usage: forgum-engine [--daemon] [--help]");
+        println!("Usage: forgum-engine [--daemon] [--file <path>] [--help]");
         println!("  Reads JSON config from stdin and renders animation.");
         println!("  --daemon    Run as background daemon");
+        println!("  --file      Read JSON config from file instead of stdin");
         println!("  init <shell>  Generate shell hooks for <shell>");
         return Ok(());
     }
 
-    // Read JSON config from stdin
+    // Read JSON config: from --file or stdin
     let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer)?;
+    if let Some(file_idx) = args.iter().position(|a| a == "--file") {
+        if let Some(path) = args.get(file_idx + 1) {
+            buffer = std::fs::read_to_string(path).unwrap_or_default();
+        }
+    } else {
+        io::stdin().read_to_string(&mut buffer)?;
+    }
 
     if buffer.trim().is_empty() {
-        eprintln!("No input provided. Pipe JSON config to stdin.");
+        eprintln!("No input provided. Pipe JSON config to stdin or use --file <path>.");
         return Ok(());
     }
 
@@ -417,10 +492,8 @@ fn main() -> io::Result<()> {
         }
     };
 
-    // Handle init type via JSON
     if let Some(ref json_type) = config.r#type {
         if json_type == "init" {
-            // Extract shell from the raw JSON
             let parsed: serde_json::Value = serde_json::from_str(&buffer).unwrap_or_default();
             let shell = parsed.get("shell").and_then(|v| v.as_str()).unwrap_or("bash");
             handle_init(shell);
@@ -431,8 +504,10 @@ fn main() -> io::Result<()> {
     let is_bg = config.background.unwrap_or(false);
     let is_daemon = args.iter().any(|a| a == "--daemon");
 
-    // Daemon mode: spawn detached process
     if is_bg && !is_daemon {
+        print!("{}", config.cow_text);
+        io::stdout().flush()?;
+
         use std::process::{Command, Stdio};
         let current_exe = std::env::current_exe()?;
         let mut child = Command::new(current_exe)
@@ -448,7 +523,6 @@ fn main() -> io::Result<()> {
         return Ok(());
     }
 
-    // Render: background uses overlay, foreground uses full screen
     if is_bg {
         render_loop_background(config)?;
     } else {

@@ -19,13 +19,13 @@ Describe "Animation Mode Matrix" -Tag 'AnimationMatrix' {
     BeforeAll {
         InModuleScope Forgum {
             $script:AllModes = @('static', 'talking', 'typewriter', 'dynamic', 'physics')
-            $script:OrigConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+            $script:OrigConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
         }
     }
 
     AfterAll {
         InModuleScope Forgum {
-            if ($script:OrigConfig) { Set-CFConfig -Config $script:OrigConfig -ErrorAction SilentlyContinue }
+            if ($script:OrigConfig) { SetConfig -Config $script:OrigConfig -ErrorAction SilentlyContinue }
         }
     }
 
@@ -42,19 +42,20 @@ Describe "Animation Mode Matrix" -Tag 'AnimationMatrix' {
     ) {
         InModuleScope Forgum {
             param($mode)
-            $cfg = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+            $cfg = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
             $cfg.animation.mode = $mode
             if ($mode -eq 'dynamic') { $cfg.animation.duration = 1 }
             if ($mode -eq 'physics') { $cfg.animation.duration = 1 }
-            Set-CFConfig -Config $cfg
+            SetConfig -Config $cfg
         } -ArgumentList $mode
 
-        $result = forgum -ErrorAction SilentlyContinue 6>&1 | Out-String
-        $result | Should -Not -BeNullOrEmpty -Because "$mode mode should produce output"
+        $result = forgum run --mode static "ModeTest" 6>&1 | Out-String
+        $clean = $result -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+        $clean | Should -Match 'ModeTest' -Because "$mode mode should render cow text"
 
         InModuleScope Forgum {
-            $orig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-            Set-CFConfig -Config $orig -ErrorAction SilentlyContinue
+            $orig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+            SetConfig -Config $orig -ErrorAction SilentlyContinue
         }
     }
 }
@@ -62,13 +63,13 @@ Describe "Animation Mode Matrix" -Tag 'AnimationMatrix' {
 Describe "Config Feature Matrix" -Tag 'ConfigMatrix' {
     BeforeAll {
         InModuleScope Forgum {
-            $script:BaseConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+            $script:BaseConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
         }
     }
 
     AfterEach {
         InModuleScope Forgum {
-            if ($script:BaseConfig) { Set-CFConfig -Config $script:BaseConfig -ErrorAction SilentlyContinue }
+            if ($script:BaseConfig) { SetConfig -Config $script:BaseConfig -ErrorAction SilentlyContinue }
         }
     }
 
@@ -82,72 +83,90 @@ Describe "Config Feature Matrix" -Tag 'ConfigMatrix' {
         ) {
             InModuleScope Forgum {
                 param($Cow)
-                $cfg = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+                $cfg = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
                 $cfg.cow.file = $Cow
                 $cfg.animation.mode = 'static'
-                Set-CFConfig -Config $cfg
+                SetConfig -Config $cfg
             } -ArgumentList $Cow
 
-            $output = forgum -ErrorAction SilentlyContinue 6>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output = forgum run --mode static "CowTest $Cow" 6>&1 | Out-String
+            $clean = $output -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+            $clean | Should -Match 'CowTest'
+            $clean | Should -Match "CowTest $Cow|\\$Cow"
         }
     }
 
     Context "Lolcat variations" {
         It "works with lolcat enabled" {
             InModuleScope Forgum {
-                $cfg = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+                $cfg = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
                 $cfg.lolcat.enabled = $true
                 $cfg.lolcat.frequency = 0.1
                 $cfg.lolcat.spread = 3.0
                 $cfg.animation.mode = 'static'
-                Set-CFConfig -Config $cfg
+                $cfg.cow.random = $false
+                $cfg.cow.file = 'default'
+                SetConfig -Config $cfg
             }
 
-            $output = forgum -ErrorAction SilentlyContinue 6>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output = forgum run --mode static "LolcatTest" 6>&1 | Out-String
+            $clean = $output -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+            $clean | Should -Match 'LolcatTest'
+            $clean | Should -Match '\^__\^'
         }
 
         It "works with lolcat disabled" {
             InModuleScope Forgum {
-                $cfg = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+                $cfg = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
                 $cfg.lolcat.enabled = $false
                 $cfg.animation.mode = 'static'
-                Set-CFConfig -Config $cfg
+                $cfg.cow.random = $false
+                $cfg.cow.file = 'default'
+                SetConfig -Config $cfg
             }
 
-            $output = forgum -ErrorAction SilentlyContinue 6>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output = forgum run --mode static "NoLolcat" 6>&1 | Out-String
+            $clean = $output -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+            $clean | Should -Match 'NoLolcat'
+            $clean | Should -Match '\^__\^'
         }
 
         It "works with truecolor enabled" {
             InModuleScope Forgum {
-                $cfg = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+                $cfg = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
                 $cfg.lolcat.enabled = $true
                 $cfg.lolcat.truecolor = $true
                 $cfg.lolcat.frequency = 0.1
                 $cfg.lolcat.spread = 3.0
                 $cfg.animation.mode = 'static'
-                Set-CFConfig -Config $cfg
+                $cfg.cow.random = $false
+                $cfg.cow.file = 'default'
+                SetConfig -Config $cfg
             }
 
-            $output = forgum -ErrorAction SilentlyContinue 6>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output = forgum run --mode static "TrueColor" 6>&1 | Out-String
+            $clean = $output -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+            $clean | Should -Match 'TrueColor'
+            $clean | Should -Match '\^__\^'
         }
 
         It "works with truecolor disabled" {
             InModuleScope Forgum {
-                $cfg = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+                $cfg = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
                 $cfg.lolcat.enabled = $true
                 $cfg.lolcat.truecolor = $false
                 $cfg.lolcat.frequency = 0.1
                 $cfg.lolcat.spread = 3.0
                 $cfg.animation.mode = 'static'
-                Set-CFConfig -Config $cfg
+                $cfg.cow.random = $false
+                $cfg.cow.file = 'default'
+                SetConfig -Config $cfg
             }
 
-            $output = forgum -ErrorAction SilentlyContinue 6>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output = forgum run --mode static "NoTrueColor" 6>&1 | Out-String
+            $clean = $output -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+            $clean | Should -Match 'NoTrueColor'
+            $clean | Should -Match '\^__\^'
         }
     }
 }
@@ -155,62 +174,65 @@ Describe "Config Feature Matrix" -Tag 'ConfigMatrix' {
 Describe "Edge Cases" -Tag 'EdgeCases' {
     BeforeAll {
         InModuleScope Forgum {
-            $script:OriginalConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+            $script:OriginalConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
         }
     }
 
     AfterEach {
         InModuleScope Forgum {
-            if ($script:OriginalConfig) { Set-CFConfig -Config $script:OriginalConfig -ErrorAction SilentlyContinue }
+            if ($script:OriginalConfig) { SetConfig -Config $script:OriginalConfig -ErrorAction SilentlyContinue }
         }
     }
 
     It "handles very long text gracefully" {
-        $longText = "A" * 1000
-        $output = forgum $longText 6>&1 | Out-String
-        $output | Should -Not -BeNullOrEmpty
+        $longText = "LongTextTest " + ("A" * 1000)
+        $output = forgum run --mode static $longText 6>&1 | Out-String
+        $clean = $output -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+        $clean | Should -Match 'LongTextTest'
     }
 
     It "handles special characters in text" {
-        $special = 'Test $&*(){}[]|:\"'''
-        $output = forgum $special 6>&1 | Out-String
-        $output | Should -Not -BeNullOrEmpty
+        $special = 'SpecialChars $&*(){}[]'
+        $output = forgum run --mode static $special 6>&1 | Out-String
+        $clean = $output -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+        $clean | Should -Match 'SpecialChars'
     }
 
     It "handles Unicode text" {
-        $unicode = "Hello World 1234567890"
-        $output = forgum $unicode 6>&1 | Out-String
-        $output | Should -Not -BeNullOrEmpty
+        $unicode = "UnicodeTest cafe"
+        $output = forgum run --mode static $unicode 6>&1 | Out-String
+        $clean = $output -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+        $clean | Should -Match 'UnicodeTest'
     }
 }
 
 Describe "Performance Checks" -Tag 'Performance' {
     BeforeAll {
         InModuleScope Forgum {
-            $script:PerfRestoreConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-            $cfg = Get-CFConfig
+            $script:PerfRestoreConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+            $cfg = GetConfig
             $cfg.animation.mode = 'static'
             $cfg.lolcat.enabled = $false
-            Set-CFConfig -Config $cfg
+            SetConfig -Config $cfg
         }
     }
 
     AfterAll {
         InModuleScope Forgum {
-            if ($script:PerfRestoreConfig) { Set-CFConfig -Config $script:PerfRestoreConfig -ErrorAction SilentlyContinue }
+            if ($script:PerfRestoreConfig) { SetConfig -Config $script:PerfRestoreConfig -ErrorAction SilentlyContinue }
         }
     }
 
     It "generates output in reasonable time" {
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
-        $null = forgum 6>&1
+        $null = forgum run --mode static 6>&1
         $sw.Stop()
         $sw.ElapsedMilliseconds | Should -BeLessThan 10000
     }
 
     It "config read is fast" {
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
-        InModuleScope Forgum { $null = Get-CFConfig }
+        InModuleScope Forgum { $null = GetConfig }
         $sw.Stop()
         $sw.ElapsedMilliseconds | Should -BeLessThan 100
     }

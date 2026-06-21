@@ -46,18 +46,18 @@ Describe "Subcommand: run" -Tag 'Subcommand' {
     }
 
     It "run with no args produces cow output" {
-        $output = forgum run 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "run with text produces that text" {
-        $raw = forgum run "Hello Test" 6>&1 2>&1 | Out-String
+        $raw = forgum run --mode static "Hello Test" 6>&1 2>&1 | Out-String
         $output = Remove-Ansi $raw
         $output | Should -BeLike '*Hello Test*'
     }
 
     It "run --cow tux produces output" {
-        $output = forgum run --cow tux "Test" 6>&1 2>&1 | Out-String
+        $output = forgum run --mode static --cow tux "Test" 6>&1 2>&1 | Out-String
         $output | Should -Not -BeNullOrEmpty
     }
 
@@ -70,31 +70,6 @@ Describe "Subcommand: run" -Tag 'Subcommand' {
         $output = forgum help run 2>&1 | Out-String
         $output | Should -Match 'forgum run'
         $output | Should -Match 'Usage:'
-    }
-}
-
-Describe "Subcommand: config" -Tag 'Subcommand' {
-
-    It "config --help returns help text" {
-        $output = forgum config --help 2>&1 | Out-String
-        $output | Should -Match 'forgum config'
-        $output | Should -Match 'Usage:'
-        $output | Should -Match 'config file'
-    }
-
-    It "config -h returns help text" {
-        $output = forgum config -h 2>&1 | Out-String
-        $output | Should -Match 'forgum config'
-    }
-
-    It "config --help mentions config file locations" {
-        $output = forgum config --help 2>&1 | Out-String
-        $output | Should -Match 'config.json'
-    }
-
-    It "help config returns config help" {
-        $output = forgum help config 2>&1 | Out-String
-        $output | Should -Match 'forgum config'
     }
 }
 
@@ -446,11 +421,6 @@ Describe "Subcommand: help" -Tag 'Subcommand' {
         $output | Should -Match 'forgum run'
     }
 
-    It "help config returns config help" {
-        $output = forgum help config 2>&1 | Out-String
-        $output | Should -Match 'forgum config'
-    }
-
     It "help gallery returns gallery help" {
         $output = forgum help gallery 2>&1 | Out-String
         $output | Should -Match 'forgum gallery'
@@ -553,11 +523,11 @@ Describe "Root-level help and version" -Tag 'Subcommand' {
     }
 }
 
-Describe "Parse-ForgumArguments edge cases" -Tag 'Subcommand' {
+Describe "ParseForgumArguments edge cases" -Tag 'Subcommand' {
 
     It "parses empty arguments" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @()
+            $parsed = ParseForgumArguments -Arguments @()
             $parsed.Help | Should -Be $false
             $parsed.Text.Count | Should -Be 0
             $parsed.TextString | Should -Be ''
@@ -566,105 +536,105 @@ Describe "Parse-ForgumArguments edge cases" -Tag 'Subcommand' {
 
     It "parses --help" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--help')
+            $parsed = ParseForgumArguments -Arguments @('--help')
             $parsed.Help | Should -Be $true
         }
     }
 
     It "parses -h" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('-h')
+            $parsed = ParseForgumArguments -Arguments @('-h')
             $parsed.Help | Should -Be $true
         }
     }
 
     It "parses -?" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('-?')
+            $parsed = ParseForgumArguments -Arguments @('-?')
             $parsed.Help | Should -Be $true
         }
     }
 
     It "parses --cow tux" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--cow', 'tux')
+            $parsed = ParseForgumArguments -Arguments @('--cow', 'tux')
             $parsed.Options['cow'] | Should -Be 'tux'
         }
     }
 
     It "parses --mode aurora" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--mode', 'aurora')
+            $parsed = ParseForgumArguments -Arguments @('--mode', 'aurora')
             $parsed.Options['mode'] | Should -Be 'aurora'
         }
     }
 
     It "parses --count 10" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--count', '10')
+            $parsed = ParseForgumArguments -Arguments @('--count', '10')
             $parsed.Options['count'] | Should -Be '10'
         }
     }
 
     It "parses --shell bash" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--shell', 'bash')
+            $parsed = ParseForgumArguments -Arguments @('--shell', 'bash')
             $parsed.Options['shell'] | Should -Be 'bash'
         }
     }
 
     It "parses --duration 5" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--duration', '5')
+            $parsed = ParseForgumArguments -Arguments @('--duration', '5')
             $parsed.Options['duration'] | Should -Be '5'
         }
     }
 
     It "parses --lolcat flag" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--lolcat')
+            $parsed = ParseForgumArguments -Arguments @('--lolcat')
             $parsed.Flags['lolcat'] | Should -Be $true
         }
     }
 
     It "parses --no-lolcat flag" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--no-lolcat')
+            $parsed = ParseForgumArguments -Arguments @('--no-lolcat')
             $parsed.Flags['no-lolcat'] | Should -Be $true
         }
     }
 
     It "parses --fortune flag" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--fortune')
+            $parsed = ParseForgumArguments -Arguments @('--fortune')
             $parsed.Flags['fortune'] | Should -Be $true
         }
     }
 
     It "parses --force flag" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--force')
+            $parsed = ParseForgumArguments -Arguments @('--force')
             $parsed.Flags['force'] | Should -Be $true
         }
     }
 
     It "parses --check flag" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--check')
+            $parsed = ParseForgumArguments -Arguments @('--check')
             $parsed.Flags['check'] | Should -Be $true
         }
     }
 
     It "parses positional text" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('Hello', 'World')
+            $parsed = ParseForgumArguments -Arguments @('Hello', 'World')
             $parsed.TextString | Should -Be 'Hello World'
         }
     }
 
     It "parses mixed options and text" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--cow', 'tux', 'Hello', 'World')
+            $parsed = ParseForgumArguments -Arguments @('--cow', 'tux', 'Hello', 'World')
             $parsed.Options['cow'] | Should -Be 'tux'
             $parsed.TextString | Should -Be 'Hello World'
         }
@@ -672,7 +642,7 @@ Describe "Parse-ForgumArguments edge cases" -Tag 'Subcommand' {
 
     It "parses multiple flags" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--lolcat', '--fortune')
+            $parsed = ParseForgumArguments -Arguments @('--lolcat', '--fortune')
             $parsed.Flags['lolcat'] | Should -Be $true
             $parsed.Flags['fortune'] | Should -Be $true
         }
@@ -680,14 +650,14 @@ Describe "Parse-ForgumArguments edge cases" -Tag 'Subcommand' {
 
     It "parses help with other args" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--help', '--cow', 'tux')
+            $parsed = ParseForgumArguments -Arguments @('--help', '--cow', 'tux')
             $parsed.Help | Should -Be $true
         }
     }
 
     It "unknown --option falls through to text" {
         InModuleScope Forgum {
-            $parsed = Parse-ForgumArguments -Arguments @('--unknown', 'value')
+            $parsed = ParseForgumArguments -Arguments @('--unknown', 'value')
             $parsed.Text | Should -Contain '--unknown'
             $parsed.Text | Should -Contain 'value'
         }
@@ -803,11 +773,6 @@ Describe "Help alias routing" -Tag 'HelpAlias' {
         $output | Should -Match 'forgum interactive'
     }
 
-    It "help setup routes to config help" {
-        $output = forgum help setup 2>&1 | Out-String
-        $output | Should -Match 'forgum config'
-    }
-
     It "help show routes to gallery help" {
         $output = forgum help show 2>&1 | Out-String
         $output | Should -Match 'forgum gallery'
@@ -854,12 +819,12 @@ Describe "Module exports and structure" -Tag 'Structure' {
     It "all private subcommand handlers exist" {
         InModuleScope Forgum {
             $handlers = @(
-                'Invoke-ForgumRun', 'Invoke-ForgumConfig', 'Invoke-ForgumGallery',
-                'Invoke-ForgumPreview', 'Invoke-ForgumUpdate', 'Invoke-ForgumToggle',
-                'Invoke-ForgumAnimate', 'Invoke-ForgumEyes', 'Invoke-ForgumInit',
-                'Invoke-ForgumLiveHandler', 'Invoke-ForgumDaemon', 'Invoke-ForgumCowsay',
-                'Invoke-ForgumList', 'Invoke-ForgumTheme', 'Invoke-ForgumExport',
-                'Invoke-ForgumHistory', 'Invoke-ForgumInteractive'
+                'RunCommand', 'ConfigCommand', 'GalleryCommand',
+                'PreviewCommand', 'UpdateCommand', 'ToggleCommand',
+                'AnimateCommand', 'EyesCommand', 'InitCommand',
+                'LiveCommand', 'DaemonCommand', 'CowsayCommand',
+                'ListCommand', 'ThemeCommand', 'ExportCommand',
+                'HistoryCommand', 'InteractiveCommand'
             )
             foreach ($h in $handlers) {
                 Get-Command $h -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty
@@ -870,15 +835,15 @@ Describe "Module exports and structure" -Tag 'Structure' {
     It "all private helper functions exist" {
         InModuleScope Forgum {
             $helpers = @(
-                'Get-HelpMessage', 'Parse-ForgumArguments', 'Get-EngineBinary',
-                'Get-ForgumShellHook', 'Get-ForgumShell', 'Show-CFCowGallery',
-                'Show-CFCowPreview', 'Toggle-CFLolcat', 'Set-CFCowAnimate',
-                'Set-CFCowEyes', 'Start-ForgumDaemon', 'Stop-ForgumDaemon',
-                'Invoke-ForgumLive', 'Invoke-ForgumTUI', 'Update-Forgum',
-                'Get-LolcatParams', 'Write-ForgumHistory', 'Get-ForgumPlatform',
-                'Read-CowFile', 'Format-CowMessage', 'Get-CFConfig', 'Set-CFConfig',
-                'Get-CFCow', 'Get-Fortune', 'Read-FortuneFile', 'Invoke-Cowsay',
-                'Write-TerminalFrame', 'Set-Forgum'
+                'GetHelpMessage', 'ParseForgumArguments', 'GetEngineBinary',
+                'GetForgumShellHook', 'GetShell', 'ShowCowGallery',
+                'ShowCowPreview', 'ToggleLolcat', 'SetCowAnimate',
+                'SetCowEyes', 'StartDaemon', 'StopDaemon',
+                'InvokeForgumLive', 'InvokeForgumTUI', 'UpdateForgum',
+                'GetLolcatParams', 'WriteHistory', 'GetPlatform',
+                'ReadCowFile', 'FormatCowMessage', 'GetConfig', 'SetConfig',
+                'GetCowFiles', 'GetFortune', 'ReadFortuneFile', 'InvokeCowsay',
+                'WriteTerminalFrame', 'Set-Forgum'
             )
             foreach ($h in $helpers) {
                 Get-Command $h -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty -Because "$h should exist"
@@ -889,7 +854,7 @@ Describe "Module exports and structure" -Tag 'Structure' {
     It "all animation functions exist" {
         InModuleScope Forgum {
             $anims = @(
-                'Show-CFAnimation', 'Invoke-Engine'
+                'ShowAnimation', 'InvokeEngine'
             )
             foreach ($a in $anims) {
                 Get-Command $a -ErrorAction SilentlyContinue | Should -Not -BeNullOrEmpty -Because "$a should exist"

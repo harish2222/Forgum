@@ -14,16 +14,16 @@ BeforeAll {
 Describe "Cross-Platform Support" -Tag 'CrossPlatform' {
 
     Context "Platform detection" {
-        It "Get-ForgumPlatform returns valid platform" {
+        It "GetPlatform returns valid platform" {
             InModuleScope Forgum {
-                $platform = Get-ForgumPlatform
+                $platform = GetPlatform
                 $platform | Should -BeIn @('windows', 'macos', 'linux', 'unknown')
             }
         }
 
         It "platform matches actual OS" {
             InModuleScope Forgum {
-                $platform = Get-ForgumPlatform
+                $platform = GetPlatform
                 if ($IsWindows -or $env:OS -eq 'Windows_NT') {
                     $platform | Should -Be 'windows'
                 } elseif ($IsMacOS) {
@@ -36,9 +36,9 @@ Describe "Cross-Platform Support" -Tag 'CrossPlatform' {
     }
 
     Context "Shell detection" {
-        It "Get-ForgumShell returns valid shell" {
+        It "GetShell returns valid shell" {
             InModuleScope Forgum {
-                $shell = Get-ForgumShell
+                $shell = GetShell
                 $shell | Should -BeIn @('bash', 'zsh', 'fish', 'pwsh', 'powershell', 'unknown')
             }
         }
@@ -46,7 +46,7 @@ Describe "Cross-Platform Support" -Tag 'CrossPlatform' {
         It "Windows returns pwsh or powershell" {
             if ($IsWindows -or $env:OS -eq 'Windows_NT') {
                 InModuleScope Forgum {
-                    $shell = Get-ForgumShell
+                    $shell = GetShell
                     $shell | Should -BeIn @('pwsh', 'powershell')
                 }
             }
@@ -54,9 +54,9 @@ Describe "Cross-Platform Support" -Tag 'CrossPlatform' {
     }
 
     Context "Config path" {
-        It "Get-ForgumConfigPath returns non-empty path" {
+        It "GetForgumConfigPath returns non-empty path" {
             InModuleScope Forgum {
-                $path = Get-ForgumConfigPath
+                $path = GetForgumConfigPath
                 $path | Should -Not -BeNullOrEmpty
             }
         }
@@ -64,7 +64,7 @@ Describe "Cross-Platform Support" -Tag 'CrossPlatform' {
         It "Windows path uses backslash" {
             if ($IsWindows -or $env:OS -eq 'Windows_NT') {
                 InModuleScope Forgum {
-                    $path = Get-ForgumConfigPath
+                    $path = GetForgumConfigPath
                     $path | Should -Match '\\'
                 }
             }
@@ -72,7 +72,7 @@ Describe "Cross-Platform Support" -Tag 'CrossPlatform' {
 
         It "path ends with config.json" {
             InModuleScope Forgum {
-                $path = Get-ForgumConfigPath
+                $path = GetForgumConfigPath
                 $path | Should -Match 'config\.json$'
             }
         }

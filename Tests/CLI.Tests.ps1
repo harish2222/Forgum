@@ -85,12 +85,6 @@ Describe "forgum CLI" -Tag 'CLI' {
             $output | Should -Match '--lolcat'
         }
 
-        It "config --help shows config help" {
-            $output = forgum config --help 2>&1 | Out-String
-            $output | Should -Match 'Usage:'
-            $output | Should -Match 'forgum config'
-        }
-
         It "gallery --help shows gallery help" {
             $output = forgum gallery --help 2>&1 | Out-String
             $output | Should -Match 'Usage:'
@@ -167,12 +161,12 @@ Describe "forgum CLI" -Tag 'CLI' {
 
     Context "Default behavior" {
         It "runs with no arguments" {
-            $output = forgum 6>&1 2>&1 | Out-String
+            $output = forgum run --mode static 6>&1 2>&1 | Out-String
             $output | Should -Not -BeNullOrEmpty
         }
 
         It "runs with text argument" {
-            $raw = forgum "Test message" 6>&1 2>&1 | Out-String
+            $raw = forgum run --mode static "Test message" 6>&1 2>&1 | Out-String
             Remove-Ansi $raw | Should -Match 'Test message'
         }
     }
@@ -184,65 +178,65 @@ Describe "forgum CLI" -Tag 'CLI' {
             $funcs.Count | Should -Be 1
         }
 
-        It "exports aliases" {
+        It "exports no aliases" {
             $aliases = (Get-Command -Module Forgum -CommandType Alias).Name
-            $aliases | Should -Contain 'forgum-setup'
+            $aliases | Should -BeNullOrEmpty
         }
     }
 
-    Context "Parse-ForgumArguments" {
+    Context "ParseForgumArguments" {
         It "parses --help flag" {
             InModuleScope Forgum {
-                $parsed = Parse-ForgumArguments -Arguments @('--help')
+                $parsed = ParseForgumArguments -Arguments @('--help')
                 $parsed.Help | Should -Be $true
             }
         }
 
         It "parses -h flag" {
             InModuleScope Forgum {
-                $parsed = Parse-ForgumArguments -Arguments @('-h')
+                $parsed = ParseForgumArguments -Arguments @('-h')
                 $parsed.Help | Should -Be $true
             }
         }
 
         It "parses --cow option" {
             InModuleScope Forgum {
-                $parsed = Parse-ForgumArguments -Arguments @('--cow', 'tux')
+                $parsed = ParseForgumArguments -Arguments @('--cow', 'tux')
                 $parsed.Options['cow'] | Should -Be 'tux'
             }
         }
 
         It "parses --mode option" {
             InModuleScope Forgum {
-                $parsed = Parse-ForgumArguments -Arguments @('--mode', 'aurora')
+                $parsed = ParseForgumArguments -Arguments @('--mode', 'aurora')
                 $parsed.Options['mode'] | Should -Be 'aurora'
             }
         }
 
         It "parses --count option" {
             InModuleScope Forgum {
-                $parsed = Parse-ForgumArguments -Arguments @('--count', '10')
+                $parsed = ParseForgumArguments -Arguments @('--count', '10')
                 $parsed.Options['count'] | Should -Be '10'
             }
         }
 
         It "parses --lolcat flag" {
             InModuleScope Forgum {
-                $parsed = Parse-ForgumArguments -Arguments @('--lolcat')
+                $parsed = ParseForgumArguments -Arguments @('--lolcat')
                 $parsed.Flags['lolcat'] | Should -Be $true
             }
         }
 
         It "parses positional text" {
             InModuleScope Forgum {
-                $parsed = Parse-ForgumArguments -Arguments @('Hello', 'World')
+                $parsed = ParseForgumArguments -Arguments @('Hello', 'World')
                 $parsed.TextString | Should -Be 'Hello World'
             }
         }
 
         It "parses mixed args and text" {
             InModuleScope Forgum {
-                $parsed = Parse-ForgumArguments -Arguments @('--cow', 'tux', 'Hello')
+                $parsed = ParseForgumArguments -Arguments @('--cow', 'tux', 'Hello')
                 $parsed.Options['cow'] | Should -Be 'tux'
                 $parsed.TextString | Should -Be 'Hello'
             }

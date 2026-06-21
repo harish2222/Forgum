@@ -1,20 +1,14 @@
 <#
 .SYNOPSIS
-    Forgum Shell Setup - Configure terminal integration interactively.
+    Forgum Shell Setup - Configure terminal integration.
 .DESCRIPTION
-    Configures Fortune cow on startup, lolcat, cow file, animation, aliases, and tab completion.
-    Supports -NonInteractive for package managers (winget/scoop).
+    Configures fortune cow on startup, lolcat, cow file, animation, and profile.
+    Reads/writes config.json directly — no module function dependencies.
 .PARAMETER NonInteractive
-    Skip all prompts, use defaults (fortune=yes, lolcat=yes, cow=default, animation=dynamic, aliases=yes, completion=yes).
+    Skip all prompts, use defaults.
 .PARAMETER Force
     Overwrite existing config without asking.
-.PARAMETER NoProfile
-    Don't modify PowerShell profile.
-.EXAMPLE
-    .\setup.ps1
-    .\setup.ps1 -NonInteractive -Force
 #>
-
 [CmdletBinding()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param(
@@ -24,241 +18,137 @@ param(
     [switch]$DisableAutoUpdate
 )
 
-#Requires -Version 5.1
+$ErrorActionPreference = 'Stop'
 
-$FigletBanner = @"
-  _____ ___  ____   ____ _   _ __  __ 
- |  ___/ _ \|  _ \ / ___| | | |  \/  |
- | |_ | | | | |_) | |  _| | | | |\/| |
- |  _|| |_| |  _ <| |_| | |_| | |  | |
- |_|   \___/|_| \_\\____|\___/|_|  |_|
-"@
+# ── Config paths ──
+$configDir = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "PowerShell\Forgum"
+$configPath = Join-Path $configDir "config.json"
+$installDir = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "PowerShell\Modules\Forgum"
+$defaultConfig = Join-Path $installDir "Data\Templates\default-config.json"
+$cowsDir = Join-Path $installDir "Data\Cows"
 
-function Show-Banner {
-    Write-Host ""
-    Write-Host $FigletBanner -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "  Shell Setup Wizard" -ForegroundColor Magenta
-    Write-Host ""
-}
-
-function Show-Section {
-    param([string]$Title)
-    Write-Host ""
-    Write-Host "  ── $Title ──" -ForegroundColor Yellow
-    Write-Host ""
-}
-
-function Get-UserChoice {
-    param(
-        [string]$Prompt,
-        [bool]$Default,
-        [switch]$NonInteractive
-    )
-    $defaultStr = if ($Default) { "Y/n" } else { "y/N" }
-    Write-Host "  $Prompt " -NoNewline -ForegroundColor White
-    Write-Host "[$defaultStr]: " -NoNewline -ForegroundColor DarkGray
-    
-    if ($NonInteractive) {
-        Write-Host $(if ($Default) { "yes" } else { "no" }) -ForegroundColor Green
-        return $Default
+function Load-Config {
+    if (Test-Path $configPath) {
+        try { return Get-Content $configPath -Raw | ConvertFrom-Json } catch { }
     }
-    
-    $response = Read-Host
-    if ([string]::IsNullOrWhiteSpace($response)) { return $Default }
-    return $response -match '^[yY]'
+    if (Test-Path $defaultConfig) {
+        return Get-Content $defaultConfig -Raw | ConvertFrom-Json
+    }
+    return $null
 }
 
-function Get-UserSelection {
-    param(
-        [string]$Prompt,
-        [string[]]$Options,
-        [string]$Default,
-        [switch]$NonInteractive
-    )
+function Save-Config($cfg) {
+    if (-not (Test-Path $configDir)) { New-Item -ItemType Directory -Path $configDir -Force | Out-Null }
+    $cfg | ConvertTo-Json -Depth 20 | Set-Content -Path $configPath -Encoding UTF8 -Force
+}
+
+function Get-Choice([string]$Prompt, [bool]$Default) {
+    $tag = if ($Default) { "Y/n" } else { "y/N" }
+    Write-Host "  $Prompt " -NoNewline -ForegroundColor White
+    Write-Host "[$tag]: " -NoNewline -ForegroundColor DarkGray
+    if ($NonInteractive) { $r = if ($Default) { "yes" } else { "no" }; Write-Host $r -ForegroundColor Green; return $Default }
+    $resp = Read-Host
+    if ([string]::IsNullOrWhiteSpace($resp)) { return $Default }
+    return $resp -match '^[yY]'
+}
+
+function Get-Selection([string]$Prompt, [string[]]$Options, [string]$Default) {
     Write-Host "  $Prompt" -ForegroundColor White
     for ($i = 0; $i -lt $Options.Count; $i++) {
-        $marker = if ($Options[$i] -eq $Default) { " *" } else { "  " }
-        Write-Host "    $($i + 1)$marker $($Options[$i])" -ForegroundColor Cyan
+        $m = if ($Options[$i] -eq $Default) { " *" } else { "  " }
+        Write-Host "    $($i + 1)$m $($Options[$i])" -ForegroundColor Cyan
     }
-    
-    if ($NonInteractive) {
-        $defaultIdx = [Array]::IndexOf($Options, $Default) + 1
-        Write-Host "  Selection [$defaultIdx]: $Default" -ForegroundColor Green
-        return $Default
-    }
-    
+    if ($NonInteractive) { Write-Host "  Selection: $Default" -ForegroundColor Green; return $Default }
     $idx = Read-Host "  Selection [1-$($Options.Count)]"
     if ([string]::IsNullOrWhiteSpace($idx)) { return $Default }
-    $num = 0
-    if ([int]::TryParse($idx, [ref]$num) -and $num -ge 1 -and $num -le $Options.Count) {
-        return $Options[$num - 1]
-    }
+    $n = 0
+    if ([int]::TryParse($idx, [ref]$n) -and $n -ge 1 -and $n -le $Options.Count) { return $Options[$n - 1] }
     return $Default
 }
 
 # ── Main ──
-Show-Banner
+Write-Host "`n  Forgum Setup Wizard`n" -ForegroundColor Cyan
 
-# Check if Forgum is installed
-if (-not (Get-Command Get-CFConfig -ErrorAction SilentlyContinue)) {
-    $forgumPath = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "PowerShell\Modules\Forgum\Forgum.psd1"
-    if (-not (Test-Path $forgumPath)) {
-        $forgumPath = Join-Path $PSScriptRoot "Forgum.psd1"
-        if (-not (Test-Path $forgumPath)) {
-            Write-Host "  ERROR: Forgum module not found." -ForegroundColor Red
-            Write-Host "  Run install.ps1 first, then run this script." -ForegroundColor Yellow
-            return
-        }
-    }
-
-    try {
-        Import-Module $forgumPath -Force -ErrorAction Stop
-    } catch {
-        Write-Host "  ERROR: Failed to load Forgum module: $_" -ForegroundColor Red
-        return
-    }
-    Write-Host "  Forgum module loaded successfully!" -ForegroundColor Green
-}
-
-try {
-    $config = Get-CFConfig
-} catch {
-    Write-Host "  ERROR: Failed to load config: $_" -ForegroundColor Red
+$config = Load-Config
+if (-not $config) {
+    Write-Host "  ERROR: Cannot find default config at $defaultConfig" -ForegroundColor Red
     return
 }
 
-# Check for existing profile config
+# Check existing profile
 $profilePath = $PROFILE.CurrentUserAllHosts
 if (-not $profilePath) { $profilePath = $PROFILE.CurrentUser }
-if (Test-Path $profilePath) {
-    $existingProfile = Get-Content $profilePath -Raw
-    if ($existingProfile -match '# region FORGUM') {
-        Show-Section "Existing Configuration Detected"
-        $changeExisting = Get-UserChoice "Forgum is already configured. Do you want to change your settings?" $false -NonInteractive:$NonInteractive
-        if (-not $changeExisting -and -not $Force) {
-            Write-Host "  Keeping existing configuration. Setup complete." -ForegroundColor Green
-            return
-        }
+if ((Test-Path $profilePath) -and (Get-Content $profilePath -Raw) -match '# region FORGUM') {
+    if (-not (Get-Choice "Forgum already configured. Change settings?" $false) -and -not $Force) {
+        Write-Host "  Keeping existing config." -ForegroundColor Green; return
     }
 }
 
-# ── Toggle 1: Fortune Cow on Startup ──
-Show-Section "Fortune Cow on Startup"
-$fortuneOnStartup = Get-UserChoice "Show cow with fortune on terminal startup?" $true -NonInteractive:$NonInteractive
+# Collect choices
+$fStart = Get-Choice "Show cow on startup?" $true
+$lolcat = Get-Choice "Enable rainbow lolcat?" $true
 
-# ── Toggle 2: Lolcat Rainbow ──
-Show-Section "Lolcat Rainbow Colors"
-$lolcatEnabled = Get-UserChoice "Enable rainbow lolcat colors by default?" $true -NonInteractive:$NonInteractive
+$cows = if (Test-Path $cowsDir) {
+    Get-ChildItem $cowsDir -Filter "*.cow" | ForEach-Object { [System.IO.Path]::GetFileNameWithoutExtension($_.Name) }
+} else { @('default') }
+$cowOpts = @('default') + ($cows | Where-Object { $_ -ne 'default' } | Select-Object -First 9)
+$cow = Get-Selection "Default cow:" $cowOpts "default"
+$anim = Get-Selection "Animation mode:" @('static','dynamic','talking','typewriter','bounce','wave') "static"
+$autoUpd = -not $DisableAutoUpdate.IsPresent
+$autoUpd = Get-Choice "Daily auto-update check?" $autoUpd
 
-# ── Toggle 3: Default Cow File ──
-Show-Section "Default Cow File"
-$cowFiles = Get-CFCow | Select-Object -First 20
-$cowOptions = @('default') + ($cowFiles | Where-Object { $_ -ne 'default' } | Select-Object -First 9)
-$defaultCow = Get-UserSelection -Prompt "Choose default cow:" -Options $cowOptions -Default "default" -NonInteractive:$NonInteractive
+# Apply config
+$config.lolcat.enabled = $lolcat
+$config.cow.file = $cow
+$config.animation.mode = $anim
+$config.update.autoCheck = $autoUpd
+Save-Config $config
+Write-Host "`n  Config saved." -ForegroundColor Green
 
-# ── Toggle 4: Animation Mode ──
-Show-Section "Animation Mode"
-$animMode = Get-UserSelection -Prompt "Choose animation mode:" -Options @('static', 'dynamic', 'talking', 'typewriter', 'rainbow', 'fade', 'bounce', 'pulse', 'slide', 'blink', 'scroll') -Default "static" -NonInteractive:$NonInteractive
+# Update profile
+if (-not $NoProfile -and $profilePath) {
+    $dir = Split-Path $profilePath -Parent
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory $dir -Force | Out-Null }
+    $existing = if (Test-Path $profilePath) { Get-Content $profilePath -Raw } else { '' }
 
-# ── Toggle 4.5: Daily Auto-Update ──
-Show-Section "Daily Auto-Update"
-$autoUpdateDef = -not $DisableAutoUpdate.IsPresent
-$autoUpdate = Get-UserChoice "Enable background daily auto-update check?" $autoUpdateDef -NonInteractive:$NonInteractive
-
-# ── Toggle 5: Shell Aliases ──
-Show-Section "Shell Aliases"
-$addAliases = Get-UserChoice "Add quick aliases (forgum-show, forgum-setup, etc.)?" $true -NonInteractive:$NonInteractive
-
-# ── Toggle 6: Tab Completion ──
-Show-Section "Tab Completion"
-$addCompletion = Get-UserChoice "Add tab completion for Forgum commands?" $true -NonInteractive:$NonInteractive
-
-# ── Apply Config ──
-Show-Section "Applying Configuration"
-
-$config.lolcat.enabled = $lolcatEnabled
-$config.cow.file = $defaultCow
-$config.animation.mode = $animMode
-$config.update.autoCheck = $autoUpdate
-Set-CFConfig -Config $config -Confirm:$(-not $Force)
-Write-Host "  Config saved" -ForegroundColor Green
-
-# ── Update Profile ──
-if (-not $NoProfile) {
-    Show-Section "Updating PowerShell Profile"
-    $profilePath = $PROFILE.CurrentUserAllHosts
-    if (-not $profilePath) { $profilePath = $PROFILE.CurrentUser }
-    
-    if ($profilePath) {
-        $profileDir = Split-Path $profilePath -Parent
-        if (-not (Test-Path $profileDir)) {
-            New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
-        }
-        
-        $existingProfile = if (Test-Path $profilePath) { Get-Content $profilePath -Raw } else { '' }
-        
-        # Build the new consolidated block
-        $blockLines = [System.Collections.Generic.List[string]]::new()
-        $blockLines.Add("# region FORGUM")
-        $blockLines.Add("# This section is managed by Forgum. Manually editing may affect its ability to update.")
-        $blockLines.Add("`$env:FORGUM_NOAUTOSTART = '1'")
-        $blockLines.Add("Import-Module Forgum -ErrorAction SilentlyContinue")
-        
-        if ($fortuneOnStartup) {
-            $blockLines.Add("")
-            $blockLines.Add("if (-not `$global:FORGUM_STARTUP_DONE) {")
-            $blockLines.Add("    `$global:FORGUM_STARTUP_DONE = `$true")
-            $blockLines.Add("    if (Get-Command forgum -ErrorAction Ignore) { forgum run 'startup' | Out-Host }")
-            $blockLines.Add("}")
-        }
-        
-        $blockLines.Add("# endregion FORGUM")
-        
-        $forgumBlock = ($blockLines -join "`r`n")
-        
-        # Clean up old scattered blocks if they exist
-        $cleanedProfile = $existingProfile
-        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum Startup Fortune Cow.*?Show-FortuneCow\r?\n}', ''
-        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum Aliases.*?function cow-animate.*?}', ''
-        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum Tab Completion.*?Register-ArgumentCompleter.*?}', ''
-        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# Forgum\r?\nImport-Module Forgum -ErrorAction SilentlyContinue', ''
-        $cleanedProfile = $cleanedProfile -replace '(?s)\r?\n# region FORGUM.*?# endregion FORGUM\r?\n?', ''
-        
-        # Replace existing region if found, otherwise append
-        if ($cleanedProfile -match '(?s)# region FORGUM.*?# endregion FORGUM') {
-            $escapedBlock = $forgumBlock -replace '\$', '$$$$'
-            $newProfile = $cleanedProfile -replace '(?s)# region FORGUM.*?# endregion FORGUM', $escapedBlock
-            Write-Host "  Updated Forgum block in profile" -ForegroundColor Green
-        } else {
-            $newProfile = $cleanedProfile.Trim() + "`r`n`r`n" + $forgumBlock
-            Write-Host "  Added Forgum block to profile" -ForegroundColor Green
-        }
-        
-        # Backup profile before modifying
-        if (Test-Path $profilePath) {
-            $backupPath = "$profilePath.bak.$(Get-Date -Format 'yyyyMMddHHmmss')"
-            Copy-Item -Path $profilePath -Destination $backupPath -Force
-        }
-        
-        Set-Content -Path $profilePath -Value $newProfile.Trim() -Force -Encoding utf8NoBOM
-        Write-Host "  Profile updated: $profilePath" -ForegroundColor Green
+    $block = @(
+        "# region FORGUM",
+        "`$env:FORGUM_NOAUTOSTART = '1'",
+        "Import-Module Forgum -ErrorAction SilentlyContinue"
+    )
+    if ($fStart) {
+        $block += ""
+        $block += "if (-not `$global:FORGUM_STARTUP_DONE) {"
+        $block += "    `$global:FORGUM_STARTUP_DONE = `$true"
+        $block += "    if (Get-Command forgum -ErrorAction Ignore) { forgum 2>&1 | Out-Host }"
+        $block += "}"
     }
+    $block += "# endregion FORGUM"
+    $forgumBlock = ($block -join "`r`n")
+
+    $cleaned = $existing
+    $cleaned = $cleaned -replace '(?s)\r?\n# Forgum Startup Fortune Cow.*?Show-FortuneCow\r?\n}', ''
+    $cleaned = $cleaned -replace '(?s)\r?\n# Forgum Aliases.*?function cow-animate.*?}', ''
+    $cleaned = $cleaned -replace '(?s)\r?\n# Forgum Tab Completion.*?Register-ArgumentCompleter.*?}', ''
+    $cleaned = $cleaned -replace '(?s)\r?\n# Forgum\r?\nImport-Module Forgum -ErrorAction SilentlyContinue', ''
+    $cleaned = $cleaned -replace '(?s)\r?\n# region FORGUM.*?# endregion FORGUM\r?\n?', ''
+
+    if ($cleaned -match '(?s)# region FORGUM.*?# endregion FORGUM') {
+        $escaped = $forgumBlock -replace '\$', '$$$$'
+        $newProfile = $cleaned -replace '(?s)# region FORGUM.*?# endregion FORGUM', $escaped
+        Write-Host "  Updated Forgum block in profile" -ForegroundColor Green
+    } else {
+        $newProfile = $cleaned.Trim() + "`r`n`r`n" + $forgumBlock
+        Write-Host "  Added Forgum block to profile" -ForegroundColor Green
+    }
+
+    if (Test-Path $profilePath) {
+        $backup = "$profilePath.bak.$(Get-Date -Format 'yyyyMMddHHmmss')"
+        Copy-Item $profilePath $backup -Force
+    }
+    Set-Content $profilePath $newProfile.Trim() -Force -Encoding UTF8
+    Write-Host "  Profile: $profilePath" -ForegroundColor Green
 }
 
-# ── Summary ──
-Show-Section "Setup Complete!"
-Write-Host ""
-Write-Host "  Settings applied:" -ForegroundColor White
-Write-Host "    Fortune on startup: $fortuneOnStartup" -ForegroundColor Cyan
-Write-Host "    Lolcat rainbow:     $lolcatEnabled" -ForegroundColor Cyan
-Write-Host "    Default cow:        $defaultCow" -ForegroundColor Cyan
-Write-Host "    Animation mode:     $animMode" -ForegroundColor Cyan
-Write-Host "    Daily auto-update:  $autoUpdate" -ForegroundColor Cyan
-Write-Host "    Shell aliases:      $addAliases" -ForegroundColor Cyan
-Write-Host "    Tab completion:     $addCompletion" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "  Restart your terminal to see changes." -ForegroundColor Yellow
-Write-Host "  Run 'forgum run' to test!" -ForegroundColor Green
-Write-Host ""
-
+Write-Host "`n  Settings: startup=$fStart lolcat=$lolcat cow=$cow anim=$anim`n" -ForegroundColor Cyan
+Write-Host "  Restart terminal, then run 'forgum' to test.`n" -ForegroundColor Yellow

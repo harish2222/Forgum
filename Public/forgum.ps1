@@ -40,7 +40,7 @@ function forgum {
     if ([string]::IsNullOrEmpty($SubCommand) -and $Arguments -and $Arguments.Count -gt 0) {
         $first = $Arguments[0]
         if ($first -in '--help', '-h') {
-            Get-HelpMessage -Command 'root'
+            GetHelpMessage -Command 'root'
             return
         }
         if ($first -in '--version') {
@@ -57,16 +57,16 @@ function forgum {
             return
         }
         if ($args[0] -in '-h') {
-            Get-HelpMessage -Command 'root'
+            GetHelpMessage -Command 'root'
             return
         }
     }
 
     if ([string]::IsNullOrEmpty($SubCommand)) {
         if (-not [string]::IsNullOrEmpty($Text)) {
-            Invoke-ForgumRun -Arguments @($Text)
+            RunCommand -Arguments @($Text)
         } else {
-            Invoke-ForgumRun -Arguments $Arguments
+            RunCommand -Arguments $Arguments
         }
         return
     }
@@ -75,31 +75,31 @@ function forgum {
     $SubCommand = $SubCommand.ToLower()
 
     switch ($SubCommand) {
-        'run'       { Invoke-ForgumRun -Arguments $Arguments }
-        'config'    { Invoke-ForgumConfig -Arguments $Arguments }
-        'gallery'   { Invoke-ForgumGallery -Arguments $Arguments }
-        'preview'   { Invoke-ForgumPreview -Arguments $Arguments }
-        'update'    { Invoke-ForgumUpdate -Arguments $Arguments }
-        'toggle'    { Invoke-ForgumToggle -Arguments $Arguments }
-        'animate'   { Invoke-ForgumAnimate -Arguments $Arguments }
-        'eyes'      { Invoke-ForgumEyes -Arguments $Arguments }
-        'init'      { Invoke-ForgumInit -Arguments $Arguments }
-        'live'      { Invoke-ForgumLiveHandler -Arguments $Arguments }
-        'daemon'    { Invoke-ForgumDaemon -Arguments $Arguments }
-        'cowsay'    { Invoke-ForgumCowsay -Arguments $Arguments }
-        'list'      { Invoke-ForgumList -Arguments $Arguments }
-        'theme'     { Invoke-ForgumTheme -Arguments $Arguments }
-        'export'    { Invoke-ForgumExport -Arguments $Arguments }
-        'history'   { Invoke-ForgumHistory -Arguments $Arguments }
-        'interactive'{ Invoke-ForgumInteractive -Arguments $Arguments }
+        'run'       { RunCommand -Arguments $Arguments }
+        'config'    { ConfigCommand -Arguments $Arguments }
+        'gallery'   { GalleryCommand -Arguments $Arguments }
+        'preview'   { PreviewCommand -Arguments $Arguments }
+        'update'    { UpdateCommand -Arguments $Arguments }
+        'toggle'    { ToggleCommand -Arguments $Arguments }
+        'animate'   { AnimateCommand -Arguments $Arguments }
+        'eyes'      { EyesCommand -Arguments $Arguments }
+        'init'      { InitCommand -Arguments $Arguments }
+        'live'      { LiveCommand -Arguments $Arguments }
+        'daemon'    { DaemonCommand -Arguments $Arguments }
+        'cowsay'    { CowsayCommand -Arguments $Arguments }
+        'list'      { ListCommand -Arguments $Arguments }
+        'theme'     { ThemeCommand -Arguments $Arguments }
+        'export'    { ExportCommand -Arguments $Arguments }
+        'history'   { HistoryCommand -Arguments $Arguments }
+        'interactive'{ InteractiveCommand -Arguments $Arguments }
         'help'      {
             if ($Arguments.Count -gt 0) {
-                Get-HelpMessage -Command $Arguments[0]
+                GetHelpMessage -Command $Arguments[0]
             } else {
-                Get-HelpMessage -Command 'root'
+                GetHelpMessage -Command 'root'
             }
         }
-        { $_ -in '--help', '-h', 'h' }  { Get-HelpMessage -Command 'root' }
+        { $_ -in '--help', '-h', 'h' }  { GetHelpMessage -Command 'root' }
         { $_ -in '--version', '-v', 'version', 'v' } { "forgum v$($script:ModuleVersion)" }
         default {
             if ($SubCommand -match '^-') {
@@ -107,7 +107,7 @@ function forgum {
                 return
             }
             $fullText = "$originalSubCommand $($Arguments -join ' ')"
-            Invoke-ForgumRun -Arguments @($fullText)
+            RunCommand -Arguments @($fullText)
         }
     }
 }

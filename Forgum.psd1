@@ -13,7 +13,7 @@
     )
     CmdletsToExport   = @()
     VariablesToExport  = @()
-    AliasesToExport    = @('forgum-show', 'forgum-setup')
+    AliasesToExport    = @()
     PrivateData       = @{
         PSData = @{
             Tags         = @('cowsay', 'fortune', 'lolcat', 'ascii', 'fun', 'cross-platform', 'terminal')
@@ -26,17 +26,20 @@
 - Feature: `forgum init <shell>` generates native shell hooks for bash, zsh, fish, and PowerShell
 - Feature: `forgum help [command]` provides comprehensive help for every command and argument
 - Feature: Rust engine background rendering — animations run independently while shell stays usable
-- Feature: Cross-platform native shell hooks via Get-ForgumShellHook
+- Feature: Cross-platform native shell hooks via GetForgumShellHook
 - Feature: Silent auto-update — non-blocking background daily update checker
 - Feature: TUI & Setup Wizard configuration toggles for auto-update
 - Breaking: Module exports only `forgum` — all other functions are now Private
+- Breaking: Removed legacy `forgum-show` and `forgum-setup` aliases (use `forgum gallery` and `forgum config` instead)
 - Fix: All subcommand help returns via pipeline (not Write-Host) for testability
 - Fix: forgum.ps1 switch routing for PowerShell dash-stripped params
-- Fix: Invoke-Cowsay validation rejects empty config values gracefully
-- Fix: Get-ForgumShellHook single-quoted templates avoid PowerShell subexpression interpretation
+- Fix: InvokeCowsay validation rejects empty config values gracefully
+- Fix: GetForgumShellHook single-quoted templates avoid PowerShell subexpression interpretation
 - Fix: CI workflows — removed flaky QEMU arm64 cross-compilation tests
 - Fix: Profile integration — cleaned up setup.ps1 to prevent multiple dirty imports
-- Test: 130/130 tests passing across 8 test files
+- Fix: JSON serialization depth increased to prevent truncation warnings
+- Fix: All private functions renamed — removed PowerShell Set-/Get-/Show-/Invoke- prefixes
+- Test: 498/498 tests passing across 13 test files
 
 ## v1.0.9
 - UX: Implemented "Clean Profile" region-based modification for PowerShell profiles

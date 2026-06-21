@@ -44,7 +44,7 @@ function Set-Forgum {
         [double]$RainbowFrequency
     )
 
-    $config = Get-CFConfig
+    $config = GetConfig
     if ($PSBoundParameters.ContainsKey('Animation'))        { $config.animation.mode = $Animation }
     if ($PSBoundParameters.ContainsKey('Cow'))              { $config.cow.file = $Cow }
     if ($PSBoundParameters.ContainsKey('Eyes'))             { $config.cow.eyes = $Eyes }
@@ -53,7 +53,7 @@ function Set-Forgum {
     if ($PSBoundParameters.ContainsKey('RainbowFrequency')) { $config.lolcat.frequency = $RainbowFrequency }
 
     if ($PSCmdlet.ShouldProcess("Forgum configuration", "Update")) {
-        Set-CFConfig -Config $config
+        SetConfig -Config $config
         Write-Host "Forgum configuration updated successfully." -ForegroundColor Green
     }
 }

@@ -11,18 +11,18 @@ BeforeAll {
     Import-Module $ModulePath -Force
 }
 
-Describe 'Invoke-LiveShow' {
-    It 'when Animation is enabled, calls Invoke-Engine with correct params' {
+Describe 'InvokeLiveShow' {
+    It 'when Animation is enabled, calls InvokeEngine with correct params' {
         InModuleScope Forgum {
             $mockConfig = [pscustomobject]@{ fortune = [pscustomobject]@{ database = 'dummy-db' } }
-            Mock Get-CFConfig { return $mockConfig }
-            Mock Get-CFCow { return @('cow1', 'cow2') }
-            Mock Get-Fortune { return 'fortune1' }
-            Mock Invoke-Cowsay { return 'cow-text' }
+            Mock GetConfig { return $mockConfig }
+            Mock GetCowFiles { return @('cow1', 'cow2') }
+            Mock GetFortune { return 'fortune1' }
+            Mock InvokeCowsay { return 'cow-text' }
             Mock Get-Random { return 5000 } -ParameterFilter { $Maximum -eq 10001 }
 
             $script:lastInvoke = $null
-            Mock Invoke-Engine {
+            Mock InvokeEngine {
                 param([string]$JsonPayload)
                 $obj = $JsonPayload | ConvertFrom-Json
                 $script:lastInvoke = [pscustomobject]@{
@@ -34,24 +34,24 @@ Describe 'Invoke-LiveShow' {
                 return 'mock-output'
             }
 
-            $result = Invoke-LiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $false; Animation = $true }
+            $result = InvokeLiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $false; Animation = $true }
             $result.Status | Should -Be 'Complete'
             $script:lastInvoke | Should -Not -BeNullOrEmpty
             $script:lastInvoke.Fps | Should -Be 30
         }
     }
 
-    It 'when Animation is disabled, calls Invoke-Engine with correct params' {
+    It 'when Animation is disabled, calls InvokeEngine with correct params' {
         InModuleScope Forgum {
             $mockConfig = [pscustomobject]@{ fortune = [pscustomobject]@{ database = 'dummy-db' } }
-            Mock Get-CFConfig { return $mockConfig }
-            Mock Get-CFCow { return @('cow1', 'cow2') }
-            Mock Get-Fortune { return 'fortune1' }
-            Mock Invoke-Cowsay { return 'cow-text' }
+            Mock GetConfig { return $mockConfig }
+            Mock GetCowFiles { return @('cow1', 'cow2') }
+            Mock GetFortune { return 'fortune1' }
+            Mock InvokeCowsay { return 'cow-text' }
             Mock Get-Random { return 5000 } -ParameterFilter { $Maximum -eq 10001 }
 
             $script:lastInvoke = $null
-            Mock Invoke-Engine {
+            Mock InvokeEngine {
                 param([string]$JsonPayload)
                 $obj = $JsonPayload | ConvertFrom-Json
                 $script:lastInvoke = [pscustomobject]@{
@@ -63,7 +63,7 @@ Describe 'Invoke-LiveShow' {
                 return 'mock-output'
             }
 
-            $result = Invoke-LiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $false; Animation = $false }
+            $result = InvokeLiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $false; Animation = $false }
             $result.Status | Should -Be 'Complete'
             $script:lastInvoke | Should -Not -BeNullOrEmpty
             $script:lastInvoke.Fps | Should -Be 1
@@ -73,18 +73,18 @@ Describe 'Invoke-LiveShow' {
     It 'applies Lolcat to cow text when Lolcat toggle is enabled' {
         InModuleScope Forgum {
             $mockConfig = [pscustomobject]@{ fortune = [pscustomobject]@{ database = 'dummy-db' } }
-            Mock Get-CFConfig { return $mockConfig }
-            Mock Get-CFCow { return @('cow1', 'cow2') }
-            Mock Get-Fortune { return 'fortune1' }
-            Mock Invoke-Cowsay { return 'cow-text' }
+            Mock GetConfig { return $mockConfig }
+            Mock GetCowFiles { return @('cow1', 'cow2') }
+            Mock GetFortune { return 'fortune1' }
+            Mock InvokeCowsay { return 'cow-text' }
             Mock Get-Random { return 5000 } -ParameterFilter { $Maximum -eq 10001 }
-            Mock Format-Lolcat {
+            Mock FormatLolcat {
                 param([string]$Text, [int]$Seed)
                 return "lolcat-$Seed-$Text"
             }
 
             $script:lastInvoke = $null
-            Mock Invoke-Engine {
+            Mock InvokeEngine {
                 param([string]$JsonPayload)
                 $obj = $JsonPayload | ConvertFrom-Json
                 $script:lastInvoke = [pscustomobject]@{
@@ -96,7 +96,7 @@ Describe 'Invoke-LiveShow' {
                 return 'mock-output'
             }
 
-            $null = Invoke-LiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $true; Animation = $false }
+            $null = InvokeLiveShow -RunOnce -Config $mockConfig -Toggles @{ Lolcat = $true; Animation = $false }
             $script:lastInvoke.CowText | Should -BeLike '*lolcat-5000-cow-text*'
         }
     }

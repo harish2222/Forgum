@@ -6,23 +6,14 @@
 .EXAMPLE
     .\uninstall.ps1
 #>
-
 [CmdletBinding()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 param()
 
-Write-Host ""
-Write-Host "  Forgum Uninstaller" -ForegroundColor Cyan
-Write-Host ""
+Write-Host "`n  Forgum Uninstaller`n" -ForegroundColor Cyan
 
 # Remove module
 $installDir = Join-Path ([Environment]::GetFolderPath('MyDocuments')) "PowerShell\Modules\Forgum"
-if (-not $installDir -or -not (Test-Path $installDir)) {
-    $installDir = Join-Path $HOME "Documents/PowerShell/Modules/Forgum"
-}
-if (-not $installDir -or -not (Test-Path $installDir)) {
-    $installDir = Join-Path $HOME ".local/share/powershell/Modules/Forgum"
-}
 if (Test-Path $installDir) {
     Remove-Item $installDir -Recurse -Force
     Write-Host "  Removed module: $installDir" -ForegroundColor Green
@@ -35,21 +26,19 @@ if (Test-Path $configDir) {
     Write-Host "  Removed config: $configDir" -ForegroundColor Green
 }
 
-# Remove from profile
+# Remove from PowerShell profile
 $profilePath = $PROFILE.CurrentUserAllHosts
-if (Test-Path $profilePath) {
+if (-not $profilePath) { $profilePath = $PROFILE.CurrentUser }
+if ($profilePath -and (Test-Path $profilePath)) {
     $content = Get-Content $profilePath -Raw
     if ($content -match 'Forgum') {
-        # Remove region-based blocks first
-        $newContent = $content -replace '(?s)\r?\n*\s*# region FORGUM.*?# endregion FORGUM\r?\n*', "`n"
-        # Remove legacy scattered blocks
+        $newContent = $content -replace '(?s)\r?\n*# region FORGUM.*?# endregion FORGUM\r?\n*', "`n"
         $newContent = $newContent -replace '(?s)\r?\n*# Forgum Startup Fortune Cow.*?Show-FortuneCow\r?\n}', ''
         $newContent = $newContent -replace '(?s)\r?\n*# Forgum Aliases.*?function cow-animate.*?}', ''
         $newContent = $newContent -replace '(?s)\r?\n*# Forgum Tab Completion.*?Register-ArgumentCompleter.*?}', ''
         $newContent = $newContent -replace '(?s)\r?\n*# Forgum\r?\nImport-Module Forgum -ErrorAction SilentlyContinue\r?\n*', ''
-        # Fallback: remove any remaining Forgum import line
         $newContent = $newContent -replace '(?s)\r?\n*Import-Module Forgum[^\n]*\r?\n*', ''
-        Set-Content -Path $profilePath -Value $newContent.TrimEnd() -Encoding utf8NoBOM
+        Set-Content -Path $profilePath -Value $newContent.TrimEnd() -Encoding UTF8 -Force
         Write-Host "  Removed from PowerShell profile" -ForegroundColor Green
     }
 }
@@ -60,7 +49,6 @@ foreach ($file in @("$homeDir/.bashrc", "$homeDir/.zshrc", "$homeDir/.config/fis
     if (Test-Path $file) {
         $content = Get-Content $file -Raw
         if ($content -match 'Forgum') {
-            # Remove Forgum blocks (bash/zsh style and fish style)
             $newContent = $content -replace '(?s)\r?\n*# Forgum.*?^fi\r?\n?', ''
             $newContent = $newContent -replace '(?s)\r?\n*# Forgum.*?^end\r?\n?', ''
             $newContent = $newContent -replace '(?s)\r?\n*# Forgum.*?pwsh.*?Forgum.*?\r?\n?', ''
@@ -70,6 +58,4 @@ foreach ($file in @("$homeDir/.bashrc", "$homeDir/.zshrc", "$homeDir/.config/fis
     }
 }
 
-Write-Host ""
-Write-Host "  Forgum uninstalled successfully!" -ForegroundColor Green
-Write-Host ""
+Write-Host "`n  Forgum uninstalled.`n" -ForegroundColor Green

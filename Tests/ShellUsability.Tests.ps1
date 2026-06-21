@@ -51,13 +51,13 @@ Describe "Shell Usability During Animation" -Tag 'ShellUsability' {
 
     Context "1. Config animation.background is wired" {
         It "config has animation.background field" {
-            $config = InModuleScope Forgum { Get-CFConfig }
+            $config = InModuleScope Forgum { GetConfig }
             $config.PSObject.Properties.Name | Should -Contain 'animation'
             $config.animation.PSObject.Properties.Name | Should -Contain 'background'
         }
 
         It "animation.background defaults to true" {
-            $config = InModuleScope Forgum { Get-CFConfig }
+            $config = InModuleScope Forgum { GetConfig }
             [bool]$config.animation.background | Should -Be $true
         }
     }
@@ -68,11 +68,11 @@ Describe "Shell Usability During Animation" -Tag 'ShellUsability' {
             Test-Path $script:EngineBinary | Should -Be $true
         }
 
-        It "engine background=true renders cursor control codes, not raw cow text" {
+        It "engine background=true outputs cow text to stdout for pipeline capture" {
             $json = '{"type":"render","effect":"static","cow_text":"BgTest","background":true,"duration":1,"fps":10}'
             $raw = $json | & $script:EngineBinary 2>&1 | Out-String
             $clean = Strip-Ansi $raw
-            $clean.Trim() | Should -Not -Match 'BgTest'
+            $clean.Trim() | Should -Match 'BgTest'
         }
 
         It "engine background=false renders cow text visible in output" {
@@ -124,13 +124,13 @@ Describe "Shell Usability During Animation" -Tag 'ShellUsability' {
 
     Context "5. Startup config defaults" {
         It "config animation.background is true by default" {
-            $config = InModuleScope Forgum { Get-CFConfig }
+            $config = InModuleScope Forgum { GetConfig }
             $config.animation.background | Should -Be $true
         }
 
         It "config cow.random can be set" {
             InModuleScope Forgum {
-                $config = Get-CFConfig
+                $config = GetConfig
                 $config.cow.random = $true
                 $config.cow.random | Should -Be $true
                 $config.cow.random = $false
@@ -142,11 +142,11 @@ Describe "Shell Usability During Animation" -Tag 'ShellUsability' {
 Describe "Background Rendering Behavior" -Tag 'BackgroundRendering' {
 
     Context "6. Background vs foreground output" {
-        It "background mode does not output cow text to stdout" {
+        It "background mode outputs cow text to stdout for pipeline capture" {
             $json = '{"type":"render","effect":"static","cow_text":"StdoutTest","background":true,"duration":1,"fps":10}'
             $raw = $json | & $script:EngineBinary 2>&1 | Out-String
             $clean = Strip-Ansi $raw
-            $clean.Trim() | Should -Not -Match 'StdoutTest'
+            $clean.Trim() | Should -Match 'StdoutTest'
         }
 
         It "foreground mode outputs cow text to stdout" {

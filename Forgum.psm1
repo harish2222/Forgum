@@ -77,51 +77,46 @@ Get-ChildItem -Path $publicPath -Filter '*.ps1' -Recurse -ErrorAction SilentlyCo
 # Module version
 $script:ModuleVersion = '1.1.2'
 
-# Define command aliases (legacy compat — aliased to forgum subcommands)
-Set-Alias -Name forgum-show   -Value forgum -Scope Script -ErrorAction SilentlyContinue
-Set-Alias -Name forgum-setup  -Value forgum -Scope Script -ErrorAction SilentlyContinue
-
 # Module-scoped cache for performance
 $script:CowFileCache = @{}
 $script:FortuneCache = @{}
 $script:ConfigCache  = $null
 $script:ConfigCacheTime = [datetime]::MinValue
 
-# Auto-start flag: Show-CFAnimation checks this to decide whether to use --once
+# Auto-start flag: ShowAnimation checks this to decide whether to use --once
 # (safe for startup) or --frames N (allows animation for manual invocations).
 $script:IsAutoStart = $false
 
 # Cache TTL in seconds (avoids stale reads during long sessions)
 $script:ConfigCacheTTL = 30
 
-# Auto-start: render a single static cow with lolcat on every import.
+# Auto-start: render a random cow with random animation + fortune on every import.
 #
 # Skipped when:
 #   - $env:FORGUM_NOAUTOSTART = '1' (caller-controlled)
 #   - output is redirected / non-interactive (CI, scripts, piped contexts)
 #   - HostName is ServerRemoteHost (SSH session, etc.)
-#
-# Never animates on auto-start: animations require interactive consent because
-# they block the terminal until completion (or keypress).
 if ($env:FORGUM_NOAUTOSTART -ne '1' -and
     -not [Console]::IsOutputRedirected -and
     $Host.Name -ne 'ServerRemoteHost') {
     if (Get-Command forgum -ErrorAction Ignore) {
         try {
             # Update check
-            $realConfig = Get-CFConfig
-            $configDir = Split-Path (Get-ConfigPath) -Parent
+            $realConfig = GetConfig
+            $configDir = Split-Path (GetConfigPath) -Parent
             $flagPath = Join-Path $configDir ".update_available"
 
             if (Test-Path $flagPath) {
                 Write-Host "`n🚀 A new version of Forgum is available! Run 'forgum update' to upgrade.`n" -ForegroundColor Yellow
             }
 
-            # Signal to Show-CFAnimation that this is auto-start: use --once
-            # so the binary exits after one frame and never blocks startup.
+            # Force randomness: random cow, random animation effect, random fortune.
+            # Background mode keeps shell interactive while animation renders.
             $script:IsAutoStart = $true
             $config = $realConfig | Select-Object *
             $config.cow.random = $true
+            $config.animation.mode = 'random'
+            $config.animation.background = $true
             $config.lolcat.enabled = $true
 
             $savedCache = $script:ConfigCache
@@ -129,7 +124,7 @@ if ($env:FORGUM_NOAUTOSTART -ne '1' -and
             $script:ConfigCache = $config
             $script:ConfigCacheTime = [datetime]::UtcNow
             try {
-                $cowText = forgum run "startup" 2>&1 | Out-String
+                $cowText = forgum 2>&1 | Out-String
                 if ($cowText) { Write-Host $cowText }
             } finally {
                 $script:ConfigCache = $savedCache
@@ -156,10 +151,10 @@ if (-not $script:__ForgumCompletionRegistered -and (Get-Command Register-Argumen
         'history','interactive','help'
     )
 
-    # --- Invoke-Cowsay completion (existing) ---
-    Register-ArgumentCompleter -CommandName Invoke-Cowsay -ParameterName CowFile -ScriptBlock {
+    # --- InvokeCowsay completion (existing) ---
+    Register-ArgumentCompleter -CommandName InvokeCowsay -ParameterName CowFile -ScriptBlock {
         param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-        Get-CFCow | Where-Object { $_ -like "*$wordToComplete*" } | ForEach-Object {
+        GetCowFiles | Where-Object { $_ -like "*$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
     }
@@ -198,4 +193,4 @@ if (-not $script:__ForgumCompletionRegistered -and (Get-Command Register-Argumen
     }
 }
 
-Export-ModuleMember -Function forgum -Alias forgum-show, forgum-setup
+Export-ModuleMember -Function forgum

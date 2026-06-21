@@ -13,6 +13,11 @@ BeforeAll {
     Import-Module $ModulePath -Force
     $script:TestCows = (Get-ChildItem (Join-Path $ModuleRoot 'Data/Cows') -Filter '*.cow').BaseName
     $script:TestFortunes = Get-Content (Join-Path $ModuleRoot 'Data/Fortunes/fortunes.txt') -Raw
+
+    function Remove-Ansi {
+        param([string]$Text)
+        $Text -replace 'e\[[0-9;]*[a-zA-Z]', '' -replace 'e\][^\a]*\a', '' -replace '[\x1b]\[[0-9;]*[a-zA-Z]', '' -replace '[\x1b]\][^\x07]*\x07', ''
+    }
 }
 
 Describe "Module Loading" -Tag 'Module' {
@@ -28,8 +33,8 @@ Describe "Module Loading" -Tag 'Module' {
         }
     }
 
-    It "exports setup alias" {
-        (Get-Command -Module Forgum -CommandType Alias).Name | Should -Contain 'forgum-setup'
+    It "exports no aliases" {
+        (Get-Command -Module Forgum -CommandType Alias).Name | Should -BeNullOrEmpty
     }
 
     It "exports the expected function" {
@@ -54,16 +59,16 @@ Describe "Config System" -Tag 'Config' {
     BeforeAll {
         InModuleScope Forgum {
             $script:ModuleRoot = (Get-Module Forgum).ModuleBase
-            $script:OriginalConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+            $script:OriginalConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
             $template = Get-Content (Join-Path $script:ModuleRoot 'Data/Templates/default-config.json') -Raw | ConvertFrom-Json
-            Set-CFConfig -Config $template
+            SetConfig -Config $template
         }
     }
 
     AfterAll {
         InModuleScope Forgum {
             if ($script:OriginalConfig) {
-                Set-CFConfig -Config $script:OriginalConfig -ErrorAction SilentlyContinue
+                SetConfig -Config $script:OriginalConfig -ErrorAction SilentlyContinue
             }
         }
     }
@@ -71,7 +76,7 @@ Describe "Config System" -Tag 'Config' {
     Context "Default values from template" {
         It "has correct default animation settings" {
             InModuleScope Forgum {
-                $config = Get-CFConfig
+                $config = GetConfig
                 $config.animation.mode | Should -Be 'random'
                 $config.animation.speed | Should -Be 20
                 $config.animation.duration | Should -Be 12
@@ -83,9 +88,9 @@ Describe "Config System" -Tag 'Config' {
 
         It "has correct default cow settings" {
             InModuleScope Forgum {
-                $config = Get-CFConfig
+                $config = GetConfig
                 $config.cow.file | Should -Be 'default'
-                $config.cow.random | Should -Be $false
+                $config.cow.random | Should -Be $true
                 $config.cow.eyes | Should -Be 'oo'
                 $config.cow.tongue | Should -Be '  '
             }
@@ -93,8 +98,8 @@ Describe "Config System" -Tag 'Config' {
 
         It "has correct default lolcat settings" {
             InModuleScope Forgum {
-                $config = Get-CFConfig
-                $config.lolcat.enabled | Should -Be $false
+                $config = GetConfig
+                $config.lolcat.enabled | Should -Be $true
                 $config.lolcat.truecolor | Should -Be $true
                 $config.lolcat.frequency | Should -Be 0.1
             }
@@ -102,7 +107,7 @@ Describe "Config System" -Tag 'Config' {
 
         It "has correct default output settings" {
             InModuleScope Forgum {
-                $config = Get-CFConfig
+                $config = GetConfig
                 $config.output.wordWrap | Should -Be $true
                 $config.output.maxWidth | Should -Be 60
             }
@@ -112,16 +117,16 @@ Describe "Config System" -Tag 'Config' {
     Context "Config round-trip persistence" {
         It "persists config changes" {
             InModuleScope Forgum {
-                $config = Get-CFConfig
+                $config = GetConfig
                 $origMode = $config.animation.mode
                 $config.animation.mode = 'disco'
-                Set-CFConfig -Config $config
+                SetConfig -Config $config
 
-                (Get-CFConfig).animation.mode | Should -Be 'disco'
+                (GetConfig).animation.mode | Should -Be 'disco'
 
                 $config.animation.mode = $origMode
-                Set-CFConfig -Config $config
-                (Get-CFConfig).animation.mode | Should -Be $origMode
+                SetConfig -Config $config
+                (GetConfig).animation.mode | Should -Be $origMode
             }
         }
     }
@@ -130,7 +135,7 @@ Describe "Config System" -Tag 'Config' {
 Describe "Cow File System" -Tag 'Cows' {
     It "lists available cow files" {
         InModuleScope Forgum {
-            $cows = Get-CFCow
+            $cows = GetCowFiles
             $cows | Should -Not -BeNullOrEmpty
             $cows.Count | Should -BeGreaterThan 50
         }
@@ -144,7 +149,7 @@ Describe "Cow File System" -Tag 'Cows' {
     ) {
         InModuleScope Forgum {
             param($Cow)
-            $cowText = Get-CFCow -Name $Cow
+            $cowText = GetCowFiles -Name $Cow
             $cowText | Should -Not -BeNullOrEmpty
             $cowText | Should -Match '\$eyes|\$thoughts'
         } -ArgumentList $Cow
@@ -152,7 +157,7 @@ Describe "Cow File System" -Tag 'Cows' {
 
     It "throws for nonexistent cow names" {
         InModuleScope Forgum {
-            { Get-CFCow -Name 'nonexistent-cow-12345' } | Should -Throw
+            { GetCowFiles -Name 'nonexistent-cow-12345' } | Should -Throw
         }
     }
 }
@@ -160,7 +165,7 @@ Describe "Cow File System" -Tag 'Cows' {
 Describe "Fortune System" -Tag 'Fortune' {
     It "returns a fortune string" {
         InModuleScope Forgum {
-            $fortune = Get-Fortune
+            $fortune = GetFortune
             $fortune | Should -Not -BeNullOrEmpty
             $fortune.Length | Should -BeGreaterThan 0
         }
@@ -168,9 +173,9 @@ Describe "Fortune System" -Tag 'Fortune' {
 
     It "returns different fortunes on multiple calls" {
         InModuleScope Forgum {
-            $f1 = Get-Fortune
-            $f2 = Get-Fortune
-            $f3 = Get-Fortune
+            $f1 = GetFortune
+            $f2 = GetFortune
+            $f3 = GetFortune
             ($f1 -ne $f2 -or $f2 -ne $f3) | Should -Be $true
         }
     }
@@ -181,41 +186,47 @@ Describe "forgum" -Tag 'Cowsay' {
         InModuleScope Forgum {
             $moduleRoot = (Get-Module Forgum).ModuleBase
             $template = Get-Content (Join-Path $moduleRoot 'Data/Templates/default-config.json') -Raw | ConvertFrom-Json
-            Set-CFConfig -Config $template
+            SetConfig -Config $template
         }
     }
 
     It "renders a cow with text bubble" {
-        $output = forgum "Test message" 6>&1 | Out-String
+        $raw = forgum run --mode static "Test message" 6>&1 | Out-String
+        $output = Remove-Ansi $raw
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Test message'
     }
 
     It "supports custom cow files" {
-        $output = forgum "Custom cow" -CowFile 'tux' 6>&1 | Out-String
+        $raw = forgum run --mode static --cow tux "Custom cow" 6>&1 | Out-String
+        $output = Remove-Ansi $raw
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Custom cow'
     }
 
     It "supports thinking mode with string parameter" {
-        $output = forgum "Thinking..." -Thoughts 'o' 6>&1 | Out-String
+        $raw = forgum run --mode static --eyes '@@' "Thinking..." 6>&1 | Out-String
+        $output = Remove-Ansi $raw
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Thinking'
     }
 
     It "supports custom eyes" {
-        $output = forgum "Custom eyes" -Eyes 'XX' 6>&1 | Out-String
+        $raw = forgum run --mode static --eyes 'XX' "Custom eyes" 6>&1 | Out-String
+        $output = Remove-Ansi $raw
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Custom eyes'
     }
 
     It "handles empty text gracefully" {
-        $output = forgum "" 6>&1 | Out-String
+        $raw = forgum run --mode static "" 6>&1 | Out-String
+        $output = Remove-Ansi $raw
         $output | Should -Not -BeNullOrEmpty
     }
 
     It "handles multi-line text" {
-        $output = forgum "Line 1`nLine 2" 6>&1 | Out-String
+        $raw = forgum run --mode static "Line 1`nLine 2" 6>&1 | Out-String
+        $output = Remove-Ansi $raw
         $output | Should -Not -BeNullOrEmpty
         $output | Should -Match 'Line 1'
         $output | Should -Match 'Line 2'
@@ -226,20 +237,20 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
     Context "With truecolor enabled" {
         BeforeAll {
             InModuleScope Forgum {
-                $script:RestoreConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-                $cfg = Get-CFConfig
+                $script:RestoreConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+                $cfg = GetConfig
                 $cfg.lolcat.enabled = $true
                 $cfg.lolcat.truecolor = $true
                 $cfg.lolcat.frequency = 0.1
                 $cfg.lolcat.spread = 3.0
                 $cfg.animation.mode = 'static'
-                Set-CFConfig -Config $cfg
+                SetConfig -Config $cfg
             }
         }
 
         AfterAll {
             InModuleScope Forgum {
-                if ($script:RestoreConfig) { Set-CFConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
+                if ($script:RestoreConfig) { SetConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
             }
         }
 
@@ -251,18 +262,18 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
             $hasAnsi = $output -match [regex]::Escape("$esc[38;2;")
             if (-not $hasAnsi) {
                 InModuleScope Forgum {
-                    $cfg = Get-CFConfig
+                    $cfg = GetConfig
                     $cfg.lolcat.enabled = $false
                     $cfg.animation.mode = 'static'
-                    Set-CFConfig -Config $cfg
+                    SetConfig -Config $cfg
                 }
                 $plain = forgum 6>&1 | Out-String
                 ($output -ne $plain) | Should -Be $true
                 InModuleScope Forgum {
-                    $cfg = Get-CFConfig
+                    $cfg = GetConfig
                     $cfg.lolcat.enabled = $true
                     $cfg.lolcat.truecolor = $true
-                    Set-CFConfig -Config $cfg
+                    SetConfig -Config $cfg
                 }
             } else {
                 $output | Should -Match "$esc\[38;2;"
@@ -273,14 +284,14 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
     Context "With truecolor disabled" {
         BeforeAll {
             InModuleScope Forgum {
-                $script:RestoreConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-                $cfg = Get-CFConfig
+                $script:RestoreConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+                $cfg = GetConfig
                 $cfg.lolcat.enabled = $true
                 $cfg.lolcat.truecolor = $false
                 $cfg.lolcat.frequency = 0.1
                 $cfg.lolcat.spread = 3.0
                 $cfg.animation.mode = 'static'
-                Set-CFConfig -Config $cfg
+                SetConfig -Config $cfg
             }
             $script:OrigColorterm = $env:COLORTERM
             $script:OrigWTSession = $env:WT_SESSION
@@ -292,7 +303,7 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
             $env:COLORTERM = $script:OrigColorterm
             $env:WT_SESSION = $script:OrigWTSession
             InModuleScope Forgum {
-                if ($script:RestoreConfig) { Set-CFConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
+                if ($script:RestoreConfig) { SetConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
             }
         }
 
@@ -304,18 +315,18 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
             $hasAnsi = $output -match [regex]::Escape("$esc[38;5;")
             if (-not $hasAnsi) {
                 InModuleScope Forgum {
-                    $cfg = Get-CFConfig
+                    $cfg = GetConfig
                     $cfg.lolcat.enabled = $false
                     $cfg.animation.mode = 'static'
-                    Set-CFConfig -Config $cfg
+                    SetConfig -Config $cfg
                 }
                 $plain = forgum 6>&1 | Out-String
                 ($output -ne $plain) | Should -Be $true
                 InModuleScope Forgum {
-                    $cfg = Get-CFConfig
+                    $cfg = GetConfig
                     $cfg.lolcat.enabled = $true
                     $cfg.lolcat.truecolor = $false
-                    Set-CFConfig -Config $cfg
+                    SetConfig -Config $cfg
                 }
             } else {
                 $output | Should -Match "$esc\[38;5;"
@@ -326,19 +337,19 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
     Context "When disabled" {
         BeforeAll {
             InModuleScope Forgum {
-                $script:RestoreConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-                $cfg = Get-CFConfig
+                $script:RestoreConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+                $cfg = GetConfig
                 $cfg.lolcat.enabled = $false
                 $cfg.lolcat.frequency = 0.1
                 $cfg.lolcat.spread = 3.0
                 $cfg.animation.mode = 'static'
-                Set-CFConfig -Config $cfg
+                SetConfig -Config $cfg
             }
         }
 
         AfterAll {
             InModuleScope Forgum {
-                if ($script:RestoreConfig) { Set-CFConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
+                if ($script:RestoreConfig) { SetConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
             }
         }
 
@@ -354,35 +365,35 @@ Describe "Lolcat Colorization" -Tag 'Lolcat' {
 Describe "Animation Modes" -Tag 'Animation' {
     BeforeAll {
         InModuleScope Forgum {
-            $script:OrigConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+            $script:OrigConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
         }
     }
 
     AfterAll {
         InModuleScope Forgum {
-            if ($script:OrigConfig) { Set-CFConfig -Config $script:OrigConfig -ErrorAction SilentlyContinue }
+            if ($script:OrigConfig) { SetConfig -Config $script:OrigConfig -ErrorAction SilentlyContinue }
         }
     }
 
     Context "Static animation" {
         BeforeAll {
             InModuleScope Forgum {
-                $script:RestoreConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-                $cfg = Get-CFConfig
+                $script:RestoreConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+                $cfg = GetConfig
                 $cfg.animation.mode = 'static'
-                Set-CFConfig -Config $cfg
+                SetConfig -Config $cfg
             }
         }
 
         AfterAll {
             InModuleScope Forgum {
-                if ($script:RestoreConfig) { Set-CFConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
+                if ($script:RestoreConfig) { SetConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
             }
         }
 
         It "returns cow text immediately" {
             InModuleScope Forgum {
-                $output = Show-CFAnimation -CowOutput "Test cow"
+                $output = ShowAnimation -CowOutput "Test cow"
                 $output | Should -Not -BeNullOrEmpty
             }
         }
@@ -391,23 +402,23 @@ Describe "Animation Modes" -Tag 'Animation' {
     Context "Dynamic animation" {
         BeforeAll {
             InModuleScope Forgum {
-                $script:RestoreConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-                $cfg = Get-CFConfig
+                $script:RestoreConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+                $cfg = GetConfig
                 $cfg.animation.mode = 'dynamic'
                 $cfg.animation.duration = 1
-                Set-CFConfig -Config $cfg
+                SetConfig -Config $cfg
             }
         }
 
         AfterAll {
             InModuleScope Forgum {
-                if ($script:RestoreConfig) { Set-CFConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
+                if ($script:RestoreConfig) { SetConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
             }
         }
 
         It "cycles through random cows and fortunes" {
             InModuleScope Forgum {
-                { Show-CFAnimation -CowOutput "Test cow" } | Should -Not -Throw
+                { ShowAnimation -CowOutput "Test cow" } | Should -Not -Throw
             }
         }
     }
@@ -415,23 +426,23 @@ Describe "Animation Modes" -Tag 'Animation' {
     Context "Physics animation" {
         BeforeAll {
             InModuleScope Forgum {
-                $script:RestoreConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-                $cfg = Get-CFConfig
+                $script:RestoreConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+                $cfg = GetConfig
                 $cfg.animation.mode = 'physics'
                 $cfg.animation.duration = 1
-                Set-CFConfig -Config $cfg
+                SetConfig -Config $cfg
             }
         }
 
         AfterAll {
             InModuleScope Forgum {
-                if ($script:RestoreConfig) { Set-CFConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
+                if ($script:RestoreConfig) { SetConfig -Config $script:RestoreConfig -ErrorAction SilentlyContinue }
             }
         }
 
         It "runs without throwing" {
             InModuleScope Forgum {
-                { Show-CFAnimation -CowOutput "Test cow" } | Should -Not -Throw
+                { ShowAnimation -CowOutput "Test cow" } | Should -Not -Throw
             }
         }
     }
@@ -440,7 +451,7 @@ Describe "Animation Modes" -Tag 'Animation' {
 Describe "Cross-Platform Behavior" -Tag 'Platform' {
     It "has platform-agnostic path handling" {
         InModuleScope Forgum {
-            $path = Get-ConfigPath
+            $path = GetConfigPath
             $path | Should -Not -BeNullOrEmpty
             if ($IsLinux) { $path | Should -Match '/' }
             elseif ($IsMacOS) { $path | Should -Match '/' }
@@ -455,11 +466,11 @@ Describe "Cross-Platform Behavior" -Tag 'Platform' {
     }
 }
 
-Describe "Format-CowMessage Alignment" -Tag 'Formatting' {
+Describe "FormatCowMessage Alignment" -Tag 'Formatting' {
     It "correctly calculates width with tabs and invisible chars" {
         InModuleScope Forgum {
             $trickyFortune = "A wise cow says:`tmoo." + [char]0x200B
-            $output = Format-CowMessage -Text $trickyFortune -MaxWidth 40
+            $output = FormatCowMessage -Text $trickyFortune -MaxWidth 40
             $lines = $output -split "`n"
 
             $lines[0].Length | Should -Be $lines[-1].Length
@@ -472,7 +483,7 @@ Describe "Format-CowMessage Alignment" -Tag 'Formatting' {
     }
 }
 
-Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
+Describe "ShowAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
     It "invokes forgum-engine binary for flagship modes when present" {
         $moduleRoot = Split-Path (Get-Module Forgum).ModuleBase -Parent
         $binPath = Join-Path $moduleRoot "bin/forgum-engine.exe"
@@ -481,12 +492,12 @@ Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
         if (Test-Path $binPath) {
             InModuleScope Forgum {
                 param($binPath)
-                $script:RestoreConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-                $cfg = Get-CFConfig
+                $script:RestoreConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+                $cfg = GetConfig
                 $cfg.animation.mode = 'aurora'
-                Set-CFConfig -Config $cfg
-                { Show-CFAnimation -CowOutput "moo" } | Should -Not -Throw
-                Set-CFConfig -Config $script:RestoreConfig
+                SetConfig -Config $cfg
+                { ShowAnimation -CowOutput "moo" } | Should -Not -Throw
+                SetConfig -Config $script:RestoreConfig
             } -ArgumentList $binPath
         } else {
             Set-ItResult -Inconclusive -Because "Rust engine binary not built/found at $binPath"
@@ -496,13 +507,13 @@ Describe "Show-CFAnimation Cross-Platform Wrapper" -Tag 'Wrapper' {
     It "falls back safely if forgum-engine is missing for flagship modes" {
         InModuleScope Forgum {
             Mock Test-Path { return $false } -ParameterFilter { $Path -like "*forgum-engine*" }
-            $script:RestoreConfig = Get-CFConfig | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-            $cfg = Get-CFConfig
+            $script:RestoreConfig = GetConfig | ConvertTo-JsonSafe | ConvertFrom-Json
+            $cfg = GetConfig
             $cfg.animation.mode = 'aurora'
-            Set-CFConfig -Config $cfg
+            SetConfig -Config $cfg
 
-            { Show-CFAnimation -CowOutput "moo" } | Should -Not -Throw
-            Set-CFConfig -Config $script:RestoreConfig
+            { ShowAnimation -CowOutput "moo" } | Should -Not -Throw
+            SetConfig -Config $script:RestoreConfig
         }
     }
 }

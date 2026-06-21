@@ -14,26 +14,21 @@ BeforeAll {
 Describe "Rust Engine" -Tag 'Engine' {
 
     Context "Binary detection" {
-        It "Get-EngineBinary finds or returns null" {
+        It "GetEngineBinary finds engine binary" {
             InModuleScope Forgum {
-                $bin = Get-EngineBinary
-                if ($bin) {
-                    Test-Path $bin | Should -Be $true
-                } else {
-                    $bin | Should -BeNullOrEmpty
-                }
+                $bin = GetEngineBinary
+                $bin | Should -Not -BeNullOrEmpty
+                Test-Path $bin | Should -Be $true
             }
         }
 
         It "binary name matches platform" {
             InModuleScope Forgum {
-                $bin = Get-EngineBinary
-                if ($bin) {
-                    if ($IsWindows -or $env:OS -eq 'Windows_NT') {
-                        $bin | Should -Match '\.exe$'
-                    } else {
-                        $bin | Should -Not -Match '\.exe$'
-                    }
+                $bin = GetEngineBinary
+                if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+                    $bin | Should -Match '\.exe$'
+                } else {
+                    $bin | Should -Not -Match '\.exe$'
                 }
             }
         }
@@ -42,7 +37,7 @@ Describe "Rust Engine" -Tag 'Engine' {
     Context "Binary execution" {
         BeforeAll {
             InModuleScope Forgum {
-                $script:BinaryPath = Get-EngineBinary
+                $script:BinaryPath = GetEngineBinary
             }
         }
 
@@ -95,8 +90,8 @@ Describe "Rust Engine" -Tag 'Engine' {
 
         It "handles invalid JSON gracefully" {
             if ($script:BinaryPath) {
-                "not json" | & $script:BinaryPath 2>&1 | Out-Null
-                $true | Should -Be $true
+                $output = "not json" | & $script:BinaryPath 2>&1 | Out-String
+                $output | Should -Match '(?i)(error|parse|invalid|failed)'
             } else {
                 Set-ItResult -Inconclusive -Because "engine binary not built"
             }
@@ -104,18 +99,18 @@ Describe "Rust Engine" -Tag 'Engine' {
 
         It "handles empty stdin gracefully" {
             if ($script:BinaryPath) {
-                "" | & $script:BinaryPath 2>&1 | Out-Null
-                $true | Should -Be $true
+                $output = "" | & $script:BinaryPath 2>&1 | Out-String
+                $output | Should -Match '(?i)(no input|empty|error|pipe)'
             } else {
                 Set-ItResult -Inconclusive -Because "engine binary not built"
             }
         }
     }
 
-    Context "Get-ForgumShellHook" {
+    Context "GetForgumShellHook" {
         It "bash hook contains function definition" {
             InModuleScope Forgum {
-                $hook = Get-ForgumShellHook -Shell 'bash'
+                $hook = GetForgumShellHook -Shell 'bash'
                 $hook | Should -Match 'forgum\(\)'
                 $hook | Should -Match 'cowsay'
                 $hook | Should -Match 'forgum-engine'
@@ -124,7 +119,7 @@ Describe "Rust Engine" -Tag 'Engine' {
 
         It "zsh hook contains function definition" {
             InModuleScope Forgum {
-                $hook = Get-ForgumShellHook -Shell 'zsh'
+                $hook = GetForgumShellHook -Shell 'zsh'
                 $hook | Should -Match 'forgum\(\)'
                 $hook | Should -Match 'cowsay'
             }
@@ -132,7 +127,7 @@ Describe "Rust Engine" -Tag 'Engine' {
 
         It "fish hook contains function definition" {
             InModuleScope Forgum {
-                $hook = Get-ForgumShellHook -Shell 'fish'
+                $hook = GetForgumShellHook -Shell 'fish'
                 $hook | Should -Match 'function forgum'
                 $hook | Should -Match 'cowsay'
             }
@@ -140,7 +135,7 @@ Describe "Rust Engine" -Tag 'Engine' {
 
         It "pwsh hook contains function definition" {
             InModuleScope Forgum {
-                $hook = Get-ForgumShellHook -Shell 'pwsh'
+                $hook = GetForgumShellHook -Shell 'pwsh'
                 $hook | Should -Match 'Invoke-ForgumEngine'
                 $hook | Should -Match 'forgum-engine'
             }
@@ -148,7 +143,7 @@ Describe "Rust Engine" -Tag 'Engine' {
 
         It "unsupported shell returns error message" {
             InModuleScope Forgum {
-                $hook = Get-ForgumShellHook -Shell 'elvish'
+                $hook = GetForgumShellHook -Shell 'elvish'
                 $hook | Should -Match 'Unsupported'
             }
         }

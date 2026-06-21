@@ -47,7 +47,7 @@ BeforeAll {
         $obj = [ordered]@{
             type     = 'render'
             effect   = $Effect
-            text     = $Text
+            cow_text = $Text
             width    = 80
             height   = 24
             background = $true
@@ -57,7 +57,7 @@ BeforeAll {
         if ($CowText)  { $obj.cow_text = $CowText }
         if ($CowFile)  { $obj.cow_file = $CowFile }
         if ($Eyes)     { $obj.eyes = $Eyes }
-        $obj | ConvertTo-Json -Depth 5 -Compress
+        $obj | ConvertTo-Json -Depth 20 -Compress
     }
 
     # Helper: strip ANSI escape codes for output matching
@@ -139,19 +139,19 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
         It "renders basic cow" {
             $json = New-RenderJson -Text 'Hello World'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output | Should -Match 'Hello World' -Because "engine should output cow text"
         }
 
         It "renders with custom eyes" {
             $json = New-RenderJson -Text 'Test' -Eyes '@@'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output | Should -Match 'Test' -Because "cow text should appear in output"
         }
 
         It "renders with cow file" {
             $json = New-RenderJson -Text 'Tux' -CowFile 'tux'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output | Should -Match 'Tux' -Because "cow text should appear in output"
         }
 
         It "renders all effects" {
@@ -159,24 +159,51 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
             foreach ($effect in $effects) {
                 $json = New-RenderJson -Effect $effect -Text "Test $effect"
                 $output = $json | & $script:EngineBinary 2>&1 | Out-String
-                $output | Should -Not -BeNullOrEmpty -Because "effect $effect should produce output"
+                $output | Should -Match "Test $effect" -Because "effect $effect should render cow text"
             }
         }
 
         It "handles missing text" {
             $json = '{"type":"render","effect":"static","width":80,"height":24,"background":true,"duration":1,"fps":10}'
-            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $tmpIn = [System.IO.Path]::GetTempFileName()
+            $tmpOut = [System.IO.Path]::GetTempFileName()
+            $tmpErr = [System.IO.Path]::GetTempFileName()
+            [System.IO.File]::WriteAllText($tmpIn, $json)
+            try {
+                $p = Start-Process -FilePath $script:EngineBinary -ArgumentList "" -RedirectStandardInput $tmpIn -NoNewWindow -PassThru -Wait -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+                $exitCode = $p.ExitCode
+            } catch { $exitCode = 1 }
+            finally { Remove-Item $tmpIn, $tmpOut, $tmpErr -Force -ErrorAction SilentlyContinue }
+            $exitCode | Should -BeIn @(0, 1) -Because "engine should not crash on missing text"
         }
 
         It "handles empty text" {
-            $json = '{"type":"render","effect":"static","text":"","width":80,"height":24,"background":true,"duration":1,"fps":10}'
-            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $json = '{"type":"render","effect":"static","cow_text":"","width":80,"height":24,"background":true,"duration":1,"fps":10}'
+            $tmpIn = [System.IO.Path]::GetTempFileName()
+            $tmpOut = [System.IO.Path]::GetTempFileName()
+            $tmpErr = [System.IO.Path]::GetTempFileName()
+            [System.IO.File]::WriteAllText($tmpIn, $json)
+            try {
+                $p = Start-Process -FilePath $script:EngineBinary -ArgumentList "" -RedirectStandardInput $tmpIn -NoNewWindow -PassThru -Wait -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+                $exitCode = $p.ExitCode
+            } catch { $exitCode = 1 }
+            finally { Remove-Item $tmpIn, $tmpOut, $tmpErr -Force -ErrorAction SilentlyContinue }
+            $exitCode | Should -BeIn @(0, 1) -Because "engine should not crash on empty text"
         }
 
         It "handles long text (5000 chars)" {
             $longText = "A" * 5000
             $json = New-RenderJson -Text $longText
-            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $tmpIn = [System.IO.Path]::GetTempFileName()
+            $tmpOut = [System.IO.Path]::GetTempFileName()
+            $tmpErr = [System.IO.Path]::GetTempFileName()
+            [System.IO.File]::WriteAllText($tmpIn, $json)
+            try {
+                $p = Start-Process -FilePath $script:EngineBinary -ArgumentList "" -RedirectStandardInput $tmpIn -NoNewWindow -PassThru -Wait -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+                $exitCode = $p.ExitCode
+            } catch { $exitCode = 1 }
+            finally { Remove-Item $tmpIn, $tmpOut, $tmpErr -Force -ErrorAction SilentlyContinue }
+            $exitCode | Should -BeIn @(0, 1) -Because "engine should handle long text"
         }
     }
 
@@ -212,41 +239,65 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
     Context "5. Error Handling & Robustness" {
 
         It "handles invalid JSON" {
-            { "not valid json" | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $output = "not valid json" | & $script:EngineBinary 2>&1 | Out-String
+            $output | Should -Match '(?i)(error|parse|invalid|failed)' -Because "invalid JSON should produce error"
         }
 
         It "handles empty stdin" {
-            { "" | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $output = "" | & $script:EngineBinary 2>&1 | Out-String
+            $output | Should -Match '(?i)(no input|empty|error|pipe)' -Because "empty stdin should produce error"
         }
 
         It "handles empty JSON object" {
             $json = '{"background":true,"duration":1,"fps":10}'
-            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $tmpIn = [System.IO.Path]::GetTempFileName()
+            $tmpOut = [System.IO.Path]::GetTempFileName()
+            $tmpErr = [System.IO.Path]::GetTempFileName()
+            [System.IO.File]::WriteAllText($tmpIn, $json)
+            try {
+                $p = Start-Process -FilePath $script:EngineBinary -ArgumentList "" -RedirectStandardInput $tmpIn -NoNewWindow -PassThru -Wait -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+                $exitCode = $p.ExitCode
+            } catch { $exitCode = 1 }
+            finally { Remove-Item $tmpIn, $tmpOut, $tmpErr -Force -ErrorAction SilentlyContinue }
+            $exitCode | Should -BeIn @(0, 1) -Because "empty JSON object should not crash"
         }
 
         It "handles unknown type" {
             $json = '{"type":"unknown_command","background":true,"duration":1,"fps":10}'
-            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $tmpIn = [System.IO.Path]::GetTempFileName()
+            $tmpOut = [System.IO.Path]::GetTempFileName()
+            $tmpErr = [System.IO.Path]::GetTempFileName()
+            [System.IO.File]::WriteAllText($tmpIn, $json)
+            try {
+                $p = Start-Process -FilePath $script:EngineBinary -ArgumentList "" -RedirectStandardInput $tmpIn -NoNewWindow -PassThru -Wait -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+                $exitCode = $p.ExitCode
+            } catch { $exitCode = 1 }
+            finally { Remove-Item $tmpIn, $tmpOut, $tmpErr -Force -ErrorAction SilentlyContinue }
+            $exitCode | Should -BeIn @(0, 1) -Because "unknown type should not crash"
         }
 
         It "handles malformed JSON" {
-            { '{broken json' | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $output = '{broken json' | & $script:EngineBinary 2>&1 | Out-String
+            $output | Should -Match '(?i)(error|parse|invalid|failed)' -Because "malformed JSON should produce error"
         }
 
         It "handles huge JSON (100K chars)" {
             $bigText = "X" * 100000
             $json = New-RenderJson -Text $bigText
-            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $output = $json | & $script:EngineBinary 2>&1 | Out-String
+            $output | Should -Not -BeNullOrEmpty -Because "huge JSON should produce output"
         }
 
         It "handles zero dimensions" {
-            $json = '{"type":"render","effect":"static","text":"Test","width":0,"height":0,"background":true,"duration":1,"fps":10}'
-            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $json = '{"type":"render","effect":"static","cow_text":"Test","width":0,"height":0,"background":true,"duration":1,"fps":10}'
+            $output = $json | & $script:EngineBinary 2>&1 | Out-String
+            $output | Should -Not -BeNullOrEmpty -Because "zero dimensions should not crash"
         }
 
         It "handles large dimensions" {
-            $json = '{"type":"render","effect":"static","text":"Test","width":10000,"height":10000,"background":true,"duration":1,"fps":10}'
-            { $json | & $script:EngineBinary 2>&1 | Out-Null } | Should -Not -Throw
+            $json = '{"type":"render","effect":"static","cow_text":"Test","width":10000,"height":10000,"background":true,"duration":1,"fps":10}'
+            $output = $json | & $script:EngineBinary 2>&1 | Out-String
+            $output | Should -Not -BeNullOrEmpty -Because "large dimensions should not crash"
         }
     }
 
@@ -254,15 +305,17 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
     Context "6. Multi-line & Special Characters" {
 
         It "handles newlines" {
-            $json = '{"type":"render","effect":"static","text":"Line1\nLine2","width":80,"height":24,"background":true,"duration":1,"fps":10}'
+            $json = '{"type":"render","effect":"static","cow_text":"Line1\nLine2","width":80,"height":24,"background":true,"duration":1,"fps":10}'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output | Should -Match 'Line1' -Because "multiline text should render"
+            $output | Should -Match 'Line2'
         }
 
         It "handles tabs" {
-            $json = '{"type":"render","effect":"static","text":"Tab\there","width":80,"height":24,"background":true,"duration":1,"fps":10}'
+            $json = '{"type":"render","effect":"static","cow_text":"Tab\there","width":80,"height":24,"background":true,"duration":1,"fps":10}'
             $output = $json | & $script:EngineBinary 2>&1 | Out-String
-            $output | Should -Not -BeNullOrEmpty
+            $output | Should -Match 'Tab' -Because "tabbed text should render"
+            $output | Should -Match 'here'
         }
     }
 
@@ -270,34 +323,36 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
     Context "7. Rapid Sequential Requests" {
 
         It "10 rapid renders" {
-            $ok = $true
+            $failures = @()
             1..10 | ForEach-Object {
                 $json = New-RenderJson -Text "Rapid $_"
-                try { $null = $json | & $script:EngineBinary 2>&1 } catch { $ok = $false }
+                $output = $json | & $script:EngineBinary 2>&1 | Out-String
+                if ([string]::IsNullOrWhiteSpace($output)) { $failures += $_ }
             }
-            $ok | Should -Be $true
+            $failures | Should -BeNullOrEmpty -Because "all 10 rapid renders should produce output"
         }
 
         It "10 mixed-type requests" {
-            $ok = $true
+            $failures = @()
             1..10 | ForEach-Object {
                 $json = if ($_ % 2 -eq 0) {
                     New-RenderJson -Text "Mixed $_"
                 } else {
                     '{"type":"init","shell":"bash"}'
                 }
-                try { $null = $json | & $script:EngineBinary 2>&1 } catch { $ok = $false }
+                $output = $json | & $script:EngineBinary 2>&1 | Out-String
+                if ([string]::IsNullOrWhiteSpace($output)) { $failures += $_ }
             }
-            $ok | Should -Be $true
+            $failures | Should -BeNullOrEmpty -Because "all 10 mixed requests should produce output"
         }
     }
 
     # ── 8: Module Integration ────────────────────────────────────────────────
     Context "8. PowerShell Module Integration" {
 
-        It "Get-EngineBinary returns valid path" {
+        It "GetEngineBinary returns valid path" {
             InModuleScope Forgum {
-                $bin = Get-EngineBinary
+                $bin = GetEngineBinary
                 $bin | Should -Not -BeNullOrEmpty
                 Test-Path $bin | Should -Be $true
             }
@@ -305,7 +360,7 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
 
         It "engine matches platform extension" {
             InModuleScope Forgum {
-                $bin = Get-EngineBinary
+                $bin = GetEngineBinary
                 if ($IsWindows -or $env:OS -eq 'Windows_NT') {
                     $bin | Should -Match '\.exe$'
                 } else {
@@ -314,16 +369,16 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
             }
         }
 
-        It "Get-ForgumShellHook pwsh references engine" {
+        It "GetForgumShellHook pwsh references engine" {
             InModuleScope Forgum {
-                $hook = Get-ForgumShellHook -Shell 'pwsh'
+                $hook = GetForgumShellHook -Shell 'pwsh'
                 $hook | Should -Match 'Invoke-ForgumEngine'
             }
         }
 
-        It "Get-ForgumShellHook bash is valid" {
+        It "GetForgumShellHook bash is valid" {
             InModuleScope Forgum {
-                $hook = Get-ForgumShellHook -Shell 'bash'
+                $hook = GetForgumShellHook -Shell 'bash'
                 $hook | Should -Match 'forgum\(\)'
                 $hook | Should -Match 'cowsay'
                 $hook | Should -Match 'forgum-engine'
@@ -332,7 +387,7 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
 
         It "unsupported shell returns error" {
             InModuleScope Forgum {
-                $hook = Get-ForgumShellHook -Shell 'elvish'
+                $hook = GetForgumShellHook -Shell 'elvish'
                 $hook | Should -Match 'Unsupported'
             }
         }
@@ -341,18 +396,41 @@ Describe "Engine Manual Production Test" -Tag 'Engine-Manual' {
     # ── 9: Effect Output ─────────────────────────────────────────────────────
     Context "9. Effect-specific Output" {
 
-        It "static produces non-empty output" {
+        It "static produces output with cow text" {
             $json = New-RenderJson -CowText 'VerifyMe'
             $raw = $json | & $script:EngineBinary 2>&1 | Out-String
-            $raw | Should -Not -BeNullOrEmpty
+            $raw | Should -Match 'VerifyMe' -Because "static effect should render cow text"
         }
 
         $effects = @('aurora', 'plasma', 'matrix', 'fire', 'rain', 'bounce', 'disco', 'physics')
         foreach ($effect in $effects) {
-            It "$effect produces output" {
-                $json = New-RenderJson -Effect $effect -Text 'Test'
+            It "$effect produces output with cow text" {
+                $json = New-RenderJson -Effect $effect -Text 'EffectTest'
                 $output = $json | & $script:EngineBinary 2>&1 | Out-String
-                $output | Should -Not -BeNullOrEmpty
+                $output | Should -Match 'EffectTest' -Because "$effect effect should render cow text"
+            }
+        }
+    }
+
+    # ── 11: Visual Render on Screen ──────────────────────────────────────────
+    Context "11. Visual Render on Screen" {
+
+        $effects = @('aurora', 'plasma', 'fire', 'matrix', 'bounce', 'disco', 'physics', 'ember', 'shatter', 'portal', 'glitch', 'neon-pulse', 'liquid-chrome')
+        foreach ($effect in $effects) {
+            It "renders $effect animation in visible console for 2 seconds" {
+                $json = "{{""type"":""render"",""effect"":""$effect"",""cow_text"":""$effect Test"",""width"":80,""height"":24,""background"":false,""duration"":2,""fps"":15}}"
+                $tmpFile = Join-Path $env:TEMP "forgum_test_$effect.json"
+                [System.IO.File]::WriteAllText($tmpFile, $json)
+                try {
+                    $proc = Start-Process -FilePath $script:EngineBinary `
+                        -ArgumentList "--file `"$tmpFile`"" `
+                        -NoNewWindow -PassThru
+                    Start-Sleep -Seconds 3
+                    if (-not $proc.HasExited) { $proc.Kill() }
+                    $proc.HasExited | Should -Be $true
+                } finally {
+                    Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
+                }
             }
         }
     }
