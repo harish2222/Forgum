@@ -38,11 +38,14 @@ function InvokeEngine {
 
                 if ($isBackground -and $NonBlocking.IsPresent) {
                     # Background: launch detached, don't wait
+                    # CreateNoWindow=$true ensures engine shares the parent console
+                    # instead of creating a hidden new window (which would make the
+                    # animation invisible). The engine opens CONOUT$ directly.
                     $psi = New-Object System.Diagnostics.ProcessStartInfo
                     $psi.FileName = $enginePath
                     $psi.Arguments = "--file `"$tmpFile`""
                     $psi.UseShellExecute = $false
-                    $psi.CreateNoWindow = $false
+                    $psi.CreateNoWindow = $true
                     $null = [System.Diagnostics.Process]::Start($psi)
                     return $null
                 }
