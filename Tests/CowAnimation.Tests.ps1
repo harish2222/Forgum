@@ -134,7 +134,7 @@ Describe "Cow File Animation Tests" -Tag 'CowAnimation' {
         ) {
             $json = @{
                 type = 'render'; effect = $Effect; cow_text = "  TestCow`n  ^__^"
-                width = 80; height = 24; background = $true; duration = 1; fps = 10
+                width = 80; height = 24; background = $false; duration = 1; fps = 10
             } | ConvertTo-Json -Compress
             $raw = $json | & $script:EngineBinary 2>&1 | Out-String
             $raw | Should -Not -BeNullOrEmpty

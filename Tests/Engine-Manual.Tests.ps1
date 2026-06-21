@@ -50,7 +50,7 @@ BeforeAll {
             cow_text = $Text
             width    = 80
             height   = 24
-            background = $true
+            background = $false
             duration = 1
             fps      = 10
         }

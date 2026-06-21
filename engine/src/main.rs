@@ -127,24 +127,15 @@ fn render_loop_foreground(config: SceneConfig) -> io::Result<()> {
     let has_terminal = is_terminal_stdout();
     let effect_name = resolve_effect_name(&config);
 
-    // Static effects with piped stdout: just print cow_text (no animation needed)
-    if !has_terminal && effect_name == "static" {
+    // Piped stdout: print cow_text directly (animation can't render to a pipe)
+    if !has_terminal {
         let mut stdout = io::stdout();
         print!("{}", config.cow_text);
         stdout.flush()?;
         return Ok(());
     }
 
-    let mut console_out = if has_terminal { None } else { open_console_out() };
-    let can_animate = has_terminal || console_out.is_some();
-
-    if !can_animate {
-        // Truly no console available — plain text fallback
-        let mut stdout = io::stdout();
-        print!("{}", config.cow_text);
-        stdout.flush()?;
-        return Ok(());
-    }
+    let mut console_out: Option<std::io::BufWriter<std::fs::File>> = None;
 
     if has_terminal {
         crossterm_terminal::enable_raw_mode()?;
@@ -250,24 +241,15 @@ fn render_loop_background(config: SceneConfig) -> io::Result<()> {
     let has_terminal = is_terminal_stdout();
     let effect_name = resolve_effect_name(&config);
 
-    // Static effects with piped stdout: just print cow_text (no animation needed)
-    if !has_terminal && effect_name == "static" {
+    // Piped stdout: print cow_text directly (animation can't render to a pipe)
+    if !has_terminal {
         let mut stdout = io::stdout();
         print!("{}", config.cow_text);
         stdout.flush()?;
         return Ok(());
     }
 
-    let mut console_out = if has_terminal { None } else { open_console_out() };
-    let can_animate = has_terminal || console_out.is_some();
-
-    if !can_animate {
-        let mut stdout = io::stdout();
-        print!("{}", config.cow_text);
-        stdout.flush()?;
-        return Ok(());
-    }
-
+    let mut console_out: Option<std::io::BufWriter<std::fs::File>> = None;
     let mut stdout = io::stdout();
     let (cols, rows) = get_terminal_size();
     let mut fb = FrameBuffer::new(cols as usize, rows as usize);
