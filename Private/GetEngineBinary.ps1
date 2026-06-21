@@ -4,6 +4,7 @@ function GetEngineBinary {
         Locates the forgum-engine binary cross-platform.
     .DESCRIPTION
         Searches bin/, engine/target/release/, engine/target/debug/.
+        Auto-rebuilds if no binary found and Rust toolchain is available.
         Returns full path or $null if not found.
     #>
     $onWindows = $IsWindows -or $env:OS -eq 'Windows_NT'
@@ -19,6 +20,21 @@ function GetEngineBinary {
 
     foreach ($path in $candidates) {
         if (Test-Path $path) { return $path }
+    }
+
+    # Auto-rebuild if Rust toolchain is available
+    $cargo = Get-Command cargo -ErrorAction SilentlyContinue
+    if ($cargo) {
+        $buildScript = Join-Path $moduleRoot "Scripts/build-engine.ps1"
+        if (Test-Path $buildScript) {
+            try {
+                & $buildScript -Quiet 2>$null
+                # Re-check after build
+                foreach ($path in $candidates) {
+                    if (Test-Path $path) { return $path }
+                }
+            } catch { }
+        }
     }
 
     return $null

@@ -505,9 +505,6 @@ fn main() -> io::Result<()> {
     let is_daemon = args.iter().any(|a| a == "--daemon");
 
     if is_bg && !is_daemon {
-        print!("{}", config.cow_text);
-        io::stdout().flush()?;
-
         use std::process::{Command, Stdio};
         let current_exe = std::env::current_exe()?;
         let mut child = Command::new(current_exe)

@@ -39,6 +39,7 @@ impl Terminal {
         }
     }
 
+    #[allow(dead_code)]
     pub fn refresh_size(&mut self) {
         if let Ok((c, r)) = crossterm::terminal::size() {
             self.size = TermSize { cols: c, rows: r };

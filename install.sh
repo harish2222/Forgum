@@ -193,6 +193,107 @@ check_command() {
     command -v "$1" &>/dev/null
 }
 
+check_rust_deps() {
+    echo -e "\n${YELLOW}  Checking Rust toolchain...${NC}"
+
+    local issues=0
+
+    if check_command rustc; then
+        echo -e "  ${GREEN}✓${NC} rustc: $(rustc --version)"
+    else
+        echo -e "  ${YELLOW}⚠ rustc not found${NC}"
+        issues=$((issues + 1))
+    fi
+
+    if check_command cargo; then
+        echo -e "  ${GREEN}✓${NC} cargo: $(cargo --version)"
+    else
+        echo -e "  ${YELLOW}⚠ cargo not found${NC}"
+        issues=$((issues + 1))
+    fi
+
+    # Auto-install Rust if missing
+    if [ $issues -gt 0 ]; then
+        echo -e "\n  ${CYAN}Installing Rust toolchain...${NC}"
+        if curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable 2>&1; then
+            # Source cargo env
+            local cargo_home="${CARGO_HOME:-$HOME/.cargo}"
+            if [ -f "$cargo_home/env" ]; then
+                source "$cargo_home/env"
+            fi
+            # Re-check
+            if check_command rustc && check_command cargo; then
+                echo -e "  ${GREEN}✓${NC} Rust installed: $(rustc --version)"
+                echo -e "  ${GREEN}✓${NC} Cargo installed: $(cargo --version)"
+                return 0
+            fi
+        fi
+        echo -e "  ${RED}✗ Rust installation failed${NC}"
+        echo -e "  Manual install: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+        return 1
+    fi
+
+    # Check C compiler
+    if check_command cc || check_command gcc || check_command clang; then
+        echo -e "  ${GREEN}✓${NC} C compiler found"
+    else
+        echo -e "  ${YELLOW}⚠ No C compiler — install build-essential (apt) or Xcode CLI tools (macOS)${NC}"
+    fi
+
+    return 0
+}
+
+build_engine() {
+    echo -e "\n${YELLOW}  Building forgum-engine (release)...${NC}"
+
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local engine_dir="$script_dir/engine"
+    local bin_dir="$script_dir/bin"
+
+    if [ ! -d "$engine_dir" ]; then
+        echo -e "  ${RED}✗ Engine source not found: $engine_dir${NC}"
+        return 1
+    fi
+
+    if ! check_rust_deps; then
+        return 1
+    fi
+
+    cd "$engine_dir"
+    if cargo build --release 2>&1; then
+        echo -e "  ${GREEN}✓${NC} Build succeeded"
+    else
+        echo -e "  ${RED}✗ Build FAILED${NC}"
+        cd "$script_dir"
+        return 1
+    fi
+
+    # Copy binary
+    local exe_name="forgum-engine"
+    local src_bin="target/release/$exe_name"
+    if [ ! -f "$src_bin" ]; then
+        echo -e "  ${RED}✗ Binary not found: $src_bin${NC}"
+        cd "$script_dir"
+        return 1
+    fi
+
+    mkdir -p "$bin_dir"
+    cp "$src_bin" "$bin_dir/$exe_name"
+    chmod +x "$bin_dir/$exe_name"
+    local size
+    size=$(du -h "$bin_dir/$exe_name" | cut -f1)
+    echo -e "  ${GREEN}✓${NC} Binary installed: $bin_dir/$exe_name ($size)"
+
+    # Verify
+    if "$bin_dir/$exe_name" --help >/dev/null 2>&1; then
+        echo -e "  ${GREEN}✓${NC} Binary verified"
+    fi
+
+    cd "$script_dir"
+    return 0
+}
+
 detect_platform() {
     case "$(uname -s)" in
         Linux*)   echo "linux";;
@@ -421,12 +522,16 @@ main() {
         exit 1
     fi
 
-    # Step 4: Setup Profile
-    echo -e "\n${BOLD}━━━ Step 4/5: Shell Profile ━━━${NC}"
+    # Step 4: Build Rust engine
+    echo -e "\n${BOLD}━━━ Step 4/6: Rust Engine ━━━${NC}"
+    build_engine || echo -e "  ${YELLOW}⚠ Engine build failed. Module works without animations.${NC}"
+
+    # Step 5: Setup Profile
+    echo -e "\n${BOLD}━━━ Step 5/5: Shell Profile ━━━${NC}"
     setup_profile
 
-    # Step 5: Verify
-    echo -e "\n${BOLD}━━━ Step 5/5: Verification ━━━${NC}"
+    # Step 6: Verify
+    echo -e "\n${BOLD}━━━ Step 6/6: Verification ━━━${NC}"
     run_tests
 
     # Interactive Setup Prompt

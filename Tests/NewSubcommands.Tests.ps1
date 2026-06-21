@@ -38,7 +38,7 @@ Describe "forgum cowsay" -Tag 'NewSubcommand' {
     }
 
     It "cowsay --eyes @@ sets custom eyes" {
-        $raw = forgum cowsay "EyesTest" --eyes '@@' 6>&1 2>&1 | Out-String
+        $raw = forgum cowsay "EyesTest" --cow default --eyes '@@' 2>&1 | Out-String
         $output = Remove-Ansi $raw
         $output | Should -Match '@@'
     }

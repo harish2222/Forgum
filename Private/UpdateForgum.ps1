@@ -31,4 +31,16 @@ function UpdateForgum {
     }
     "Run: iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/harish2222/Forgum/main/install.ps1'))"
     "Or: Update-Module Forgum"
+
+    # Rebuild engine if source is available
+    $root = Split-Path $PSScriptRoot -Parent
+    $buildScript = Join-Path $root "Scripts\build-engine.ps1"
+    if (Test-Path $buildScript) {
+        Write-Host "`nRebuilding engine..." -ForegroundColor Cyan
+        $result = & $buildScript -Quiet
+        if ($result -eq $false) {
+            Write-Host "Engine build failed. Animations may not work." -ForegroundColor Yellow
+            Write-Host "Install Rust: https://rustup.rs" -ForegroundColor Yellow
+        }
+    }
 }

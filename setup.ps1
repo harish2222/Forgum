@@ -113,7 +113,6 @@ if (-not $NoProfile -and $profilePath) {
 
     $block = @(
         "# region FORGUM",
-        "`$env:FORGUM_NOAUTOSTART = '1'",
         "Import-Module Forgum -ErrorAction SilentlyContinue"
     )
     if ($fStart) {

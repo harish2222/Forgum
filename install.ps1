@@ -18,8 +18,16 @@ $sourceDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocatio
 
 Write-Host "`n  Forgum Installer v1.1.2`n" -ForegroundColor Cyan
 
-# ── Build Rust engine (optional) ──
-if (Test-Path "$sourceDir\engine\Cargo.toml") {
+# ── Build Rust engine ──
+$buildScript = Join-Path $sourceDir "Scripts\build-engine.ps1"
+if (Test-Path $buildScript) {
+    Write-Host "  Checking engine dependencies and building..." -ForegroundColor Cyan
+    $result = & $buildScript -Quiet
+    if ($result -eq $false) {
+        Write-Host "  Engine build failed. Module will work without animations." -ForegroundColor Yellow
+    }
+} elseif (Test-Path "$sourceDir\engine\Cargo.toml") {
+    Write-Host "  Build script not found, attempting cargo build directly..." -ForegroundColor Yellow
     $hasCargo = Get-Command cargo -ErrorAction SilentlyContinue
     if ($hasCargo) {
         Write-Host "  Building Rust engine..." -ForegroundColor Cyan

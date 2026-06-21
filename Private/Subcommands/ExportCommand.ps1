@@ -13,6 +13,7 @@ function ExportCommand {
     $config = GetConfig
 
     $cowName = if ($parsed.Options.ContainsKey('cow')) { $parsed.Options['cow'] } else { $config.cow.file }
+    $explicitCow = $parsed.Options.ContainsKey('cow')
     $eyes = if ($parsed.Options.ContainsKey('eyes')) { $parsed.Options['eyes'] } else { $config.cow.eyes }
     $tongue = if ($parsed.Options.ContainsKey('tongue')) { $parsed.Options['tongue'] } else { $config.cow.tongue }
     $format = if ($parsed.Options.ContainsKey('format')) { $parsed.Options['format'] } else { 'txt' }
@@ -33,7 +34,9 @@ function ExportCommand {
         return
     }
 
-    $cowOutput = InvokeCowsay -Text $text -CowFile $cowName -Eyes $eyes -Tongue $tongue
+    $cowParams = @{ Text = $text; CowFile = $cowName; Eyes = $eyes; Tongue = $tongue }
+    if ($explicitCow) { $cowParams['NoRandom'] = $true }
+    $cowOutput = InvokeCowsay @cowParams
 
     if (-not $noColor -and $config.lolcat.enabled) {
         $lp = GetLolcatParams

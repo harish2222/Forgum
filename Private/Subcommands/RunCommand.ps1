@@ -15,12 +15,15 @@ function RunCommand {
     $animationMode = if ($parsed.Options.ContainsKey('mode')) { $parsed.Options['mode'] } else { $config.animation.mode }
     $useLolcat = if ($parsed.Flags.ContainsKey('lolcat')) { $true } elseif ($parsed.Flags.ContainsKey('no-lolcat')) { $false } else { $config.lolcat.enabled }
     $cowName = if ($parsed.Options.ContainsKey('cow')) { $parsed.Options['cow'] } elseif ($config.cow.file) { $config.cow.file } else { 'default' }
+    $explicitCow = $parsed.Options.ContainsKey('cow')
 
     if ([string]::IsNullOrEmpty($text)) {
         $text = GetFortune
     }
 
-    $cowOutput = InvokeCowsay -Text $text -CowFile $cowName -Eyes $config.cow.eyes -Tongue $config.cow.tongue
+    $cowParams = @{ Text = $text; CowFile = $cowName; Eyes = $config.cow.eyes; Tongue = $config.cow.tongue }
+    if ($explicitCow) { $cowParams['NoRandom'] = $true }
+    $cowOutput = InvokeCowsay @cowParams
 
     if ($useLolcat) {
         $lp = GetLolcatParams

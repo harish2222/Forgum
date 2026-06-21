@@ -22,7 +22,8 @@ function InvokeCowsay {
         [string]$CowFile = 'default',
         [string]$Eyes = '',
         [string]$Tongue = '',
-        [string]$Thoughts = '\'
+        [string]$Thoughts = '\',
+        [switch]$NoRandom
     )
 
     $config = GetConfig
@@ -34,7 +35,8 @@ function InvokeCowsay {
         $Tongue = if ($config.cow.tongue) { $config.cow.tongue } else { '  ' }
     }
 
-    if ($config.cow.random) {
+    # Only randomize cow if caller did NOT explicitly pass a cow file
+    if ($config.cow.random -and -not $NoRandom) {
         $cowsPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Data/Cows'
         $cowFiles = Get-ChildItem -Path $cowsPath -Filter '*.cow' -ErrorAction SilentlyContinue
         if ($cowFiles) {
